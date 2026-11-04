@@ -1,33 +1,52 @@
-// OG 画像（1200x630）と Gem 用の指示文を作る: node tools/assets.js
+// サムネイル画像と Gem 用の指示文を作る: node tools/assets.js
+//   docs/og.jpg              リンクを貼ったときのプレビュー（1200x630、Discord・X・LINE など）
+//   docs/social-preview.jpg  GitHub の Settings → Social preview 用（1280x640）
+//   gem-instructions.md      Gem「モッフィー工房」に貼る文章
+// 絵は assets/og-base.jpg（Gemini / Nano Banana で生成した文字なしの絵）を使い、文字はサイトと同じフォントで重ねる。
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..');
+const BASE = path.join(ROOT, 'assets', 'og-base.jpg');
+const SITE = 'rin-cat.github.io/moffy-maker';
+
+// w, h: 出力サイズ。s: 1200 幅を基準にした文字の倍率
+function cardHTML(w, h, s, img) {
+  return `<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  body{margin:0;width:${w}px;height:${h}px;overflow:hidden;background:#ECEAF3 url(${img}) center/cover no-repeat;color:#24233A;font-family:"BIZ UDPGothic",sans-serif}
+  .t{position:absolute;left:${56 * s}px;top:0;bottom:0;width:${400 * s}px;display:flex;flex-direction:column;justify-content:center;gap:${18 * s}px}
+  .e{font:500 ${17 * s}px "IBM Plex Mono",monospace;letter-spacing:.08em;color:#5E5A78}
+  .e b{background:linear-gradient(135deg,#4285F4,#EA4335 40%,#FBBC04 65%,#34A853);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:${19 * s}px}
+  h1{margin:0;font:900 ${51 * s}px/1.18 "Zen Maru Gothic",sans-serif;letter-spacing:.01em;white-space:nowrap}
+  p{margin:0;font-weight:700;font-size:${21 * s}px;line-height:1.6;color:#46425F}
+  .u{margin-top:${6 * s}px;font:500 ${14 * s}px "IBM Plex Mono",monospace;color:#5E5A78}
+</style></head><body><div class="t">
+  <div class="e"><b>✦</b> 非公式・ファンメイド</div>
+  <h1>モッフィー<br>指示書メーカー</h1>
+  <p>自分のモッフィーを、<br>同じ見た目のまま Gemini で</p>
+  <div class="u">${SITE}</div>
+</div></body></html>`;
+}
+
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage();
   await p.goto('file://' + path.join(ROOT, 'moffy-studio.html')); await p.waitForTimeout(800);
-  const svgs = [];
-  for (const i of [0, 1, 2]) { await p.click(`[data-sample="${i}"]`); svgs.push(await p.$eval('#preview', e => e.innerHTML)); }
   // だれでも使える工房版の Gem 指示文
-  await p.click('#r-gem');
   const gem = await p.evaluate(() => { const r = RECIPES.find(x => x.id === 'gem'); const segs = r.build(promptDNA(st.d), { scope: 'だれでも使える工房' }, null, {}); return segs.map(s => `## ${s.h}\n\n${s.h === 'カスタム指示' ? '```\n' + s.t + '\n```' : s.t}`).join('\n\n'); });
   fs.writeFileSync(path.join(ROOT, 'gem-instructions.md'), `# Gem「モッフィー工房（非公式）」\n\nツールのレシピ「Gemにする」→「だれでも使える工房」と同じ内容です。gemini.google.com（パソコン）→ Gem マネージャー →「新しい Gem」で、それぞれの欄に貼ってください。\n\n${gem}\n`);
-  // OG 画像
-  const card = await b.newPage({ viewport: { width: 1200, height: 630 } });
-  await card.setContent(`<!doctype html><html><head><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=BIZ+UDPGothic:wght@400;700&display=swap"><style>
-  body{margin:0;width:1200px;height:630px;background:#F3F2F8;font-family:"BIZ UDPGothic",sans-serif;color:#24233A;display:grid;grid-template-columns:1fr 1fr;align-items:center;overflow:hidden}
-  .l{padding:0 0 0 80px;display:grid;gap:22px}
-  .e{font:500 22px "IBM Plex Mono",monospace;color:#625F7C;letter-spacing:.06em}
-  h1{font:900 66px/1.2 "Zen Maru Gothic",sans-serif;margin:0;white-space:nowrap}
-  p{font-size:28px;line-height:1.6;color:#4A4766;margin:0}
-  .r{position:relative;height:630px}
-  .m{position:absolute;width:300px}
-  .m svg{width:100%;height:auto}
-  </style></head><body><div class="l"><div class="e">✦ 非公式・ファンメイド</div><h1>モッフィー<br>指示書メーカー</h1><p>自分のモッフィーを、同じ見た目のまま<br>Gemini で遊ばせる指示書をつくる</p></div>
-  <div class="r"><div class="m" style="left:150px;top:40px;width:330px">${svgs[0]}</div><div class="m" style="left:20px;top:330px;width:250px">${svgs[1]}</div><div class="m" style="left:310px;top:340px;width:260px">${svgs[2]}</div></div></body></html>`);
-  await card.waitForTimeout(1200);
+  // サムネイル
+  if (!fs.existsSync(BASE)) throw new Error('assets/og-base.jpg がありません');
+  const img = 'data:image/jpeg;base64,' + fs.readFileSync(BASE).toString('base64');
   fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
-  await card.screenshot({ path: path.join(ROOT, 'docs', 'og.png') });
+  for (const [w, h, s, name] of [[1200, 630, 1, 'og.jpg'], [1280, 640, 1280 / 1200, 'social-preview.jpg']]) {
+    const card = await b.newPage({ viewport: { width: w, height: h } });
+    await card.setContent(cardHTML(w, h, s, img));
+    await card.evaluate(() => document.fonts.ready); await card.waitForTimeout(400);
+    await card.screenshot({ path: path.join(ROOT, 'docs', name), type: 'jpeg', quality: 90 });
+    await card.close();
+  }
   await b.close();
-  console.log('docs/og.png と gem-instructions.md を書き出しました');
+  console.log('docs/og.jpg・docs/social-preview.jpg・gem-instructions.md を書き出しました');
 })();

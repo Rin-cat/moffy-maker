@@ -23,7 +23,7 @@ desc = re.search(r'<meta name="description" content="(.*?)">', head).group(1)
 head = head.replace('<meta name="moffy-site-url" content="">',
                     f'<meta name="moffy-site-url" content="{html.escape(site_url)}">')
 # 共有プレビュー（Discord・X・LINE などでリンクを貼ったときのカード）
-og_image = (site_url + "og.png") if site_url else "og.png"
+og_image = (site_url + "og.jpg") if site_url else "og.jpg"
 icon = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E"
         "%3Ccircle cx='32' cy='34' r='26' fill='%238EC9F2'/%3E"
         "%3Ccircle cx='23' cy='32' r='8' fill='%231E1B2C'/%3E%3Ccircle cx='41' cy='32' r='8' fill='%231E1B2C'/%3E"
@@ -36,6 +36,9 @@ extra = f"""<meta charset="utf-8">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:image" content="{og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる。左に「モッフィー指示書メーカー」の文字">
 {f'<meta property="og:url" content="{site_url}">' if site_url else ''}
 <meta name="twitter:card" content="summary_large_image">
 """

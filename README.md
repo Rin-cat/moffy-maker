@@ -1,6 +1,6 @@
 # モッフィー指示書メーカー（非公式）
 
-![モッフィー指示書メーカー](docs/og.png)
+![モッフィー指示書メーカー](docs/og.jpg)
 
 Gemini から生まれたキャラクター「モッフィー」を、**同じ見た目のまま**いろいろな場面で遊ばせるための指示書（プロンプト）を作る Web ツールです。
 Google AI 学生コミュニティ（Google AI 学生アンバサダープログラムから続く学生コミュニティ）の仲間と一緒に遊んだり、Nano Banana のプロンプトの書き方を学んだりすることを想定して作りました。
@@ -98,11 +98,13 @@ HTML ファイル1つで動く静的サイトです。ビルドの道具やサ�
 moffy-studio.html      ツール本体（ここを編集する）
 docs/                  GitHub Pages で公開している版（tools/build.py で生成）
   index.html             完全な HTML（lang、OG タグ、ファビコンつき）
-  og.png                 リンクを貼ったときのプレビュー画像（1200×630）
+  og.jpg                 リンクを貼ったときのプレビュー画像（1200×630）
+  social-preview.jpg     GitHub の Social preview 用（1280×640）
+assets/og-base.jpg     サムネイルの絵（Gemini で生成した文字なしの絵）
 gem-instructions.md    Gem「モッフィー工房」に貼る文章
 research-notes.md      調査メモ（出典つき）
 tools/build.py         docs/index.html を作る
-tools/assets.js        og.png と gem-instructions.md を作る
+tools/assets.js        サムネイル2種（絵に文字を重ねる）と gem-instructions.md を作る
 tests/                 自動テスト
 ```
 
@@ -136,5 +138,6 @@ node tests/link.js       # 共有リンクと QR（公開 URL を入れて build
 ## 免責
 
 - 非公式のファンメイドツールです。内容は作者個人によるもので、Google の公式な製品や見解ではありません。モッフィーは Google のキャラクターです
+- サムネイルの絵は、このツールの見本3匹を Gemini（Nano Banana）で生成し、鼻の修正と文字入れをあとから行ったものです
 - 公式のモッフィージェネレーター：[goo.gle/moffy-generator](https://goo.gle/moffy-generator)／公式ガイド：[Gemini でつくれるキャラクター「モッフィー」のすべて](https://note.com/google_gemini/n/n4bc7c828daff)
 - ライセンスは未設定です
