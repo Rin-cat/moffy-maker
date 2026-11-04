@@ -188,6 +188,9 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await p.click('#eye-clear');
   ok((await p.$eval('#eye-thumb', i => i.hidden)) && !(await p.textContent('#out')).includes('目の見本とそっくり'), '2回押すと目の見本を削除');
   ok(reqs.length === before6, '目の見本の画像をどこにも送信しない ' + reqs.slice(before6).join(' '));
+  await p.evaluate(() => localStorage.setItem('moffy-maker-draft', JSON.stringify({ d: { ...DEFAULT_DNA }, recipe: 'sheet', attach: true, explain: false, ro: {} })));
+  await p.goto(file); await p.waitForTimeout(600);
+  ok((await p.getAttribute('#r-base', 'aria-pressed')) === 'true', '前の版の下書き（設定画）は基準画像から始まる');
   ok(errs.length === 0, '操作中のエラーなし ' + errs.join(' | '));
   await b.close();
   console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');

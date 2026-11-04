@@ -1244,7 +1244,7 @@ async function copyText(text,toast,fallbackEl){
 }
 function flash(sel,msg){const el=$(sel);el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=""},2600)}
 function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro,useEye:st.useEye}))}catch(e){}}
-function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false}}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)&&!(o.recipe==="sheet"&&o.useEye===undefined)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false}}catch(e){}}
 function savedList(){try{return JSON.parse(localStorage.getItem("moffy-maker-saved")||"[]")}catch(e){return []}}
 function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span class="hint">保存したモッフィー：</span>`+l.map((x,i)=>`<button type="button" data-load="${i}">${esc(x.name)}</button>`).join(""):""}
 function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}

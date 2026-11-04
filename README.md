@@ -150,7 +150,7 @@ node tools/assets.js
 テストは Playwright（Chromium）で動きます。引数を省くと `moffy-studio.html` を、`docs/index.html` を渡すと公開用を検査します。
 
 ```bash
-node tests/smoke.js      # 機能テスト（全レシピ、DNA の往復、取り込み、QR、360〜768px の横スクロール、目の見本の添付・貼り付け・保存・削除など 79 項目）
+node tests/smoke.js      # 機能テスト（全レシピ、DNA の往復、取り込み、QR、360〜768px の横スクロール、目の見本の添付・貼り付け・保存・削除など 80 項目）
 node tests/lint.js       # 指示書の点検（ガチャ DNA × 全レシピ × 添付あり/なし × 目の見本あり/なし、約4,400通り）
 node tests/a11y.js       # axe-core によるアクセシビリティ検査（ライト／ダーク）
 node tests/link.js       # 共有リンクと QR（公開 URL を入れて build したとき）
