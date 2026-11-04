@@ -1,0 +1,876 @@
+<title>モッフィー指示書メーカー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Gemini で自分のモッフィーを同じ見た目のまま遊ばせるための指示書（プロンプト）を作る、非公式のファンメイドツール。">
+<meta name="moffy-site-url" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 作業台。上段左 = モッフィーを決める（入力）、上段右 = DNAカード（固定した見た目）、下段 = レシピ（Gemini に渡す指示書）。読む順と作業の順を一致させる */
+:root{
+  --bg:#F3F2F8; --panel:#FFFFFF; --ink:#24233A; --muted:#625F7C; --line:#DDDBEA;
+  --accent:#4C5BD4; --accent-ink:#FFFFFF; --soft:#E9EBFB; --field:#F7F6FB;
+  --warn:#A34A12; --warn-bg:#FCEFE4; --ok:#1C6E45; --ok-bg:#E3F4EA; --why:#5B4FB8; --why-bg:#F1EEFD;
+  --g-blue:#4285F4; --g-red:#EA4335; --g-yellow:#FBBC04; --g-green:#34A853;
+  --f-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDPGothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16151F; --panel:#211F2E; --ink:#ECEBF5; --muted:#A9A6C2; --line:#38364C;
+  --accent:#8C97F2; --accent-ink:#14132A; --soft:#2B2A44; --field:#1B1A27;
+  --warn:#F2A46B; --warn-bg:#3A2619; --ok:#7BD3A2; --ok-bg:#183326; --why:#C4BBFF; --why-bg:#2A2547; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16151F; --panel:#211F2E; --ink:#ECEBF5; --muted:#A9A6C2; --line:#38364C;
+  --accent:#8C97F2; --accent-ink:#14132A; --soft:#2B2A44; --field:#1B1A27;
+  --warn:#F2A46B; --warn-bg:#3A2619; --ok:#7BD3A2; --ok-bg:#183326; --why:#C4BBFF; --why-bg:#2A2547; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+.app{max-width:1180px;margin:0 auto;display:grid;gap:24px}
+.stack{display:grid;gap:24px;min-width:0}
+.starter{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.starter .lbl{margin-right:2px}
+.chip.gacha{border-style:dashed}
+.next{display:grid;gap:4px;font-size:13px;border-left:3px solid var(--accent);padding:4px 0 4px 12px}
+.next b{font-family:var(--f-display)}
+.next ol{margin:0;padding-left:1.3em}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:clamp(28px,4.4vw,42px);font-weight:900;letter-spacing:.01em}
+h2{font-size:20px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.spark{background:linear-gradient(135deg,var(--g-blue),var(--g-red) 40%,var(--g-yellow) 65%,var(--g-green));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:15px}
+.lede{color:var(--muted);max-width:66ch;margin-top:8px}
+.flow{list-style:none;counter-reset:f;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.flow li{counter-increment:f;display:grid;gap:2px;padding:10px 14px 10px 46px;position:relative;border-left:2px solid var(--line)}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:10px;width:24px;height:24px;border-radius:50%;background:var(--soft);color:var(--accent);font:700 13px/24px var(--f-mono);text-align:center}
+.flow b{font-family:var(--f-display);font-size:15px}
+.flow span{font-size:13px;color:var(--muted)}
+@media (max-width:720px){.flow{grid-template-columns:minmax(0,1fr)}}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:18px;min-width:0}
+.field{display:grid;gap:8px;min-width:0}
+.field>label,.lbl{font-weight:700;font-size:13px}
+.hint{font-size:12.5px;color:var(--muted)}
+textarea,input[type=text],select{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+textarea{min-height:68px;resize:vertical}
+:is(textarea,input,select,button,a,summary,pre):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+@media (max-width:480px){.row2{grid-template-columns:minmax(0,1fr)}}
+details.adv{border-top:1px dashed var(--line);padding-top:14px}
+details.adv summary{cursor:pointer;font-weight:700;font-family:var(--f-display)}
+details.adv[open] summary{margin-bottom:14px}
+.adv-body{display:grid;gap:14px}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px}
+.okmsg{background:var(--ok-bg);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:13px}
+.tabs{display:flex;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:4px;width:max-content;max-width:100%}
+.tabs button{font:inherit;font-size:13px;font-weight:700;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"],.tabs button[aria-pressed="true"]{background:var(--panel);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.stage{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:520px){.stage{grid-template-columns:minmax(0,1fr)}.stage>div:first-child{width:min(100%,240px);margin-inline:auto}}
+.preview{aspect-ratio:1;max-width:100%;border-radius:16px;background:radial-gradient(circle at 50% 40%,var(--soft),var(--field));display:grid;place-items:center}
+.preview svg{width:100%;height:100%}
+.cap{font-size:12px;color:var(--muted);margin-top:6px}
+.card{display:grid;gap:4px;min-width:0}
+.card .name{font-family:var(--f-display);font-size:24px;font-weight:900;overflow-wrap:anywhere}
+.mono{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:13px;margin:6px 0 0}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;overflow-wrap:anywhere}
+.rules{display:flex;flex-wrap:wrap;gap:6px}
+.rule{font-size:12px;border-radius:999px;padding:3px 10px;background:var(--ok-bg);color:var(--ok)}
+.codebox{display:grid;gap:6px}
+.codebox code{display:block;font-family:var(--f-mono);font-size:11.5px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px 10px;overflow-wrap:anywhere;word-break:break-all;max-height:84px;overflow:auto}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-size:13px;font-weight:700;border-radius:10px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:12px}
+.toast{font-size:12.5px;color:var(--ok);min-height:1.2em}
+.qr{display:grid;justify-items:start;gap:6px}
+.qr canvas,.qr img{background:#FFFFFF;padding:8px;border-radius:10px}
+.saved{display:flex;flex-wrap:wrap;gap:8px}
+.saved button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:4px 10px;cursor:pointer}
+.rgroups{display:grid;gap:12px}
+.rg{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:10px;align-items:start}
+.rg-name{font-family:var(--f-display);font-weight:700;font-size:13px;color:var(--muted);padding-top:5px}
+@media (max-width:480px){.rg{grid-template-columns:minmax(0,1fr);gap:6px}.rg-name{padding-top:0}}
+.rbar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.rdesc{font-size:13.5px;color:var(--muted);max-width:75ch}
+.rfields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px}
+.attach{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;background:var(--soft);border-radius:12px;padding:10px 12px}
+.attach b{font-family:var(--f-display)}
+.out{display:grid;gap:12px;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:14px;max-height:620px;overflow:auto}
+.blk{display:grid;gap:6px;min-width:0}
+.blk-h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.blk pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:12.5px;line-height:1.75;color:var(--ink)}
+.why{font-size:12.5px;line-height:1.6;background:var(--why-bg);color:var(--why);border-radius:10px;padding:8px 10px}
+.why b{font-family:var(--f-display)}
+.why .src{display:block;font-size:12px;margin-top:2px}
+.actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;background:var(--panel);border-top:1px solid var(--line);padding:12px 0 calc(4px + env(safe-area-inset-bottom,0px));margin-top:-6px}
+@media (max-width:520px){.actions{gap:6px 10px;padding-top:10px}.actions .btn{padding:7px 11px}.actions .mono{display:none}}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.note{display:grid;gap:4px;align-content:start}
+.note h3{font-size:14px}
+.note p{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto}
+table.cmp{border-collapse:collapse;width:100%;font-size:13px;min-width:620px}
+table.cmp th,table.cmp td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+table.cmp th{font-family:var(--f-display);font-size:13px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted);display:grid;gap:6px}
+footer ul{margin:0;padding-left:1.2em}
+@media (prefers-reduced-motion:no-preference){.preview svg{transition:transform .3s}.preview:hover svg{transform:scale(1.03) rotate(-1deg)}}
+</style>
+
+<div class="app">
+  <header>
+    <div class="eyebrow"><span class="spark" aria-hidden="true">✦</span> 非公式・ファンメイド</div>
+    <h1>モッフィー指示書メーカー</h1>
+    <p class="lede">Gemini で生まれた自分のモッフィーを、同じ見た目のまま、おでかけ・着せ替え・スタンプ・友だちとの共演まで遊ばせるための指示書（プロンプト）を作ります。画像は自分の Gemini アプリで作るので、APIキーも費用もいりません。</p>
+    <ol class="flow">
+      <li><b>モッフィーを決める</b><span>言葉から作るか、公式ジェネレーターの子を取り込む</span></li>
+      <li><b>設定画をつくる</b><span>三面図と表情で見た目を固定する</span></li>
+      <li><b>レシピを選んで貼る</b><span>設定画を添付して Gemini に貼る</span></li>
+    </ol>
+  </header>
+
+  <main class="stack">
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-make">
+      <h2 id="h-make">1. モッフィーを決める</h2>
+      <div class="tabs" role="tablist" aria-label="決め方">
+        <button type="button" role="tab" id="mode-new" data-mode="new" aria-selected="true">言葉から作る</button>
+        <button type="button" role="tab" id="mode-import" data-mode="import" aria-selected="false">取り込む</button>
+      </div>
+
+      <div id="pane-new" class="field" style="gap:16px">
+        <div class="starter" role="group" aria-labelledby="lbl-starter">
+          <span class="lbl" id="lbl-starter">見本から始める</span>
+          <span class="chips" id="samples"></span>
+          <button type="button" class="chip gacha" id="gacha">ガチャで決める</button>
+        </div>
+        <div class="field">
+          <label for="kw">好きな言葉</label>
+          <textarea id="kw"></textarea>
+          <div class="chips" id="tags" aria-label="キーワードタグ"></div>
+          <div class="warn" id="ipwarn" hidden></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="nm">名前</label><input type="text" id="nm"></div>
+          <div class="field"><label for="ps">性格（任意）</label><input type="text" id="ps" placeholder="空欄なら設定画で Gemini が考えます"></div>
+        </div>
+        <details class="adv" id="adv" open>
+          <summary>見た目を指定する（任意）</summary>
+          <div class="adv-body">
+            <p class="hint">選んだ項目は、毎回の指示書に「固定パーツ」として入ります。「おまかせ」は設定画で Gemini が決めます。</p>
+            <div class="field"><span class="lbl" id="lbl-c">毛の色</span><div class="swatches" id="colors" role="group" aria-labelledby="lbl-c"></div></div>
+            <div class="row2" id="partsel"></div>
+            <div class="row2">
+              <div class="field"><label for="eyestyle">目のスタイル</label>
+                <select id="eyestyle"><option value="g4">2026年版（4色グラデーション）</option><option value="classic">クラシック（青→紫）</option></select></div>
+              <div class="field"><label for="ot">そのほかの特徴</label><input type="text" id="ot" placeholder="例：おなかに星の模様"></div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="pane-import" class="field" hidden style="gap:12px">
+        <label for="imp">DNAコード・共有リンク・JSON</label>
+        <textarea id="imp" placeholder="MF1. で始まるDNAコード、共有リンク、または Gemini が返した JSON を貼ってください"></textarea>
+        <div class="btns">
+          <button type="button" class="btn" id="imp-go">読み込む</button>
+          <button type="button" class="btn ghost" id="imp-recipe">公式の子を取り込むレシピを開く</button>
+        </div>
+        <div id="imp-msg" role="status"></div>
+        <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。設定画のあとに Gemini が返す JSON も、ここに貼ると「おまかせ」だった所が確定します。</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-card">
+      <h2 id="h-card">2. DNAカード</h2>
+      <div class="stage">
+        <div>
+          <div class="preview" id="preview" role="img" aria-label="パーツ構成の簡易プレビュー"></div>
+          <p class="cap" id="autocap"></p>
+        </div>
+        <div class="card">
+          <div class="name" id="c-name"></div>
+          <div class="mono" id="c-id"></div>
+          <p class="hint" id="c-p"></p>
+          <dl class="dl" id="c-dl"></dl>
+        </div>
+      </div>
+      <p class="hint">左の図は、選んだパーツを確かめるための簡易プレビューです。仕上がりの絵は Gemini が描きます。</p>
+      <div class="field">
+        <span class="lbl">生成後に見直す項目</span>
+        <div class="rules" id="rules"></div>
+      </div>
+      <div class="codebox">
+        <span class="lbl">DNAコード（友だちに渡すとそのまま取り込めます）</span>
+        <code id="c-code" tabindex="0"></code>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn ghost small" id="copy-code">DNAコードをコピー</button>
+        <button type="button" class="btn ghost small" id="copy-link" hidden>共有リンクをコピー</button>
+        <button type="button" class="btn ghost small" id="share-dna" hidden>共有メニューで送る</button>
+        <button type="button" class="btn ghost small" id="qr-btn" aria-expanded="false" aria-controls="qr">QRコード</button>
+        <button type="button" class="btn ghost small" id="save">このブラウザに保存</button>
+      </div>
+      <div class="qr" id="qr" hidden></div>
+      <div class="saved" id="saved" role="group" aria-label="保存したモッフィー"></div>
+      <div class="toast" id="toast1" role="status"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-recipe" id="recipes">
+    <h2 id="h-recipe">3. レシピを選んで Gemini に貼る</h2>
+    <div class="rgroups" id="rgroups"></div>
+    <p class="rdesc" id="rdesc"></p>
+    <div class="rbar">
+      <div class="tabs" role="group" aria-label="設定画の使い方" id="attach-tabs">
+        <button type="button" data-attach="1" aria-pressed="true">設定画を添付する</button>
+        <button type="button" data-attach="0" aria-pressed="false">文章だけ</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="explain"> なぜこう書くのか（解説）を表示</label>
+    </div>
+    <div class="rfields" id="rfields"></div>
+    <div class="attach" id="attachline"></div>
+    <div class="out" id="out" tabindex="0" role="region" aria-label="指示書"></div>
+    <div class="next" id="nextline"></div>
+    <div class="actions">
+      <div class="btns">
+        <button type="button" class="btn" id="copy">指示書をコピー</button>
+        <a class="btn ghost" id="open-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini を開く</a>
+      </div>
+      <span class="mono" id="count"></span>
+      <div class="toast" id="toast2" role="status" style="flex-basis:100%"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes">知っておきたいこと</h2>
+    <div class="notes">
+      <div class="note"><h3>画像の添付は18歳以上</h3><p>設定画を添付して描かせるのは、Gemini アプリでは「画像の編集」にあたり、18歳以上が対象です。18歳未満の人は「文章だけ」を選んでください。</p></div>
+      <div class="note"><h3>モデルは Flash か Pro</h3><p>Flash-Lite を選ぶと画像生成が Nano Banana 2 Lite になり、参照画像を使った一貫性が弱くなります。</p></div>
+      <div class="note"><h3>生成回数を節約する</h3><p>無料版の1日の生成数には上限があります。気になる所は作り直さず、レシピ「部分修正」でその部分だけ直すと、元の子も崩れません。</p></div>
+      <div class="note"><h3>非公式のファンツールです</h3><p>Google とは関係ありません。既存のキャラクターや実在の人物に似せる使い方はせず、公式 note の「マナーを守って楽しく遊ぼう」にならって楽しんでください。</p></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cmp">
+    <h2 id="h-cmp">公式ジェネレーターとの役割分担</h2>
+    <div class="tbl">
+      <table class="cmp">
+        <thead><tr><th>場面</th><th>公式モッフィージェネレーター</th><th>このツール</th></tr></thead>
+        <tbody>
+          <tr><td>生む</td><td>言葉とタグから、画像と性格を生成。ルールの自動チェックつき</td><td>公式の子を「取り込む」か、パーツを指定して言葉から作る</td></tr>
+          <tr><td>固定する</td><td>画像を保存（ダウンロード）</td><td>三面図と表情の設定画、DNAコード、QRコード</td></tr>
+          <tr><td>遊ぶ</td><td>着せ替え・おでかけ・ぷくぷくシール</td><td>左の3つに加え、フィギュア・アイコン・スタンプ・季節・4コマ・友だちとの共演</td></tr>
+          <tr><td>直す</td><td>要望を書き足して再生成</td><td>理由つきのルールチェックと、その部分だけを直す部分修正</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <p>このツールの書き方は、次の資料にもとづいています。</p>
+    <ul>
+      <li><a href="https://note.com/google_gemini/n/n4bc7c828daff" target="_blank" rel="noopener">Gemini 公式 note「Gemini でつくれるキャラクター『モッフィー』のすべて」（2026年6月17日）</a></li>
+      <li><a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">Google AI for Developers「Nano Banana image generation」（プロンプトのコツと制限）</a></li>
+      <li><a href="https://support.google.com/gemini/answer/14286560?hl=ja" target="_blank" rel="noopener">Gemini アプリ ヘルプ「Gemini アプリで画像を生成、編集する」</a></li>
+      <li><a href="https://note.com/ripe_spirea6186/n/n755657c7c500" target="_blank" rel="noopener">2025年版ジェネレーターのプロンプト例（ぶらんさんの note）</a></li>
+    </ul>
+    <p>非公式のファンメイドツールです。モッフィーは Google のキャラクターです。</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+"use strict";
+document.documentElement.lang="ja";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const isCustom=v=>typeof v==="string"&&v.charAt(0)==="*";
+
+/* ================= データ ================= */
+const COLORS=[
+ {id:"sky",name:"そらいろ",hex:"#8EC9F2",desc:"淡いそらいろ"},
+ {id:"blue",name:"あお",hex:"#4C7FE0",desc:"あざやかな青"},
+ {id:"navy",name:"よぞら",hex:"#3B4A8F",desc:"夜空のような深い紺色"},
+ {id:"pink",name:"ももいろ",hex:"#F4AFC4",desc:"やさしいももいろ"},
+ {id:"lav",name:"ラベンダー",hex:"#BDA8EE",desc:"ラベンダー色"},
+ {id:"mint",name:"ミント",hex:"#9FDCC0",desc:"ミントグリーン"},
+ {id:"lemon",name:"レモン",hex:"#F6DD72",desc:"レモンイエロー"},
+ {id:"orange",name:"みかん",hex:"#F5A35C",desc:"みかん色"},
+ {id:"white",name:"ミルク",hex:"#F4F1EA",desc:"ミルクのような白"},
+ {id:"cocoa",name:"ココア",hex:"#A87A5E",desc:"ココアブラウン"},
+ {id:"gray",name:"くもり",hex:"#B9B6C2",desc:"くもり空のような明るいグレー"},
+ {id:"auto",name:"おまかせ",hex:null,desc:null},
+];
+const COLOR_WORDS=[[/水色|空色|そらいろ|スカイ/,"#8EC9F2"],[/紺|ネイビー|夜空|よぞら/,"#3B4A8F"],[/青|ブルー|あお/,"#4C7FE0"],[/ピンク|桃|もも/,"#F4AFC4"],[/紫|ラベンダー|パープル/,"#BDA8EE"],[/ミント|エメラルド|水緑/,"#9FDCC0"],[/緑|グリーン|みどり|わかば/,"#8CCB7E"],[/黄|レモン|イエロー|きいろ|金/,"#F6DD72"],[/オレンジ|みかん|橙/,"#F5A35C"],[/赤|レッド|あか/,"#E5675E"],[/白|ホワイト|しろ|ミルク/,"#F4F1EA"],[/黒|ブラック|くろ/,"#4A4652"],[/灰|グレー|くもり/,"#B9B6C2"],[/茶|ブラウン|ココア|チョコ/,"#A87A5E"]];
+function guessHex(t){for(const [re,h] of COLOR_WORDS) if(re.test(t)) return h; return "#C9C6D8"}
+
+// [id, 画面の表示, 指示書に入れる文]
+const PARTS={
+ s:{name:"体のかたち",opts:[["auto","おまかせ"],["round","まんまる","体はボールのようなまんまるのかたち"],["egg","たまご型","体はたてに少し長いたまご型"],["pear","ずんぐり洋なし","体は下のほうがふっくらした、ずんぐりした洋なし型"],["mochi","おもち型","体は横に少しつぶれた、おもちのような横長のかたち"]]},
+ u:{name:"毛並み",opts:[["auto","おまかせ"],["soft","長くやわらか","全身が長くやわらかい毛におおわれている"],["spiky","頭の毛が逆立つ","全身が長くやわらかい毛におおわれ、頭のてっぺんの毛だけがツンと逆立っている"],["curly","くるくる","全身がくるくるとカールした、ヒツジのようなやわらかい毛におおわれている"],["extra","もこもこ多め","全身が、とくに毛足の長いもこもこの毛におおわれている"]]},
+ h:{name:"ツノ",opts:[["auto","おまかせ"],["none","なし","頭のてっぺんはツノのない、なめらかなまるい毛のライン"],["one","1本","おでこの中央に、小さな円すい形のツノが1本"],["two","2本","頭の左右に、先の丸い小さなツノが2本"],["stripe","しま模様2本","頭の左右に、しま模様の小さなツノが2本"],["curl","巻きヅノ2本","頭の左右に、くるんと巻いたヒツジのようなツノが2本"]]},
+ e:{name:"耳",opts:[["auto","おまかせ"],["none","なし","耳は毛にうもれて見えない"],["droop","たれ耳","体の左右に、毛足の長いたれ耳"],["up","立ち耳","頭の上に、ぴんと立った細長い耳が2つ"],["round","まる耳","頭の上に、小さな丸い耳が2つ"]]},
+ t:{name:"しっぽ",opts:[["auto","おまかせ"],["none","なし","しっぽは見えず、おしりまでまるい毛のかたまり"],["puff","ポンポン","おしりに、ポンポンのような丸いしっぽ"],["long","ふさふさ長め","先がふさふさした、長いしっぽ"],["dragon","ドラゴン風","先がとがった、ドラゴンのような短いしっぽ"]]},
+ w:{name:"はね",opts:[["auto","おまかせ"],["none","なし","背中はまるい毛だけで、はねはない"],["angel","天使のはね","背中に、小さな白い天使のはね"],["bat","こうもりのはね","背中に、小さなこうもりのはね"],["fairy","妖精のはね","背中に、すきとおった小さな妖精のはね"]]},
+ y:{name:"目の数",opts:[["2","2つ"],["1","1つ"],["3","3つ"]]},
+ f:{name:"キバ",opts:[["auto","おまかせ"],["none","なし","口もとにキバは見えない"],["one","片方に1本","口の片はしから、小さなキバが1本のぞいている"],["two","2本","口から、小さなキバが2本のぞいている"]]},
+ a:{name:"身につけている物",opts:[["auto","おまかせ"],["none","なし","アクセサリーは身につけていない"],["scarf","赤いマフラー","首に赤いマフラーを巻いている"],["ribbon","大きなリボン","頭に大きなリボンをつけている"],["crown","小さな王冠","頭に小さな王冠をのせている"],["leaf","葉っぱ1枚","頭に葉っぱを1枚のせている"],["headphones","ヘッドホン","首にヘッドホンをかけている"],["glasses","まるメガネ","まるいメガネをかけている"],["bag","小さなリュック","背中に小さなリュックを背負っている"]]},
+};
+const PART_ORDER=["s","u","h","e","t","w","y","f","a"];
+const LOOK_KEYS=["s","u","h","e","t","w","a"];
+const TEXT_KEYS=["n","k","p","o"];
+const KEYS=[...TEXT_KEYS,"i","c",...PART_ORDER];
+const DEFAULT_DNA={n:"ヤマモッフィー",k:"青色、登山が好き、食いしん坊",p:"",o:"",i:"g4",c:"sky",s:"round",u:"soft",h:"two",e:"none",t:"puff",w:"none",y:"2",f:"one",a:"scarf"};
+const BLANK_DNA={n:"",k:"",p:"",o:"",i:"g4",c:"auto",s:"auto",u:"auto",h:"auto",e:"auto",t:"auto",w:"auto",y:"2",f:"auto",a:"auto"};
+const TAGS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン"];
+const SAMPLES=[
+ {...DEFAULT_DNA},
+ {n:"ヨミモッフィー",k:"図書館、ねぼすけ、夜空",p:"本を読みながら寝落ちするのが特技の、のんびり屋",o:"",i:"g4",c:"navy",s:"egg",u:"extra",h:"none",e:"droop",t:"long",w:"none",y:"1",f:"none",a:"glasses"},
+ {n:"ハナビモッフィー",k:"夏祭り、いたずら、みかん色",p:"花火の音を聞くとしっぽが震える、元気ないたずらっ子",o:"",i:"g4",c:"orange",s:"mochi",u:"spiky",h:"one",e:"round",t:"dragon",w:"bat",y:"3",f:"two",a:"ribbon"},
+];
+const GACHA_WORDS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン","星空","海","チョコミント","カメラ好き","雪","ダンス","お昼寝","パン屋さん","サッカー","ピアノ","温泉","アイドル好き","ロボット"];
+const NAME_PARTS=["ポム","モコ","ルル","チャチャ","ソラ","ミル","ココ","フワ","ピノ","ムギ","ララ","ニコ","トト","マロ","キキ"];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function gacha(){
+ const words=[];while(words.length<3){const w=pick(GACHA_WORDS);if(!words.includes(w))words.push(w)}
+ const d={...BLANK_DNA,n:pick(NAME_PARTS)+pick(NAME_PARTS)+"モッフィー",k:words.join("、"),i:Math.random()<.85?"g4":"classic",c:pick(COLORS.filter(c=>c.id!=="auto")).id};
+ for(const k of ["s","u","h","e","t","w","f","a"])d[k]=pick(PARTS[k].opts.filter(o=>o[0]!=="auto"))[0];
+ d.y=Math.random()<.7?"2":pick(["1","3"]);
+ return d;
+}
+// レシピごとの「このあと」
+const NEXT={
+ sheet:["出てきた設定画を保存する（以後のレシピで毎回添付します）","一緒に返ってきた JSON をコピーし、「1. モッフィーを決める」の「取り込む」に貼る（おまかせだった所が確定します）","遊ぶレシピを選び、設定画を添付して指示書を貼る"],
+ import:["Gemini の返事（JSON）をコピーし、「取り込む」に貼る","レシピ「設定画をつくる」で、もとにする画像を「あり」にして設定画を作る"],
+ scene:["気になる所があれば「ルールチェック」か「部分修正」へ","同じチャットなら、続けて「次は〇〇して」と頼むだけでも見た目を保ちやすくなります。チャットが長くなったら、新しいチャットで設定画を添付し直します"],
+ stamps:["文字がまちがっていたら「部分修正」の「そのほか」に正しい文字を書いて直す","コマ数がずれたら、4コマから試すと安定します"],
+ friends:["友だちにも自分の DNA コードを渡すと、相手の画面でも共演の指示書を作れます"],
+ check:["返ってきた fix_prompt の文を、判定した画像と同じチャットにそのまま送ると、その部分だけ直せます"],
+ fix:["直らないときは、直したい所を1つずつに分けて頼むと成功しやすくなります"],
+ gem:["Gem を保存したら、共有 →「リンクを知っている全員」でリンクを配れます","Gem の中で画像が作れないときは、Gem が出した指示書を通常のチャットに貼ってください"],
+};
+// 既存キャラクター名（オリジナル性と権利面の注意用。網羅ではない）
+const IP_SRC="ミッフィー|miffy|ピカチュウ|pikachu|ポケモン|pok[eé]mon|ハローキティ|キティちゃん|hello ?kitty|ドラえもん|doraemon|スヌーピー|snoopy|ミッキー|mickey|ディズニー|disney|マリオ|mario|カービィ|kirby|ちいかわ|chiikawa|リラックマ|すみっコ|トトロ|totoro|ジバニャン|ぐでたま|シナモロール|cinnamoroll|アンパンマン|ムーミン|moomin";
+const ipHits=t=>[...new Set((String(t||"").match(new RegExp(IP_SRC,"gi"))||[]))];
+const ipClean=t=>String(t||"").replace(new RegExp(IP_SRC,"gi"),"").replace(/[、,]\s*(?=[、,])/g,"").replace(/^[、,\s]+|[、,\s]+$/g,"").trim();
+
+/* ================= 状態 ================= */
+const st={d:{...DEFAULT_DNA},mode:"new",recipe:"sheet",attach:true,explain:false,ro:{}};
+
+/* ================= DNA の読み書き ================= */
+const optOf=(k,v)=>PARTS[k].opts.find(o=>o[0]===v);
+function partLabel(d,k){const v=d[k];if(isCustom(v))return v.slice(1);const o=optOf(k,v);return o?o[1]:"おまかせ"}
+function partPhrase(d,k){const v=d[k];if(isCustom(v))return v.slice(1);const o=optOf(k,v);return o&&o[2]?o[2]:null}
+const colorRow=d=>COLORS.find(x=>x.id===d.c);
+function colorLabel(d){if(isCustom(d.c))return d.c.slice(1);const c=colorRow(d);return c?c.name:"おまかせ"}
+function colorDesc(d){if(isCustom(d.c))return d.c.slice(1);const c=colorRow(d);return c?c.desc:null}
+function colorHex(d){if(isCustom(d.c))return guessHex(d.c.slice(1));const c=colorRow(d);return c?c.hex:null}
+const eyeCount=d=>Math.min(3,Math.max(1,parseInt(d.y,10)||2));
+function autoNames(d){const a=[];if(!colorDesc(d))a.push("毛の色");for(const k of [...LOOK_KEYS,"f"])if(!partPhrase(d,k))a.push(PARTS[k].name);return a}
+function fixedPairs(d){const r=[];const cd=colorDesc(d);if(cd)r.push(["毛の色",cd]);for(const k of [...LOOK_KEYS,"f"])if(partPhrase(d,k))r.push([PARTS[k].name,partLabel(d,k)]);return r}
+// 指示書に入れる用。既存キャラクター名を外したコピー
+function promptDNA(d){const p={...d};for(const k of TEXT_KEYS)p[k]=ipClean(d[k]);return p}
+
+function b64u(str){const bytes=new TextEncoder().encode(str);let bin="";bytes.forEach(b=>{bin+=String.fromCharCode(b)});return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const bin=atob(s);return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)))}
+function dnaCompact(d){const o={v:1};for(const k of KEYS){const v=d[k];if(v!==undefined&&v!==""&&v!==BLANK_DNA[k])o[k]=v}return o}
+const dnaCode=d=>"MF1."+b64u(JSON.stringify(dnaCompact(d)));
+function hashStr(str){let h=2166136261;for(const ch of str){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(36).toUpperCase().padStart(7,"0").slice(-6)}
+const dnaId=d=>"MF-"+hashStr(JSON.stringify(dnaCompact(d)));
+
+const LONG={name:"n",keywords:"k",personality:"p",other:"o",eye_style:"i",color:"c",shape:"s",fur:"u",horn:"h",horns:"h",ear:"e",ears:"e",tail:"t",wing:"w",wings:"w",eyes:"y",fang:"f",fangs:"f",accessory:"a"};
+const UNKNOWN=/^(不明|わからない|わかりません|unknown|n\/a|-|なし（不明）)$/i;
+function matchColor(v){if(COLORS.some(c=>c.id===v))return v;if(isCustom(v))return v;const c=COLORS.find(c=>c.id!=="auto"&&(v===c.name||v===c.desc));return c?c.id:"*"+v}
+function matchPart(k,v){const opts=PARTS[k].opts;if(opts.some(o=>o[0]===v))return v;if(isCustom(v))return v;const o=opts.find(o=>v===o[1]||v===o[2]);if(o)return o[0];if(/^(なし|ない|無し|none|ありません)$/i.test(v))return "none";return "*"+v.slice(0,80)}
+function eyesFrom(v){const m=String(v).replace(/[１一]/g,"1").replace(/[２二]/g,"2").replace(/[３三]/g,"3").match(/[0-9]+/);const n=m?parseInt(m[0],10):2;return String(Math.min(3,Math.max(1,n)))}
+function normalize(src){
+ if(!src||typeof src!=="object")throw new Error("中身が読めませんでした");
+ const out={...BLANK_DNA};let hit=0;
+ for(const [key,val] of Object.entries(src)){
+  const k=LONG[key]||key;if(!KEYS.includes(k))continue;
+  const v=val==null?"":String(val).trim();if(!v||UNKNOWN.test(v))continue;hit++;
+  if(TEXT_KEYS.includes(k))out[k]=v.slice(0,120);
+  else if(k==="i")out.i=/classic|紫|クラシック/.test(v)?"classic":"g4";
+  else if(k==="c")out.c=matchColor(v);
+  else if(k==="y")out.y=eyesFrom(v);
+  else out[k]=matchPart(k,v);
+ }
+ if(!hit)throw new Error("モッフィーの項目が見つかりませんでした");
+ return out;
+}
+// Gemini の返事によくある崩れ（全角の引用符・コメント行・末尾のカンマ）を許容して読む
+function looseJSON(s){
+ try{return JSON.parse(s)}catch(e){}
+ const t=s.replace(/[“”＂]/g,'"').replace(/[‘’]/g,"'").replace(/^\s*\/\/.*$/mg,"").replace(/\/\*[\s\S]*?\*\//g,"").replace(/,\s*([}\]])/g,"$1");
+ return JSON.parse(t);
+}
+function parseDNA(text){
+ text=String(text||"").trim();if(!text)throw new Error("貼り付け欄が空です");
+ let m=text.match(/MF1\.([A-Za-z0-9_-]+)/);
+ if(m){let o;try{o=JSON.parse(unb64u(m[1]))}catch(e){throw new Error("DNAコードが途中で切れているようです")}return normalize(o)}
+ const j=text.replace(/[｛]/g,"{").replace(/[｝]/g,"}").match(/\{[\s\S]*\}/);
+ if(j){let o;try{o=looseJSON(j[0])}catch(e){throw new Error("JSONの形がくずれています。{ から } までをまとめて貼ってください")}return normalize(o)}
+ throw new Error("MF1. で始まるDNAコードか、{ } で囲まれた JSON を貼ってください");
+}
+
+/* ================= 指示書の部品 ================= */
+const WHY={
+ intent:["画像の用途を伝えると、構図や雰囲気が目的に合いやすくなります。","公式ガイド「Provide Context and Intent」"],
+ char:["キーワードを並べるより、文章で具体的に描写したほうが狙いどおりになります。本家の2025年版ジェネレーターも、色・体の形・ツノ・口・毛・アクセサリーを文章にしてつなげる形でした。","公式ガイド「Be Hyper-Specific」／2025年版ジェネレーターのプロンプト"],
+ charAttach:["以前に生成した画像を一緒に渡すと、同じキャラクターを保ちやすくなります。文章は確認用で、食いちがったら画像を優先させます。","公式ガイド「Character consistency」"],
+ charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、設定画のあとに返ってくる JSON を取り込んで確定させるのがおすすめです。","このツールの仕組み"],
+ eye:["スパークルアイはモッフィーの証で、細かいぶん崩れやすい部分です。色・星の大きさ・光り方まで指定します。","公式 note（2026年6月）／2025年版ジェネレーターのプロンプト"],
+ nose:["「描かない」だけより、望む状態（目と口のあいだは毛並みが続く）を書くほうが守られやすくなります。本家の大事なルールなので、短い禁止文も残しています。","公式ガイド「Semantic Negative Prompts」"],
+ style:["質感をはっきり書くと、場面が変わっても「ふわふわの3DCG」から外れにくくなります。","公式 note（モッフィーは Nano Banana から生まれた3DCGのキャラクター）"],
+ ratio:["参照画像を添付すると、出力はその画像の縦横比に引きずられます（設定画は横長）。毎回はっきり指定します。","公式ドキュメント「Aspect ratios and image size」"],
+ steps:["要素が多い場面は、手順に分けると整理されて描き崩れが減ります。","公式ガイド「Use Step-by-Step Instructions」"],
+ check:["描いたあとに自分で見直させます。公式ジェネレーターのチェック項目（鼻なし・口あり・目は3つまで・キラキラの目・ふわふわ）に、このモッフィーのDNAを足しています。","公式 note のルールチェック"],
+ sheet:["三面図と表情をそろえた設定画は、あとで別の場面を描くときの「正解の見本」になります。","公式ガイド「Character consistency: 360 view」"],
+ json:["おまかせで決まった見た目を文字で受け取り、このページに取り込むと DNA が確定します。","このツールの仕組み"],
+ text:["文字入りの画像は、先に文字を確定させてから描かせるとうまくいきます。コマ数は指定とずれることがあるので、まずは4コマがおすすめです。","公式ドキュメント「Limitations」"],
+ fix:["全体を作り直すより「ここだけ直して、ほかは同じに」と頼むほうが、元の子が崩れず、1日の生成回数も節約できます。","公式ガイド「Inpainting (Semantic masking)」"],
+ friends:["Nano Banana 2.1 が見た目を保てるキャラクターは4体までです。画像の順番と名前を対応させて、描き分けを頼みます。","公式ドキュメント「Use up to 14 reference images」"],
+ import:["公式ジェネレーターで生まれた子を、このツールの DNA に変換します。画像を読むだけなので、画像の生成回数は使いません。","このツールの仕組み"],
+ judge:["合否だけでなく理由を書かせると、判定が甘くなりにくく、直す場所もはっきりします。","公式ジェネレーターのチェックを、理由つきに拡張"],
+ figure:["Google Japan が紹介した「フィギュア化」の遊び方を、DNA 固定つきにしたものです。","Google Japan の投稿（2025年9月）"],
+ comic:["公式ガイドの「コマ割りまんが」の使い方です。セリフは少ないほど崩れにくくなります。","公式ガイド「Sequential art」"],
+ gem:["Gem にルールを入れておくと、毎回指示書を貼らなくても同じ決まりで作れます。リンクで友だちにも共有できます。","Gemini アプリ ヘルプ「Gem を共有する」"],
+ scene:["背景・モッフィー・なじませ方の順に頼むと、写真のような背景でもモッフィーの質感が保たれます。","公式ガイド「Use Step-by-Step Instructions」"],
+};
+const seg=(h,t,why)=>({h,t,why:why?why[0]:"",src:why?why[1]:""});
+const RATIO_LABEL={"1:1":"1:1（正方形）","4:5":"4:5（縦長）","3:4":"3:4（縦長）","9:16":"9:16（縦長）","16:9":"16:9（横長）","3:2":"3:2（横長）"};
+const STYLE="質感は、毛足の長いぬいぐるみのような、やわらかい3DCG。やさしいスタジオライトで、毛の1本1本がふんわりと光を受けている。こわさのない、思わず抱きしめたくなる雰囲気。";
+const gradText=d=>d.i==="classic"?"Google Gemini のブランドカラーの青から紫へ、なめらかに変わるたて方向のグラデーション":"青・赤・黄・緑の4色が、なめらかなグラデーションで溶け合う色";
+const gradShort=d=>d.i==="classic"?"青→紫のグラデーション":"青・赤・黄・緑の4色グラデーション";
+const eyeText=d=>`目は${eyeCount(d)}つ。大きくつぶらな、モッフィーの証「スパークルアイ」。黒目（虹彩）はやや小さめで、${gradText(d)}。虹彩の中央には白く光る大きな四芒星（✦）のハイライトがあり、瞳孔をすっかり覆っているが、虹彩全体は覆っていない。星のふちは少しやわらかく、まわりにほのかな光のにじみ（ブルーム）がある。目全体はやさしく、うるっと光る質感。`;
+function faceText(d,expr){const f=partPhrase(d,"f");return `顔のパーツは目と口だけ。目と口のあいだには鼻がなく、なめらかな毛並みがそのまま続いている（鼻は描かない）。口は小さく、${f||"キバの有無はもとになった言葉に合わせて決める"}。表情：${expr}。`}
+function bodyText(d,how){
+ const out=[];const cd=colorDesc(d);
+ out.push(`体の色は${cd||"もとになった言葉に合う色"}。`);
+ for(const k of LOOK_KEYS){const p=partPhrase(d,k);if(p)out.push(p+"。")}
+ if(d.o)out.push(`そのほかの特徴：${d.o}。`);
+ const au=autoNames(d).filter(x=>x!=="キバ"&&x!=="毛の色");
+ if(au.length){
+  if(how==="decide")out.push(`${au.join("・")}は、もとになった言葉に合わせて自由に決める。`);
+  else if(how==="attach")out.push(`${au.join("・")}は添付画像のとおりにする。`);
+  else out.push(`${au.join("・")}は、もとになった言葉に合わせて、なるべくシンプルに描く。`);
+ }
+ return out.join("");
+}
+function charSeg(d,how){
+ const nm=d.n||"名前未定";let t="";
+ if(how==="attach")t+=`添付した画像のモッフィー「${nm}」と同じ子を描く。見た目は添付画像を正とし、次の説明と食いちがう所があれば添付画像に合わせる。\n`;
+ t+=`「${nm}」は、ぬいぐるみのようにふわふわした3DCGのモンスター「モッフィー」の1匹。ずんぐりした体つき。`;
+ if(d.k)t+=`もとになった言葉は「${d.k}」。`;
+ if(d.p)t+=`性格は「${d.p}」。`;
+ t+="\n"+bodyText(d,how);
+ return seg("キャラクター",t,how==="attach"?WHY.charAttach:how==="text"?WHY.charText:WHY.char);
+}
+const frameSeg=(ratio,camera,bg,allowText)=>seg("構図",`アスペクト比は ${RATIO_LABEL[ratio]||ratio} で出力する。${camera?camera+"。":""}${bg?bg+"。":""}${allowText?"":"画像の中は絵だけにして、文字やロゴは入れない。"}`,WHY.ratio);
+function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,`目がスパークルアイ（${gradShort(d)}と、中央の白い四芒星）`,"全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`)]}
+const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、次の項目を1つずつ見直し、合わない所があればその部分だけを直してから出力する。\n${[...checkList(d),...extra].map(x=>"・"+x).join("\n")}\n画像は1枚だけ出力する。`,WHY.check);
+const JSON_TEMPLATE=`{
+  "name": "名前",
+  "keywords": "もとになった言葉",
+  "personality": "性格（1〜2文）",
+  "color": "毛の色（例：淡いそらいろ）",
+  "shape": "体のかたち",
+  "fur": "毛並み",
+  "horn": "ツノ（なければ「なし」）",
+  "ear": "耳（なければ「なし」）",
+  "tail": "しっぽ（なければ「なし」）",
+  "wing": "はね（なければ「なし」）",
+  "eyes": 2,
+  "fang": "キバ（なければ「なし」）",
+  "accessory": "いつも身につけている物（なければ「なし」）",
+  "other": "そのほかの特徴（模様など）"
+}`;
+function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"設定画のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);return parts.join("、")}
+
+/* ================= レシピ ================= */
+const ATTACH_SHEET="設定画（1枚）";
+const RECIPES=[
+ {id:"sheet",group:"はじめる",label:"設定画をつくる",ratio:"16:9",usesAttach:false,
+  desc:"最初に1回だけ使います。三面図と表情4つで見た目を固定し、以後のレシピで毎回添付する「見本」にします。",
+  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式ジェネレーターの画像など）"]}],
+  attachNote:o=>o.src.startsWith("あり")?"もとにするモッフィーの画像（1枚）":"なし",
+  build(d,o,r){const img=o.src.startsWith("あり");return [
+   seg("目的",img?"添付した画像のモッフィーを、今後ずっと同じ見た目で描くための「設定画」を1枚つくってください。見た目は添付画像を正とします。":"新しいモッフィーの「設定画」を1枚つくってください。このキャラクターを今後ずっと同じ見た目で描くための基準になる資料です。",WHY.intent),
+   charSeg(d,img?"attach":"decide"),
+   seg("目",eyeText(d),WHY.eye),
+   seg("顔",faceText(d,"愛らしく、こわさのない表情"),WHY.nose),
+   seg("質感",STYLE,WHY.style),
+   seg("レイアウト","上の段に、全身の「正面」「横向き」「後ろ向き」を、同じ大きさ・同じ高さで3つ並べる。下の段に、顔のアップで表情を4つ並べる（にっこり／びっくり／うるうる泣き顔／ねむい顔）。7つとも同じ子に見えるよう、毛の色・ツノ・耳・しっぽ・はね・持ち物の位置と形をそろえる。",WHY.sheet),
+   frameSeg(r,"正面から見た、ゆがみのない平らな構図","背景は無地の明るいグレー。ラベルや矢印もつけない"),
+   checkSeg(d),
+   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、設定画で決めた内容を入れます。性格は、もとになった言葉から考えてください。\n${JSON_TEMPLATE}`,WHY.json),
+  ]}},
+ {id:"import",group:"はじめる",label:"公式の子を取り込む",ratio:null,usesAttach:false,
+  desc:"公式ジェネレーターなどで作ったモッフィーの画像から、DNA を読み取ります。Gemini の返事（JSON）を、上の「取り込む」に貼ってください。",
+  fields:[],attachNote:()=>"取り込みたいモッフィーの画像（1枚）",
+  build(d){return [
+   seg("目的","添付した画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。",WHY.import),
+   seg("書き方","見えている特徴だけを書く。確かめられない項目は「不明」と書く。色は「淡いそらいろ」のように具体的に。ツノ・しっぽ・はね・キバは、数・形・位置まで書く。目の数は数字で書く。名前がわからなければ、見た目に合う名前を考える。",WHY.char),
+   seg("出力",`次の JSON だけを出力してください。\n${JSON_TEMPLATE}`,WHY.json),
+  ]}},
+ {id:"outing",group:"あそぶ",label:"おでかけ",ratio:"4:5",usesAttach:true,
+  desc:"好きな場所におでかけした写真を作ります。背景は写真のように、モッフィーはふわふわの3DCGのまま。",
+  fields:[{k:"place",label:"場所",type:"text",def:"京都の竹林の小道"},{k:"time",label:"時間帯",type:"select",opts:["昼","朝","夕焼け","夜"]},{k:"act",label:"していること",type:"text",def:"抹茶ソフトクリームを食べている"}],
+  build(d,o,r,c){return [
+   seg("目的",`SNSに投稿する「おでかけ写真」をつくってください。モッフィーの「${d.n||"名前未定"}」が、${o.time}の${o.place}で${o.act}ところです。`,WHY.intent),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"その場を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE,WHY.style),
+   seg("手順",`1. まず、${o.time}の${o.place}の風景を、写真のようにリアルに描く。\n2. 次に、その風景の中にモッフィーを全身で置く。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 最後に、光の向き・影・色味を風景に合わせて、本当にその場にいるように自然になじませる。`,WHY.scene),
+   frameSeg(r,"目線の高さから、モッフィーの全身と風景が入る構図",""),checkSeg(d),
+  ]}},
+ {id:"outfit",group:"あそぶ",label:"着せ替え",ratio:"4:5",usesAttach:true,
+  desc:"服やアイテムを着せます。体の色やツノの形は変えずに、上から着せるだけにします。",
+  fields:[{k:"wear",label:"着るもの",type:"text",def:"黄色いレインコートと長ぐつ"}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」の着せ替え画像をつくってください。着るものは「${o.wear}」です。`,WHY.intent),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"おしゃれを楽しむ、ちょっと得意げな表情"),WHY.nose),seg("質感",STYLE,WHY.style),
+   seg("着せ方",`${o.wear}を、モッフィーの体型に合わせて上から着せる。毛は服のふちからふわっとはみ出す。ツノ・耳・しっぽ・はねは服の外に出し、形を変えない。体の色と毛並みはそのまま。`,WHY.steps),
+   frameSeg(r,"全身が入る、ファッション写真のような正面寄りの構図","背景は、服の色が映えるやわらかい無地のグラデーション"),checkSeg(d),
+  ]}},
+ {id:"sticker",group:"あそぶ",label:"ぷくぷくシール",ratio:"1:1",usesAttach:true,
+  desc:"ツヤツヤでぷっくりした立体シールの画像を作ります。公式ジェネレーターの3機能の1つを、DNA 固定つきにしたものです。",
+  fields:[{k:"pose",label:"ポーズ",type:"select",opts:["正面でにっこり","手をふっている","ジャンプしている","ねそべっている"]}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」の「ぷくぷくシール」をつくってください。子どものころに集めた、ツヤツヤでぷっくりふくらんだ立体シールのような画像です。`,WHY.intent),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"にっこり笑った表情"),WHY.nose),
+   seg("仕上げ",`ポーズは「${o.pose}」。シール全体がぷっくりと盛り上がり、表面にツヤのある光の反射が入る。キャラクターのまわりを太めの白いフチで切り抜いた形（ダイカット）にする。`,WHY.steps),
+   frameSeg(r,"シール1枚を真上から見た構図","背景は無地の白"),checkSeg(d),
+  ]}},
+ {id:"figure",group:"あそぶ",label:"フィギュアにする",ratio:"4:5",usesAttach:true,
+  desc:"1/7スケールの市販フィギュアにした写真を作ります。Google Japan が紹介した遊び方です。",
+  fields:[{k:"box",label:"パッケージ箱",type:"select",opts:["あり","なし"]}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」を、1/7スケールの市販フィギュアにした写真をつくってください。`,WHY.figure),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"愛らしい表情"),WHY.nose),
+   seg("シーン",`実写のような写真。フィギュアは文字のない円形の透明アクリル台座に立ち、木の机の上に置かれている。毛並みは彫刻で表現され、PVCのやわらかいツヤがある。${o.box==="あり"?"フィギュアの横に、このモッフィーのイラストが印刷されたおもちゃのパッケージ箱を置く。":""}背景は明るくおしゃれな部屋で、少しぼかす。`,WHY.scene),
+   frameSeg(r,"机の高さから少し見下ろす、斜め45度の構図",""),checkSeg(d,["フィギュアの質感になっている（生き物ではなく置物）"]),
+  ]}},
+ {id:"icon",group:"あそぶ",label:"SNSアイコン",ratio:"1:1",usesAttach:true,
+  desc:"プロフィール用の正方形アイコンです。丸く切り抜いても顔が欠けない余白をとります。",
+  fields:[{k:"expr",label:"表情",type:"select",opts:["にっこり","ウインク","びっくり","すまし顔"]},{k:"bg",label:"背景",type:"text",def:"毛の色が映えるやさしい単色"}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」をSNSのプロフィールアイコンにします。小さく表示されても顔がはっきりわかる画像をつくってください。`,WHY.intent),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,o.expr),WHY.nose),seg("質感",STYLE,WHY.style),
+   frameSeg(r,"顔と胸から上を中央に大きく入れる、少しだけ見上げる構図。丸く切り抜いても顔が欠けないよう、まわりに余白をとる",`背景は${o.bg}`),checkSeg(d),
+  ]}},
+ {id:"stamps",group:"あそぶ",label:"スタンプ",ratio:null,ratioBy:o=>({"4":"1:1","6":"3:2","8":"16:9"})[o.panels]||"1:1",usesAttach:true,
+  desc:"メッセージで使う一言スタンプを、1枚の画像にまとめて作ります。文字を先に決めてから描かせます。",
+  fields:[{k:"panels",label:"コマ数",type:"select",opts:["4","6","8"]},{k:"words",label:"言葉（読点で区切る）",type:"text",def:"おはよう、ありがとう、おつかれ、おやすみ、了解、すき、ごめんね、わーい"}],
+  build(d,o,r,c){const n=+o.panels;const pool=String(o.words).split(/[、,，]/).map(x=>x.trim()).filter(Boolean);const fill=["おはよう","ありがとう","おつかれ","おやすみ","了解","すき","ごめんね","わーい"];while(pool.length<n)pool.push(fill[pool.length%fill.length]);const w=pool.slice(0,n);const lay={4:"2列×2段",6:"3列×2段",8:"4列×2段"}[n];return [
+   seg("目的",`メッセージで送る一言スタンプを、1枚の画像に${n}コマでつくってください。主役は「${d.n||"名前未定"}」です。`,WHY.intent),
+   seg("文字（先に確定）",`コマに入れる文字は、次の${n}つだけです。表記をこのとおり正確に書きます。\n${w.map((x,i)=>`${i+1}. 「${x}」`).join("\n")}`,WHY.text),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"コマごとに、言葉に合う表情"),WHY.nose),
+   seg("レイアウト",`画像を${lay}の${n}コマに分ける。各コマに、言葉に合う表情とポーズのモッフィーを1匹ずつ描き、言葉はコマの下に、太めの丸い文字で大きく入れる。各コマは白い背景で、コマどうしは白い余白で区切る。キャラクターには白いフチどりをつける。`,WHY.steps),
+   frameSeg(r,"","",true),checkSeg(d,[`コマが${n}つあり、文字が指定どおり`]),
+  ]}},
+ {id:"season",group:"あそぶ",label:"季節イベント",ratio:"4:5",usesAttach:true,
+  desc:"お花見やハロウィンなど、時期に合わせた投稿用の画像です。",
+  fields:[{k:"event",label:"イベント",type:"select",opts:["お花見","夏祭り","ハロウィン","クリスマス","お正月","学園祭","卒業式","誕生日"]},{k:"extra",label:"追加したいこと（任意）",type:"text",def:""}],
+  build(d,o,r,c){return [
+   seg("目的",`${o.event}の時期にSNSへ投稿する、「${d.n||"名前未定"}」の季節の画像をつくってください。`,WHY.intent),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,`${o.event}を楽しんでいる表情`),WHY.nose),seg("質感",STYLE,WHY.style),
+   seg("シーン",`${o.event}らしい背景の中に、モッフィーを全身で描く。${o.event}らしい小物を1〜2個だけ持たせるか身につけさせる。体の色・ツノ・耳・しっぽ・はねは変えない。${o.extra?`追加：${o.extra}。`:""}`,WHY.scene),
+   frameSeg(r,"全身が入る、季節感のある構図",""),checkSeg(d),
+  ]}},
+ {id:"comic",group:"あそぶ",label:"4コマまんが",ratio:"9:16",usesAttach:true,
+  desc:"モッフィーが主役の4コマまんがを1枚で作ります。セリフは少ないほど崩れにくくなります。",
+  fields:[{k:"story",label:"お話のテーマ",type:"text",def:"テスト前日、勉強しようとして寝てしまう"},{k:"talk",label:"セリフ",type:"select",opts:["なし（絵だけ）","短いセリフあり"]}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」が主役の4コマまんがを、1枚の画像でつくってください。テーマは「${o.story}」です。`,WHY.comic),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"コマごとに、場面に合う表情"),WHY.nose),
+   seg("コマ割り",`画像をたてに4つのコマに分け、上から「起・承・転・結」の順に描く。どのコマのモッフィーも同じ見た目にそろえる。${o.talk.startsWith("短い")?"セリフは各コマ1つまで、10文字以内の短い吹き出しにする。":"セリフや文字は入れず、絵だけで伝える。"}`,WHY.comic),
+   frameSeg(r,"","各コマの背景は、場面がわかる程度のシンプルな描き込み",o.talk.startsWith("短い")),checkSeg(d,["4つのコマのモッフィーが同じ見た目"]),
+  ]}},
+ {id:"friends",group:"あそぶ",label:"友だちと共演",ratio:"16:9",usesAttach:true,
+  desc:"友だちのDNAコードを貼ると、2〜4匹が同じ場面に並ぶ画像を作れます（Nano Banana が見た目を保てるのは4体まで）。",
+  fields:[{k:"codes",label:"友だちのDNAコード（1行に1匹、3匹まで）",type:"textarea",def:""},{k:"place",label:"場所",type:"text",def:"大学の芝生の広場"},{k:"act",label:"していること",type:"text",def:"ピクニックをしている"}],
+  attachNote:(o,c)=>c.attach?`設定画 ${1+c.friends.length}枚（自分、友だちの順）`:"なし（文章だけ）",
+  build(d,o,r,c){const all=[d,...c.friends];const n=all.length;
+   const list=all.map((x,i)=>`${c.attach?`${i+1}枚目の画像`:`${i+1}匹目`}：「${x.n||"名前未定"}」…${c.attach?shortDesc(x):bodyText(x,"text")+eyeText(x)}`).join("\n");
+   return [
+   seg("目的",`${c.attach?`添付した${n}枚の設定画のモッフィーたち`:`次の${n}匹のモッフィー`}を、1枚の画像に一緒に描いてください。${o.place}で${o.act}ところです。${n===1?"（友だちのDNAコードを貼ると、ここに友だちが入ります）":""}`,WHY.friends),
+   seg("登場するモッフィー",list,c.attach?WHY.charAttach:WHY.charText),
+   seg("全員に共通するルール",`全員が、ぬいぐるみのようにふわふわした3DCGのモンスター「モッフィー」。顔のパーツは目と口だけで、鼻はない（目と口のあいだは毛並みが続く）。目はスパークルアイ（虹彩の中で色がなめらかに溶け合い、中央に白く光る四芒星）。こわさのない愛らしい表情。`,WHY.nose),
+   seg("描き分け",`${n}匹の毛の色やパーツを混ぜない。どの子が誰か、ひと目でわかるように描き分ける。全員の全身が見えるように並べる。`,WHY.friends),
+   frameSeg(r,"全員の全身が入る、少し引いた構図",""),
+   seg("見直し",`描き終えたら、${n}匹それぞれについて、鼻がないこと・目の数・毛の色・ツノやはねなどのパーツが${c.attach?"設定画":"説明"}どおりかを見直し、合わない所はその部分だけを直してから出力する。画像は1枚だけ出力する。`,WHY.check),
+  ]}},
+ {id:"check",group:"なおす",label:"ルールチェック",ratio:null,usesAttach:false,
+  desc:"生成した画像を添付して、ルールどおりかを判定してもらいます。不合格の所を直すための指示文も返ってきます。",
+  fields:[],attachNote:()=>"判定したい画像（1枚）",
+  build(d){const items=checkList(d);return [
+   seg("目的",`添付した画像のキャラクターが、モッフィー「${d.n||"名前未定"}」として正しく描けているか判定してください。甘めにせず、画像から確かめられないものは不合格にします。画像は生成しないでください。`,WHY.judge),
+   seg("判定する項目",items.map((x,i)=>`${i+1}. ${x}`).join("\n"),WHY.check),
+   seg("出力",`次の JSON だけを出力してください。\n{\n  "results": [\n    {"item": "項目", "pass": true, "reason": "画像のどこを見てそう判断したか"}\n  ],\n  "score": "合格数/${items.length}",\n  "fix_prompt": "不合格の項目だけを直すための、そのまま画像編集に使える指示文（全部合格なら空文字）"\n}`,WHY.judge),
+  ]}},
+ {id:"fix",group:"なおす",label:"部分修正",ratio:null,usesAttach:false,
+  desc:"気になる所だけを直します。作り直しより元の子が崩れにくく、生成回数も節約できます。",
+  fields:[{k:"parts",label:"直したい所",type:"multi",opts:["目（スパークルアイ）","鼻が出ている","目の数","毛の色","ツノ","しっぽ","はね","身につけている物","毛並み"],def:["目（スパークルアイ）"]},{k:"note",label:"そのほか（任意）",type:"text",def:""}],
+  attachNote:()=>"直したい画像（1枚）",
+  build(d,o){const fixes=[];const P=o.parts||[];
+   if(P.includes("目（スパークルアイ）"))fixes.push(eyeText(d));
+   if(P.includes("鼻が出ている"))fixes.push("鼻を消し、目と口のあいだを、まわりと同じなめらかな毛並みでつなぐ。");
+   if(P.includes("目の数"))fixes.push(`目は${eyeCount(d)}つにする。`);
+   if(P.includes("毛の色"))fixes.push(`毛の色を${colorDesc(d)||"設定画と同じ色"}にする。`);
+   const pmap={"ツノ":"h","しっぽ":"t","はね":"w","身につけている物":"a","毛並み":"u"};
+   for(const [lab,k] of Object.entries(pmap))if(P.includes(lab))fixes.push((partPhrase(d,k)||`${PARTS[k].name}は設定画と同じにする`)+"。");
+   if(o.note)fixes.push(`そのほか：${o.note}。`);
+   const targets=[...P,...(o.note?["そのほか"]:[])].join("・")||"（直したい所を選んでください）";
+   return [
+   seg("目的",`添付した画像の「${targets}」だけを直してください。それ以外（ポーズ・表情・背景・光・構図・ほかのパーツ）は、まったく同じに保ちます。`,WHY.fix),
+   seg("正しい状態",fixes.length?fixes.map(x=>"・"+x).join("\n"):"・（直したい所を選んでください）",WHY.fix),
+   seg("構図","アスペクト比と構図は、元の画像と同じにする。画像は1枚だけ出力する。",WHY.ratio),
+  ]}},
+ {id:"gem",group:"ひろげる",label:"Gemにする",ratio:null,usesAttach:false,copyEach:true,
+  desc:"Gemini の Gem（カスタム版の Gemini）に入れる文章です。パソコンで gemini.google.com を開き、Gem マネージャー →「新しい Gem」で、名前・説明・カスタム指示にそれぞれ貼ります。共有から「リンクを知っている全員」にすると、リンクで配れます。",
+  fields:[{k:"scope",label:"Gem の種類",type:"select",opts:["このモッフィー専用","だれでも使える工房"]}],
+  attachNote:o=>o.scope==="このモッフィー専用"?"（任意）設定画を Gem の「知識」に追加":"なし",
+  build(d,o){const own=o.scope==="このモッフィー専用";const nm=d.n||"マイモッフィー";
+   const rules=["# モッフィーのデザインルール（必ず守る）","- ぬいぐるみのようにふわふわした3DCGのモンスター。ずんぐりした体で、全身が長くやわらかい毛におおわれている","- 目は1〜3つの「スパークルアイ」。虹彩の中で色がなめらかに溶け合い（2026年版は青・赤・黄・緑の4色）、中央に白く光る大きな四芒星（✦）がある","- 顔のパーツは目と口だけ。目と口のあいだは毛並みが続き、鼻は描かない","- こわさのない、思わず抱きしめたくなる表情","- 画像には、頼まれたとき以外は文字を入れない"];
+   const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。知識に設定画があれば、それを見本にする。","3. 毎回、用途に合うアスペクト比を決めて指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、デザインルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. DNA をもとに、三面図（正面・横・後ろ）と表情4つの設定画（16:9）を作る。","4. 以後のリクエストでは、DNA と設定画の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、デザインルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
+   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,eyeText(d),faceText(d,"愛らしく、こわさのない表情"),`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
+   const ins=["# 役割",own?`あなたは、モッフィー「${nm}」専属のイラストレーターです。ユーザーの頼みに合わせて、「${nm}」を同じ見た目のまま、いろいろな場面の画像にします。`:"あなたは「モッフィー工房」の案内役です。ユーザーと一緒にオリジナルのモッフィーを作り、同じ見た目のまま、いろいろな場面の画像を作ります。","",...rules,"",...flow,...fixed,"","# 話し方","やさしく短く。画像を出したあとに、次に試せる遊び方を1つだけ提案する。"].join("\n");
+   return [
+    seg("名前",own?`${nm}のアトリエ（非公式）`:"モッフィー工房（非公式）",null),
+    seg("説明",own?`モッフィー「${nm}」を、同じ見た目のまま描き続ける Gem`:"オリジナルのモッフィーを作って、同じ見た目のまま遊べる Gem",null),
+    seg("カスタム指示",ins,WHY.gem),
+  ]}},
+];
+const GROUPS=["はじめる","あそぶ","なおす","ひろげる"];
+
+/* ================= プレビュー（SVG を組み立て） ================= */
+const HEUR={
+ s:[[/たまご|卵|縦/,"egg"],[/洋なし|ずんぐり|下ぶくれ/,"pear"],[/もち|横長/,"mochi"],[/./,"round"]],
+ u:[[/逆立|ツン|とげ/,"spiky"],[/カール|くる|巻/,"curly"],[/もこ/,"extra"],[/./,"soft"]],
+ h:[[/^なし|ない$/,"none"],[/巻/,"curl"],[/しま|縞/,"stripe"],[/1本|一本|ひとつ|一つ|中央/,"one"],[/./,"two"]],
+ e:[[/^なし|うも|埋|見えない/,"none"],[/たれ|垂/,"droop"],[/丸|まる/,"round"],[/./,"up"]],
+ t:[[/^なし|見えない/,"none"],[/ドラゴン|とが|竜/,"dragon"],[/長|なが|ふさ/,"long"],[/./,"puff"]],
+ w:[[/^なし|ない$/,"none"],[/こうもり|コウモリ|悪魔/,"bat"],[/妖精|透/,"fairy"],[/./,"angel"]],
+ f:[[/^なし|見えない/,"none"],[/2|２|二|両/,"two"],[/./,"one"]],
+ a:[[/^なし/,"none"],[/マフラー|スカーフ/,"scarf"],[/リボン/,"ribbon"],[/王冠|冠/,"crown"],[/葉/,"leaf"],[/ヘッドホン/,"headphones"],[/メガネ|眼鏡/,"glasses"],[/リュック|かばん|バッグ/,"bag"],[/./,"none"]],
+};
+function kind(d,k){const v=d[k];if(!isCustom(v))return v;const t=v.slice(1);for(const [re,id] of HEUR[k]||[])if(re.test(t))return id;return "auto"}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);const ch=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p))));return "#"+ch.map(v=>v.toString(16).padStart(2,"0")).join("")}
+function blob(x,y,r,f){let s=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${f}"/>`;for(let a=0;a<360;a+=45){const t=a*Math.PI/180;s+=`<circle cx="${(x+Math.cos(t)*r*.8).toFixed(1)}" cy="${(y+Math.sin(t)*r*.8).toFixed(1)}" r="${(r*.45).toFixed(1)}" fill="${f}"/>`}return s}
+function drawPreview(d){
+ const fur=colorHex(d)||"#D9D6E6",dark=shade(fur,-.2),horn="#F3E6C8",hornLine="#D2BD8F";
+ const sk=kind(d,"s");const [rx,ry,cy]=({egg:[60,76,114],pear:[64,70,116],mochi:[80,56,122]})[sk]||[68,68,112];
+ const top=cy-ry-4;let g="";
+ const tk=kind(d,"t");
+ if(tk==="puff")g+=blob(100+rx*.82,cy+ry*.5,17,fur);
+ if(tk==="long")g+=`<path d="M${100+rx*.7} ${cy+ry*.55} C ${100+rx+30} ${cy+ry*.5}, ${100+rx+34} ${cy-10}, ${100+rx+18} ${cy-28}" stroke="${dark}" stroke-width="9" fill="none" stroke-linecap="round"/>`+blob(100+rx+16,cy-32,12,fur);
+ if(tk==="dragon")g+=`<path d="M${100+rx*.55} ${cy+ry*.4} Q ${100+rx+26} ${cy+ry*.6} ${100+rx+36} ${cy+ry*.12} L ${100+rx+22} ${cy+ry*.32} Z" fill="${dark}"/>`;
+ const wk=kind(d,"w"),wl=100-rx+2,wr=100+rx-2,wy=cy-ry*.15;
+ if(wk==="angel")g+=`<ellipse cx="${wl-12}" cy="${wy}" rx="22" ry="12" fill="#FFFFFF" stroke="#CFCBE0" transform="rotate(-25 ${wl-12} ${wy})"/><ellipse cx="${wr+12}" cy="${wy}" rx="22" ry="12" fill="#FFFFFF" stroke="#CFCBE0" transform="rotate(25 ${wr+12} ${wy})"/>`;
+ if(wk==="bat")g+=`<path d="M${wl+6} ${wy} l-34 -20 l7 15 l-13 1 l11 12 l-8 7 z" fill="#5B4E7A"/><path d="M${wr-6} ${wy} l34 -20 l-7 15 l13 1 l-11 12 l8 7 z" fill="#5B4E7A"/>`;
+ if(wk==="fairy")g+=`<ellipse cx="${wl-10}" cy="${wy-8}" rx="21" ry="11" fill="#BFE6FF" opacity=".8" transform="rotate(-35 ${wl-10} ${wy-8})"/><ellipse cx="${wr+10}" cy="${wy-8}" rx="21" ry="11" fill="#BFE6FF" opacity=".8" transform="rotate(35 ${wr+10} ${wy-8})"/>`;
+ const ek=kind(d,"e");
+ if(ek==="up")g+=`<ellipse cx="74" cy="${cy-ry+2}" rx="10" ry="24" fill="${dark}"/><ellipse cx="126" cy="${cy-ry+2}" rx="10" ry="24" fill="${dark}"/>`;
+ if(ek==="round")g+=`<circle cx="70" cy="${cy-ry+14}" r="14" fill="${dark}"/><circle cx="130" cy="${cy-ry+14}" r="14" fill="${dark}"/>`;
+ const uk=kind(d,"u");
+ g+=`<ellipse cx="100" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fur}"/>`;
+ if(sk==="pear")g+=`<ellipse cx="100" cy="${cy+ry*.35}" rx="${(rx*1.1).toFixed(1)}" ry="${(ry*.62).toFixed(1)}" fill="${fur}"/>`;
+ const step=uk==="curly"?12:15,base=uk==="extra"?12:uk==="curly"?8:9;
+ for(let a=0;a<360;a+=step){const t=a*Math.PI/180,rr=base+((a/step)%3)*1.6;const ex=sk==="pear"&&Math.sin(t)>.2?1.1:1;g+=`<circle cx="${(100+Math.cos(t)*rx*ex).toFixed(1)}" cy="${(cy+Math.sin(t)*ry).toFixed(1)}" r="${rr.toFixed(1)}" fill="${fur}"/>`}
+ if(uk==="curly")for(let a=0;a<360;a+=30){const t=a*Math.PI/180;g+=`<circle cx="${(100+Math.cos(t)*rx*.74).toFixed(1)}" cy="${(cy+Math.sin(t)*ry*.74).toFixed(1)}" r="6" fill="none" stroke="${shade(fur,.3)}" stroke-width="1.6"/>`}
+ if(uk==="spiky")g+=`<path d="M84 ${cy-ry+6} L89 ${cy-ry-16} L95 ${cy-ry+2} L100 ${cy-ry-21} L105 ${cy-ry+2} L111 ${cy-ry-16} L116 ${cy-ry+6} Z" fill="${fur}"/>`;
+ g+=`<ellipse cx="100" cy="${(cy+ry*.35).toFixed(1)}" rx="${(rx*.55).toFixed(1)}" ry="${(ry*.4).toFixed(1)}" fill="#FFFFFF" opacity=".16"/>`;
+ if(ek==="droop")g+=`<ellipse cx="${100-rx+6}" cy="${cy-ry*.3}" rx="12" ry="25" fill="${dark}" transform="rotate(25 ${100-rx+6} ${cy-ry*.3})"/><ellipse cx="${100+rx-6}" cy="${cy-ry*.3}" rx="12" ry="25" fill="${dark}" transform="rotate(-25 ${100+rx-6} ${cy-ry*.3})"/>`;
+ const hk=kind(d,"h");
+ if(hk==="one")g+=`<path d="M94 ${top+8} L100 ${top-20} L106 ${top+8} Z" fill="${horn}" stroke="${hornLine}"/>`;
+ if(hk==="two"||hk==="stripe"){g+=`<path d="M70 ${top+16} Q66 ${top-6} 78 ${top-8} Q80 ${top+6} 84 ${top+12} Z" fill="${horn}" stroke="${hornLine}"/><path d="M130 ${top+16} Q134 ${top-6} 122 ${top-8} Q120 ${top+6} 116 ${top+12} Z" fill="${horn}" stroke="${hornLine}"/>`;if(hk==="stripe")g+=`<path d="M70 ${top+6} l11 -2 M71 ${top}l9 -2 M130 ${top+6} l-11 -2 M129 ${top} l-9 -2" stroke="#B88F5A" stroke-width="2"/>`}
+ if(hk==="curl")g+=`<path d="M72 ${top+16} c-14 -8 -12 -26 2 -26 c8 0 9 9 3 10" stroke="#E7D3A8" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M128 ${top+16} c14 -8 12 -26 -2 -26 c-8 0 -9 9 -3 10" stroke="#E7D3A8" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+ const ak=kind(d,"a");
+ if(ak==="leaf")g+=`<path d="M100 ${top+4} q14 -24 30 -16 q-10 18 -30 16z" fill="#5DB36A"/>`;
+ if(ak==="ribbon")g+=`<path d="M100 ${top+10} l-22 -12 l0 22 z M100 ${top+10} l22 -12 l0 22 z" fill="#E8546B"/><circle cx="100" cy="${top+10}" r="6" fill="#C93E55"/>`;
+ if(ak==="crown")g+=`<path d="M86 ${top+8} L86 ${top-8} L93 ${top} L100 ${top-12} L107 ${top} L114 ${top-8} L114 ${top+8} Z" fill="#F2C94C" stroke="#C99A1E"/>`;
+ const n=eyeCount(d),ey=cy-ry*.15,er=n===1?17:n===3?10:12.5;
+ const xs=n===1?[100]:n===2?[80,120]:[74,100,126];const yy=n===3?[ey+3,ey-6,ey+3]:xs.map(()=>ey);
+ xs.forEach((x,i)=>{const y=yy[i],s=er*.55;g+=`<circle cx="${x}" cy="${y}" r="${er+2.5}" fill="#1E1B2C"/><circle cx="${x}" cy="${y}" r="${er}" fill="url(#eg)"/><path d="M${x} ${y-s} Q${x+s*.18} ${y-s*.18} ${x+s} ${y} Q${x+s*.18} ${y+s*.18} ${x} ${y+s} Q${x-s*.18} ${y+s*.18} ${x-s} ${y} Q${x-s*.18} ${y-s*.18} ${x} ${y-s}Z" fill="#FFFFFF"/>`});
+ if(ak==="glasses"&&n>=2)g+=`<circle cx="${xs[0]}" cy="${yy[0]}" r="${er+5}" fill="none" stroke="#3A3550" stroke-width="2.5"/><circle cx="${xs[n-1]}" cy="${yy[n-1]}" r="${er+5}" fill="none" stroke="#3A3550" stroke-width="2.5"/>`;
+ const my=ey+er+14;
+ g+=`<path d="M90 ${my} Q100 ${my+10} 110 ${my}" stroke="#3A2B3A" stroke-width="3" fill="${shade(fur,-.45)}" stroke-linecap="round"/>`;
+ const fk=kind(d,"f");
+ if(fk==="one")g+=`<path d="M104 ${my+2} l3 7 l3 -6 z" fill="#FFFFFF"/>`;
+ if(fk==="two")g+=`<path d="M93 ${my+1} l3 7 l3 -5 z M104 ${my+2} l3 7 l3 -6 z" fill="#FFFFFF"/>`;
+ if(ak==="scarf")g+=`<path d="M${100-rx*.8} ${my+16} Q100 ${my+30} ${100+rx*.8} ${my+16} L${100+rx*.8} ${my+28} Q100 ${my+42} ${100-rx*.8} ${my+28} Z" fill="#E1453C"/><rect x="${100+rx*.35}" y="${my+30}" width="14" height="26" rx="4" fill="#C7362F"/>`;
+ if(ak==="headphones")g+=`<path d="M${100-rx*.6} ${my+22} Q100 ${my+44} ${100+rx*.6} ${my+22}" stroke="#3A3550" stroke-width="5" fill="none"/><circle cx="${100-rx*.62}" cy="${my+18}" r="9" fill="#3A3550"/><circle cx="${100+rx*.62}" cy="${my+18}" r="9" fill="#3A3550"/>`;
+ if(ak==="bag")g+=`<rect x="${100+rx-10}" y="${cy+4}" width="26" height="30" rx="7" fill="#E59A3A"/><path d="M${100+rx-4} ${cy+4} q8 -16 14 0" stroke="#B87420" stroke-width="3" fill="none"/>`;
+ const eg=d.i==="classic"?`<linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset="1" stop-color="#9B72CB"/></linearGradient>`:`<linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset=".38" stop-color="#EA4335"/><stop offset=".66" stop-color="#FBBC04"/><stop offset="1" stop-color="#34A853"/></linearGradient>`;
+ $("#preview").innerHTML=`<svg viewBox="-24 -8 248 226" xmlns="http://www.w3.org/2000/svg"><defs>${eg}</defs>${g}</svg>`;
+ const au=autoNames(d);
+ $("#autocap").textContent=au.length?`おまかせ：${au.join("・")}（設定画で Gemini が決めます）`:"すべてのパーツが決まっています";
+}
+
+/* ================= 画面の組み立て（最初に1回） ================= */
+function buildStatic(){
+ $("#colors").innerHTML=COLORS.map(c=>`<button type="button" class="sw" id="sw-${c.id}" data-c="${c.id}" title="${c.name}" aria-label="${c.name}" aria-pressed="false" style="background:${c.hex||"conic-gradient(#4285F4,#EA4335,#FBBC04,#34A853,#4285F4)"}"></button>`).join("");
+ $("#partsel").innerHTML=PART_ORDER.map(k=>`<div class="field"><label for="p-${k}">${PARTS[k].name}</label><select id="p-${k}" data-part="${k}"></select></div>`).join("");
+ $("#tags").innerHTML=TAGS.map(t=>`<button type="button" class="chip" data-tag="${t}" aria-pressed="false">${t}</button>`).join("");
+ $("#rgroups").innerHTML=GROUPS.map(gn=>`<div class="rg"><div class="rg-name">${gn}</div><div class="chips">${RECIPES.filter(r=>r.group===gn).map(r=>`<button type="button" class="chip" id="r-${r.id}" data-recipe="${r.id}" aria-pressed="false">${r.label}</button>`).join("")}</div></div>`).join("");
+ $("#samples").innerHTML=SAMPLES.map((s,i)=>`<button type="button" class="chip" data-sample="${i}">${esc(s.n)}</button>`).join("");
+ try{if(navigator.share)$("#share-dna").hidden=false}catch(e){}
+ const site=siteUrl();if(site)$("#copy-link").hidden=false;
+}
+function siteUrl(){const m=document.querySelector('meta[name="moffy-site-url"]');return m&&m.content?m.content.trim():""}
+function syncInputs(){
+ const d=st.d;
+ $("#kw").value=d.k;$("#nm").value=d.n;$("#ps").value=d.p;$("#ot").value=d.o;$("#eyestyle").value=d.i;
+ for(const k of PART_ORDER){const sel=$("#p-"+k);let html=PARTS[k].opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("");if(isCustom(d[k]))html+=`<option value="${esc(d[k])}">取り込んだ値：${esc(d[k].slice(1))}</option>`;sel.innerHTML=html;sel.value=d[k]}
+ syncColor();syncTags();
+}
+function syncColor(){document.querySelectorAll(".sw").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===st.d.c)))}
+function syncTags(){document.querySelectorAll("[data-tag]").forEach(b=>b.setAttribute("aria-pressed",String(st.d.k.includes(b.dataset.tag))))}
+
+/* ================= 描画 ================= */
+function renderCard(){
+ const d=st.d;
+ $("#c-name").textContent=d.n||"名前未定";
+ $("#c-id").textContent=dnaId(d);
+ $("#c-p").textContent=d.p?`性格：${d.p}`:"";
+ const rows=[["毛の色",colorLabel(d)],...PART_ORDER.map(k=>[PARTS[k].name,partLabel(d,k)]),["目のスタイル",d.i==="classic"?"クラシック（青→紫）":"2026年版（4色）"]];
+ if(d.o)rows.push(["そのほか",d.o]);
+ $("#c-dl").innerHTML=rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+ $("#rules").innerHTML=checkList(d).map(r=>`<span class="rule">${esc(r)}</span>`).join("");
+ $("#c-code").textContent=dnaCode(d);
+ const hits=ipHits([d.n,d.k,d.p,d.o].join(" "));
+ $("#ipwarn").hidden=!hits.length;
+ if(hits.length)$("#ipwarn").textContent=`「${hits.join("」「")}」は既存のキャラクター名です。オリジナルのモッフィーにするため、指示書からは外しています。`;
+ drawPreview(d);
+ if(!$("#qr").hidden)renderQR();
+}
+function recipe(){return RECIPES.find(r=>r.id===st.recipe)||RECIPES[0]}
+function ropts(r){const o=st.ro[r.id]||(st.ro[r.id]={});for(const f of r.fields)if(o[f.k]===undefined)o[f.k]=f.type==="multi"?[...(f.def||[])]:(f.def!==undefined?f.def:(f.opts?f.opts[0]:""));return o}
+function ratioOf(r,o){return o.__ratio||(r.ratioBy?r.ratioBy(o):r.ratio)}
+function friendsOf(o){const list=[],errs=[];String(o.codes||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,3).forEach((line,i)=>{try{list.push(promptDNA(parseDNA(line)))}catch(e){errs.push(`${i+1}行目：${e.message}`)}});return {list,errs}}
+function renderRecipeUI(){
+ const r=recipe(),o=ropts(r);
+ document.querySelectorAll("[data-recipe]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.recipe===r.id)));
+ $("#rdesc").textContent=r.desc;
+ document.querySelectorAll("[data-attach]").forEach(b=>{b.setAttribute("aria-pressed",String((b.dataset.attach==="1")===st.attach));b.disabled=!r.usesAttach});
+ $("#attach-tabs").title=r.usesAttach?"":"このレシピでは切り替えません";
+ let html=r.fields.map(f=>{const id=`f-${r.id}-${f.k}`,v=o[f.k];
+  if(f.type==="select")return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-f="${f.k}">${f.opts.map(x=>`<option${x===v?" selected":""}>${esc(x)}</option>`).join("")}</select></div>`;
+  if(f.type==="textarea")return `<div class="field" style="grid-column:1/-1"><label for="${id}">${f.label}</label><textarea id="${id}" data-f="${f.k}" placeholder="MF1. で始まるコードを1行に1つ">${esc(v)}</textarea><div id="${id}-msg"></div></div>`;
+  if(f.type==="multi")return `<div class="field" style="grid-column:1/-1"><span class="lbl">${f.label}</span><div class="chips">${f.opts.map(x=>`<button type="button" class="chip" data-multi="${f.k}" data-val="${esc(x)}" aria-pressed="${v.includes(x)}">${esc(x)}</button>`).join("")}</div></div>`;
+  return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" data-f="${f.k}" value="${esc(v)}"></div>`;
+ }).join("");
+ const rr=ratioOf(r,o);
+ if(rr)html+=`<div class="field"><label for="f-ratio">アスペクト比</label><select id="f-ratio" data-f="__ratio">${Object.keys(RATIO_LABEL).map(k=>`<option value="${k}"${k===rr?" selected":""}>${RATIO_LABEL[k]}</option>`).join("")}</select></div>`;
+ $("#rfields").innerHTML=html;$("#rfields").hidden=!html;
+ renderOut();
+}
+function buildSegs(){
+ const r=recipe(),o=ropts(r),d=promptDNA(st.d);
+ const fr=r.id==="friends"?friendsOf(o):{list:[],errs:[]};
+ const c={attach:r.usesAttach?st.attach:false,how:r.usesAttach&&st.attach?"attach":"text",friends:fr.list};
+ if(r.id==="friends"){const m=$(`#f-friends-codes-msg`);if(m)m.innerHTML=fr.errs.length?`<div class="warn">${esc(fr.errs.join(" / "))}</div>`:(fr.list.length?`<div class="okmsg">${fr.list.map(x=>esc(x.n||"名前未定")).join("、")} を読み込みました</div>`:"")}
+ return {r,o,c,segs:r.build(d,o,ratioOf(r,o),c)};
+}
+const plain=segs=>segs.map(s=>(s.h?`【${s.h}】\n`:"")+s.t).join("\n\n");
+function renderOut(){
+ const {r,o,c,segs}=buildSegs();
+ const note=r.attachNote?r.attachNote(o,c):(c.attach?ATTACH_SHEET:"なし（文章だけ）");
+ const textOnlyWarn=r.usesAttach&&!st.attach&&autoNames(st.d).length?`<span>「おまかせ」が残っていると毎回見た目が変わります。設定画のあとに返ってくる JSON を取り込むと安定します。</span>`:"";
+ const needsImage=!/^なし/.test(note)&&r.id!=="gem";
+ $("#attachline").innerHTML=`<b>Gemini に添付するもの</b><span>${esc(note)}</span>${r.id!=="gem"?`<span class="mono">モデルは Flash か Pro</span>`:""}${needsImage?`<span>貼り方：入力欄の「＋」（ファイルを追加）から画像を選び、指示書を貼って送信</span>`:""}${textOnlyWarn}`;
+ const nx=NEXT[r.id]||NEXT.scene;
+ $("#nextline").innerHTML=`<b>このあと</b><ol>${nx.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+ $("#out").innerHTML=segs.map((s,i)=>`<div class="blk"><div class="blk-h"><span>【${esc(s.h)}】</span>${r.copyEach?`<button type="button" class="btn ghost small" data-copyseg="${i}">この部分をコピー</button>`:""}</div><pre>${esc(s.t)}</pre>${st.explain&&s.why?`<p class="why"><b>なぜ：</b>${esc(s.why)}<span class="src">根拠：${esc(s.src)}</span></p>`:""}</div>`).join("");
+ $("#count").textContent=`${plain(segs).length}文字`;
+ persist();
+}
+function renderAll(){renderCard();renderOut()}
+
+/* ================= QR・コピー・保存 ================= */
+function shareTarget(){const code=dnaCode(st.d),site=siteUrl();return site?`${site}${site.includes("?")?"&":"?"}dna=${code}`:code}
+function renderQR(){
+ const box=$("#qr");box.innerHTML="";
+ if(typeof QRCode==="undefined"){box.innerHTML=`<p class="hint">QRコードの部品を読み込めませんでした。DNAコードをコピーして渡してください。</p>`;return}
+ const holder=document.createElement("div");box.appendChild(holder);
+ try{new QRCode(holder,{text:shareTarget(),width:184,height:184,colorDark:"#24233A",colorLight:"#FFFFFF",correctLevel:QRCode.CorrectLevel.M})}catch(e){box.innerHTML=`<p class="hint">QRコードを作れませんでした（${esc(e.message)}）。</p>`;return}
+ const p=document.createElement("p");p.className="hint";p.textContent=siteUrl()?"スマホのカメラで読むと、このツールにDNA入りで開きます。":"読み取ると DNA コードの文字が出ます。友だちはそれを「取り込む」に貼ります。";box.appendChild(p);
+}
+async function copyText(text,toast,fallbackEl){
+ try{await navigator.clipboard.writeText(text);flash(toast,"コピーしました")}
+ catch(e){if(fallbackEl){const r=document.createRange();r.selectNodeContents(fallbackEl);const s=getSelection();s.removeAllRanges();s.addRange(r)}flash(toast,"自動でコピーできませんでした。選択した部分を手動でコピーしてください")}
+}
+function flash(sel,msg){const el=$(sel);el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=""},2600)}
+function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro}))}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)?o.recipe:"sheet";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{}}}catch(e){}}
+function savedList(){try{return JSON.parse(localStorage.getItem("moffy-maker-saved")||"[]")}catch(e){return []}}
+function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span class="hint">保存したモッフィー：</span>`+l.map((x,i)=>`<button type="button" data-load="${i}">${esc(x.name)}</button>`).join(""):""}
+function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}
+function setMode(m){st.mode=m;$("#pane-new").hidden=m!=="new";$("#pane-import").hidden=m!=="import";document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.mode===m)))}
+
+/* ================= イベント ================= */
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.mode){setMode(b.dataset.mode);return}
+ if(b.dataset.sample!==undefined){const s=SAMPLES[+b.dataset.sample];if(s){loadDNA({...s});flash("#toast1",`見本「${s.n}」を読み込みました`)}return}
+ if(b.dataset.c){st.d.c=b.dataset.c;syncColor();renderAll();return}
+ if(b.dataset.tag){const t=b.dataset.tag,kw=st.d.k;st.d.k=kw.includes(t)?kw.split(/[、,]\s*/).filter(x=>x&&x!==t).join("、"):(kw.trim()?kw.trim().replace(/[、,]$/,"")+"、":"")+t;$("#kw").value=st.d.k;syncTags();renderAll();return}
+ if(b.dataset.recipe){st.recipe=b.dataset.recipe;renderRecipeUI();persist();return}
+ if(b.dataset.attach!==undefined){st.attach=b.dataset.attach==="1";renderRecipeUI();return}
+ if(b.dataset.multi){const o=ropts(recipe()),arr=o[b.dataset.multi],v=b.dataset.val,i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);b.setAttribute("aria-pressed",String(i<0));renderOut();return}
+ if(b.dataset.copyseg!==undefined){const {segs}=buildSegs();copyText(segs[+b.dataset.copyseg].t,"#toast2");return}
+ if(b.dataset.load!==undefined){const x=savedList()[+b.dataset.load];if(x){try{loadDNA(parseDNA(x.code));flash("#toast1",`「${x.name}」を読み込みました`)}catch(err){flash("#toast1",err.message)}}return}
+ switch(b.id){
+  case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}
+  case "share-dna":{const fail=()=>flash("#toast1","共有メニューを開けませんでした。DNAコードのコピーを使ってください");try{navigator.share({title:"モッフィーのDNA",text:`モッフィー「${st.d.n||"名前未定"}」のDNAコード\n${shareTarget()}`}).catch(err=>{if(err&&err.name!=="AbortError")fail()})}catch(err){fail()}break}
+  case "gacha":{loadDNA(gacha());flash("#toast1","ガチャで新しいモッフィーを決めました");break}
+  case "copy-code":copyText(dnaCode(st.d),"#toast1",$("#c-code"));break;
+  case "copy-link":copyText(shareTarget(),"#toast1");break;
+  case "qr-btn":{const box=$("#qr");box.hidden=!box.hidden;b.setAttribute("aria-expanded",String(!box.hidden));if(!box.hidden)renderQR();break}
+  case "save":{const l=savedList().filter(x=>x.id!==dnaId(st.d));l.unshift({id:dnaId(st.d),name:st.d.n||"名前未定",code:dnaCode(st.d)});try{localStorage.setItem("moffy-maker-saved",JSON.stringify(l.slice(0,12)));flash("#toast1","このブラウザに保存しました")}catch(err){flash("#toast1","このブラウザでは保存できません")}renderSaved();break}
+  case "imp-go":{try{const d=parseDNA($("#imp").value);loadDNA(d,`「${d.n||"名前未定"}」を読み込みました。レシピを選んで続けられます。`)}catch(err){$("#imp-msg").innerHTML=`<div class="warn">${esc(err.message)}</div>`}break}
+  case "imp-recipe":{st.recipe="import";renderRecipeUI();$("#recipes").scrollIntoView({behavior:"smooth",block:"start"});break}
+ }
+});
+document.addEventListener("input",e=>{
+ const t=e.target;
+ const map={kw:"k",nm:"n",ps:"p",ot:"o"};
+ if(map[t.id]){st.d[map[t.id]]=t.value;if(t.id==="kw")syncTags();renderAll();return}
+ if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.tagName!=="SELECT")renderOut();return}
+});
+document.addEventListener("change",e=>{
+ const t=e.target;
+ if(t.dataset.part){st.d[t.dataset.part]=t.value;renderAll();return}
+ if(t.id==="eyestyle"){st.d.i=t.value;renderAll();return}
+ if(t.id==="explain"){st.explain=t.checked;renderOut();return}
+ if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.dataset.f==="panels")delete o.__ratio;renderRecipeUI();return}
+});
+
+/* ================= 起動 ================= */
+restore();
+buildStatic();
+let fromLink="";
+try{const q=new URLSearchParams(location.search).get("dna");if(q){st.d={...BLANK_DNA,...parseDNA(q)};fromLink=st.d.n||"名前未定"}}catch(e){}
+syncInputs();$("#explain").checked=st.explain;
+renderCard();renderRecipeUI();renderSaved();
+if(fromLink){setMode("import");$("#imp-msg").innerHTML=`<div class="okmsg">共有リンクから「${esc(fromLink)}」を読み込みました。</div>`}
+</script>
