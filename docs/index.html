@@ -1310,7 +1310,26 @@ async function eyeCopy(){
   eyeMsg("コピーしました。Gemini の入力欄に貼り付けられます");
  }catch(e){eyeMsg("このブラウザでは画像をコピーできません。「画像を保存」してから添付してください")}
 }
-function eyeDownload(){if(!eye.out)return;const a=document.createElement("a");a.href=eye.out;a.download="moffy-eye-sample.jpg";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました")}
+// 保存：ふつうのページ（GitHub Pages など）は <a download>。claude.ai の画面の中に埋め込まれているときは、
+// その画面の downloads 機能で保存する（使えないときはボタンを隠す）
+const eyeFramed=(()=>{try{return window.top!==window.self}catch(e){return true}})();
+let eyeDL;
+function initEyeDownloads(){
+ try{
+  if(!eyeFramed||!(window.claude&&typeof window.claude.use==="function"))return;
+  eyeDL=null;$("#eye-save").hidden=true;
+  window.claude.use("downloads").then(ns=>{eyeDL=ns||null;$("#eye-save").hidden=!eyeDL}).catch(()=>{});
+ }catch(e){}
+}
+async function eyeDownload(){
+ if(!eye.canvas)return;
+ if(eyeDL===undefined){const a=document.createElement("a");a.href=eye.out;a.download="moffy-eye-sample.jpg";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました");return}
+ if(!eyeDL){eyeMsg("この画面では保存できません。「画像をコピー」を使ってください");return}
+ const blob=await new Promise(res=>eye.canvas.toBlob(res,"image/jpeg",.92));
+ if(!blob){eyeMsg("画像を作れませんでした");return}
+ try{const r=await eyeDL.save({filename:"moffy-eye-sample.jpg",data:blob});if(r&&r.status==="saved")eyeMsg("画像を保存しました")}
+ catch(err){const code=err&&err.code;eyeMsg(code==="declined"?"保存をやめました":code==="rate_limited"?"少し待ってから、もう一度押してください":"この画面では保存できません。「画像をコピー」を使ってください")}
+}
 function eyeClear(b){
  if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと削除";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent="削除"},4000);return}
  clearTimeout(b._t);b.dataset.armed="";b.textContent="削除";
@@ -1332,6 +1351,7 @@ function initEye(){
  $("#eye-copy").addEventListener("click",eyeCopy);
  $("#eye-save").addEventListener("click",eyeDownload);
  $("#eye-clear").addEventListener("click",e=>eyeClear(e.currentTarget));
+ initEyeDownloads();
  try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eye.zoom=+o.zoom||1;eye.x=+o.x||0;eye.y=+o.y||0;eyeSetSource(o.src,{restore:true,ready:true})}}catch(e){}
  eyeUI();
 }

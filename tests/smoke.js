@@ -169,6 +169,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok((await p.textContent('#out')).includes('2枚目の目の見本と同じ'), 'ルールチェックで目を見本と比べる');
   await p.click('#r-fix');
   ok((await p.textContent('#out')).includes('2枚目の目の見本とそっくり'), '部分修正で目を見本どおりに直す');
+  const [eyeDl] = await Promise.all([p.waitForEvent('download', { timeout: 3000 }).catch(() => null), p.click('#eye-save')]);
+  ok(eyeDl && eyeDl.suggestedFilename() === 'moffy-eye-sample.jpg', '目の見本を画像として保存できる');
   await p.fill('#eye-zoom', '200'); await p.dispatchEvent('#eye-zoom', 'input'); await p.waitForTimeout(400);
   const srcA = await p.$eval('#eye-thumb', i => i.src);
   const pngB = await mk('#ff3366');
