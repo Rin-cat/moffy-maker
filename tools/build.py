@@ -5,7 +5,7 @@
   python3 tools/build.py                       # 共有リンクなし（QR は DNA コードの文字）
   python3 tools/build.py https://<user>.github.io/<repo>/   # 共有リンクと OG 画像の絶対 URL を入れる
 """
-import html, pathlib, re, sys
+import html, pathlib, re, shutil, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 src = (ROOT / "moffy-studio.html").read_text(encoding="utf-8")
@@ -30,7 +30,8 @@ icon = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0
         "%3Cpath d='M23 26l2 6 6 0-6 2-2 6-2-6-6-2 6 0z M41 26l2 6 6 0-6 2-2 6-2-6-6-2 6 0z' fill='%23fff'/%3E%3C/svg%3E")
 extra = f"""<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4C5BD4">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ECEFF4">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F141D">
 <link rel="icon" href="{icon}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="{title}">
@@ -47,4 +48,7 @@ out = f"<!doctype html>\n<html lang=\"ja\">\n<head>\n{extra}{head.strip()}\n{res
 (ROOT / "docs").mkdir(exist_ok=True)
 (ROOT / "docs" / "index.html").write_text(out, encoding="utf-8")
 (ROOT / "docs" / ".nojekyll").write_text("", encoding="utf-8")
+# ページが読む画像（assets/hero.jpg など）を docs/ にも置く
+(ROOT / "docs" / "assets").mkdir(exist_ok=True)
+shutil.copy2(ROOT / "assets" / "hero.jpg", ROOT / "docs" / "assets" / "hero.jpg")
 print("docs/index.html を書き出しました", "(共有リンク: " + site_url + ")" if site_url else "(共有リンクなし)")

@@ -68,3 +68,12 @@
 - 自動点検で、背景がある場面（おでかけ・季節・写真）に「スタジオライト」が残っていた矛盾を発見して修正
 - サムネイル生成の実例：3匹とも「鼻なし」と指定したのに、Gemini は2枚で計3匹に鼻を描いた。紺色の子は「目1つ」の指定に対して2つ
   → ルールチェックと部分修正のレシピが必要な根拠
+
+## サイクル5：UI の作り直し（2026-11-04）
+- frontend-design：よくある「AI っぽいデザイン」（同じ形の角丸カードが並ぶ、等幅の小さなラベル、見出しの上の英字ラベルなど）を避け、題材の世界から形を選ぶ
+  → アニメ制作でキャラの見た目をそろえるための「設定資料」（キャラ表・色指定・作画の指示書）をモチーフにした。このツールの役目と同じだから
+  → 色は役割で分ける：青鉛筆＝描く・選ぶ、赤鉛筆＝直す・注意・解説（アニメの現場の慣習）
+- web-design-guidelines（https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md）で点検
+  → 入力欄の name / autocomplete、入力例の「…」、スキップリンク、画像の width/height・fetchpriority、ライト／ダークのテーマ色、
+    select の背景色、製品名とコードの translate="no"、数字の Intl.NumberFormat、スクロール領域の overscroll-behavior などを修正
+  → 意図して残したもの：ラフの描き込みアニメ（stroke-dashoffset、0.55秒、動きを減らす設定では止まる）

@@ -39,7 +39,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   // Gemini が返す JSON の取り込み（自由記述の値）
   await p.fill('#imp', '```json\n{"name":"ソラ","color":"水色とラベンダーのグラデーション","horn":"なし","ear":"不明","tail":"ふさふさの長いしっぽ","eyes":"３つ","wing":"小さな白い羽","accessory":"黄色い帽子","other":"おなかに星"}\n```');
   await p.click('#imp-go');
-  const dl = await p.textContent('#c-dl');
+  const dl = (await p.textContent('#chip')) + (await p.textContent('#c-dl'));
   ok(dl.includes('水色とラベンダー') && dl.includes('黄色い帽子'), 'JSON 取り込み（自由記述）');
   ok((await p.$eval('#p-y', s => s.value)) === '3', 'JSON 取り込み（全角の目の数）');
   ok((await p.$eval('#p-h', s => s.value)) === 'none', 'JSON 取り込み（なし→none）');
@@ -92,7 +92,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await p.selectOption('#xi', 'high');
   await p.click('#r-sheet');
   const sh = await p.textContent('#out');
-  ok(sh.includes('【その子らしさ】') && sh.includes('リュック') && sh.includes('強く出す'), '設定画にモチーフと強さが入る');
+  ok(sh.includes('その子らしさ') && sh.includes('リュック') && sh.includes('強く出す'), '設定画にモチーフと強さが入る');
   ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '設定画の JSON にモチーフとプロフィールの欄');
   await p.fill('#mo', ''); await p.fill('#kw', 'ほげほげ'); await p.click('#mo-suggest');
   ok((await p.textContent('#mo-hint')).includes('辞書にない'), '辞書にない言葉の案内');
@@ -103,7 +103,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const cm = await p.textContent('#out');
   ok(cm.includes('まかせて！') && cm.includes('雷の音') && cm.includes('ぶわっと'), '4コマに口ぐせ・苦手・クセが入る');
   await p.click('#r-outing');
-  ok((await p.textContent('#out')).includes('【しぐさとお話】'), 'おでかけにクセが入る');
+  ok((await p.textContent('#out')).includes('しぐさとお話'), 'おでかけにクセが入る');
   const code3 = await p.textContent('#c-code');
   await p.click('[data-sample="2"]');
   await p.click('#mode-import'); await p.fill('#imp', code3); await p.click('#imp-go');
