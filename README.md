@@ -117,6 +117,7 @@ tools/build.py         docs/index.html を作る
 tools/assets.js        サムネイル2種（絵に文字を重ねる）と gem-instructions.md を作る
 tests/                 自動テスト
 .claude/skills/frontend-design/  デザイン調整用スキル（Anthropic 製。anthropics/skills から未改変で同梱、Apache 2.0）
+.claude/skills/web-design-guidelines/  UI レビュー用スキル（Vercel 製。vercel-labs/agent-skills から未改変で同梱、MIT）
 ```
 
 `moffy-studio.html` を編集したら、公開用を作り直します。
