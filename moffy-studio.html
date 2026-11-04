@@ -155,7 +155,10 @@ details.fold[open]>summary{margin-bottom:14px}
 .sketch .ink{stroke:var(--ink)}
 .sketch .ink-fill{fill:var(--ink);fill-opacity:.75;stroke:var(--ink)}
 .sketch .tooth{fill:#FFFFFF}
-.sketch .eye-rim{fill:#1E1B2C}
+.sketch .eye-rim{fill:#FFFFFF;stroke:#1E1B2C;stroke-width:1.5}
+.sketch .crystal{fill:#CFEAFF;fill-opacity:.85}
+.sketch .pink{fill:#F6A9C6;fill-opacity:.75}
+.sketch .gold-ln{stroke:#D49A12;stroke-width:2.8}
 .sketch .ground{fill:var(--rule);fill-opacity:.8}
 @media (prefers-reduced-motion:no-preference){.sketch svg.drawing .ln{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s ease-out forwards}}
 @keyframes draw{to{stroke-dashoffset:0}}
@@ -165,7 +168,7 @@ details.fold[open]>summary{margin-bottom:14px}
 .chip-spec b{margin-right:8px;color:var(--sub);font-weight:700}
 .swatch{width:26px;height:26px;border-radius:4px;border:1px solid var(--rule-strong)}
 .swatch[data-auto]{background:repeating-linear-gradient(45deg,var(--fill) 0 5px,var(--paper) 5px 10px)}
-.swatch.eye{border-radius:50%;background:conic-gradient(#4285F4,#EA4335,#FBBC04,#34A853,#4285F4);display:grid;place-items:center}
+.swatch.eye{border-radius:50%;border:1.5px solid #1E1B2C;box-shadow:inset 0 0 0 2px #FFFFFF;background:conic-gradient(#4285F4,#9B72CB,#EA4335,#F5A35C,#FBBC04,#34A853,#4285F4);display:grid;place-items:center}
 .swatch.eye.classic{background:linear-gradient(#4285F4,#9B72CB)}
 .swatch.eye::after{content:"✦";color:#FFFFFF;font-size:12px;line-height:1}
 .spec{margin:0;display:grid;font-size:14px}
@@ -200,6 +203,27 @@ details.fold[open]>summary{margin-bottom:14px}
 .attach .clip{width:22px;height:22px;margin-top:2px;fill:none;stroke:var(--blue);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .attach b{margin-right:10px}
 .attach .warn-inline{color:var(--red);margin-top:4px;font-size:13.5px}
+/* 目の見本 */
+.eye-ref{display:grid;gap:10px;border:1px dashed var(--rule-strong);border-radius:6px;padding:12px 14px;background:var(--fill)}
+.eye-head{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;justify-content:space-between}
+.eye-head .switch input{accent-color:var(--blue)}
+.eye-body{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:520px){.eye-body{grid-template-columns:minmax(0,1fr)}}
+.eye-drop{width:132px;height:132px;box-sizing:border-box;border:1.5px dashed var(--rule-strong);border-radius:6px;background:var(--paper);display:grid;place-items:center;text-align:center;padding:6px;transition:border-color .15s,background-color .15s}
+.eye-drop.over{border-color:var(--blue);background:var(--blue-soft)}
+.eye-drop img{width:118px;height:118px;object-fit:contain;border-radius:3px;background:#FFFFFF}
+.eye-drop p{font-size:12px;color:var(--sub);line-height:1.6}
+.eye-side{display:grid;gap:8px;min-width:0}
+.eye-ctrl{display:grid;gap:6px}
+.eye-ctrl>label{display:grid;grid-template-columns:3.5em minmax(0,1fr);gap:8px;align-items:center;font-size:13px;font-weight:700;max-width:360px}
+.eye-ctrl input[type=range]{width:100%;margin:0;accent-color:var(--blue)}
+kbd{font-family:var(--f-code);font-size:11px;border:1px solid var(--rule-strong);border-bottom-width:2px;border-radius:3px;padding:0 3px;background:var(--fill);color:var(--ink)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.danger:hover{background:var(--red-soft);color:var(--red)}
+.refs{list-style:none;margin:4px 0 2px;padding:0;display:grid;gap:4px}
+.refs li{display:flex;flex-wrap:wrap;align-items:center}
+.refs li b{font-family:var(--f-code);font-weight:500;margin-right:8px}
+.attach-thumb{width:28px;height:28px;margin-left:8px;border-radius:3px;border:1px solid var(--rule);background:#FFFFFF}
 .out{border:1px solid var(--rule-strong);border-radius:2px;background:var(--paper);max-height:72vh;overflow:auto;overscroll-behavior:contain}
 .blk{display:grid;grid-template-columns:7.5em minmax(0,1fr);border-bottom:1px solid var(--rule)}
 .blk:last-child{border-bottom:0}
@@ -239,8 +263,8 @@ footer ul{margin:0;padding-left:1.2em}
       <p class="lede">Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描いてもらうための指示書（プロンプト）をつくります。画像は自分の <span translate="no">Gemini</span> アプリで作るので、APIキーも費用もいりません。</p>
       <ol class="flow">
         <li><b>モッフィーを決める</b><span>言葉とパーツから。公式の子も取り込めます</span></li>
-        <li><b>指示書を選ぶ</b><span>設定画・おでかけ・スタンプなど15種類</span></li>
-        <li><b><span translate="no">Gemini</span> に貼る</b><span>設定画を添付して送るだけ</span></li>
+        <li><b>指示書を選ぶ</b><span>基準画像・おでかけ・スタンプなど16種類</span></li>
+        <li><b><span translate="no">Gemini</span> に貼る</b><span>基準画像と目の見本を添付して送るだけ</span></li>
       </ol>
     </div>
     <figure class="hero">
@@ -291,7 +315,7 @@ footer ul{margin:0;padding-left:1.2em}
           <details class="fold" id="prof">
             <summary>プロフィール帳（任意）</summary>
             <div class="fold-body">
-              <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄は設定画のときに Gemini が考えます。</p>
+              <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄は基準画像のときに Gemini が考えます。</p>
               <div class="row2">
                 <div class="field"><label for="pq">口ぐせ</label><input type="text" id="pq" name="catchphrase" autocomplete="off" placeholder="例：てっぺんまで、もうひと息！…"></div>
                 <div class="field"><label for="pr">クセ</label><input type="text" id="pr" name="quirk" autocomplete="off" placeholder="例：うれしいとしっぽが揺れる…"></div>
@@ -304,12 +328,12 @@ footer ul{margin:0;padding-left:1.2em}
           <details class="fold" id="adv" open>
             <summary>見た目を指定する（任意）</summary>
             <div class="fold-body">
-              <p class="hint">選んだ項目は、毎回の指示書に「固定パーツ」として入ります。「おまかせ」は設定画で Gemini が決めます。</p>
+              <p class="hint">選んだ項目は、毎回の指示書に「固定パーツ」として入ります。「おまかせ」は基準画像で Gemini が決めます。</p>
               <div class="field"><span class="lbl" id="lbl-c">毛の色</span><div class="swatches" id="colors" role="group" aria-labelledby="lbl-c"></div></div>
               <div class="row2" id="partsel"></div>
               <div class="row2">
                 <div class="field"><label for="eyestyle">目のスタイル</label>
-                  <select id="eyestyle" name="eye-style"><option value="g4">2026年版（4色グラデーション）</option><option value="classic">クラシック（青→紫）</option></select></div>
+                  <select id="eyestyle" name="eye-style"><option value="g4">2026年版（虹色）</option><option value="classic">クラシック（青→紫）</option></select></div>
                 <div class="field"><label for="ot">そのほかの特徴</label><input type="text" id="ot" name="other" autocomplete="off" placeholder="例：おなかに星の模様…"></div>
               </div>
             </div>
@@ -324,7 +348,7 @@ footer ul{margin:0;padding-left:1.2em}
             <button type="button" class="btn ghost" id="imp-recipe">公式の子を取り込むレシピを開く</button>
           </div>
           <div id="imp-msg" role="status"></div>
-          <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。設定画のあとに Gemini が返す JSON も、ここに貼ると「おまかせ」だった所が確定します。</p>
+          <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。基準画像のあとに Gemini が返す JSON も、ここに貼ると「おまかせ」だった所が確定します。</p>
         </div>
       </section>
 
@@ -369,11 +393,39 @@ footer ul{margin:0;padding-left:1.2em}
 
     <section class="sheet order" id="recipes" aria-labelledby="h-recipe">
       <div class="sheet-title"><h2 id="h-recipe">指示書</h2><p class="sheet-no">レシピを選ぶと、<span translate="no">Gemini</span> に貼る文章ができます</p></div>
+      <section class="eye-ref" aria-labelledby="h-eye">
+        <div class="eye-head">
+          <h3 id="h-eye">目の見本</h3>
+          <label class="switch"><input type="checkbox" id="eye-use" name="eye-use" checked disabled> 指示書で使う</label>
+        </div>
+        <div class="eye-body">
+          <div class="eye-drop" id="eye-drop">
+            <img id="eye-thumb" width="120" height="120" alt="目の見本（白い正方形に整えたもの）" hidden>
+            <p id="eye-empty">ここに画像をドロップするか、貼り付け（<kbd>Ctrl</kbd>+<kbd>V</kbd>／<kbd>⌘</kbd>+<kbd>V</kbd>）</p>
+          </div>
+          <div class="eye-side">
+            <p class="hint">公式ジェネレーターは、目の見本画像を毎回いっしょに渡してキラキラの目を描かせています。気に入った目の画像（公式ジェネレーターで作った子の顔のアップなど）を入れると、指示書に「目の見本」の添付が入り、目だけをまねるように頼みます。画像はこのブラウザの中だけで扱い、どこにも送信しません（「文章だけ」のときは使いません）。</p>
+            <div class="btns"><button type="button" class="btn ghost small" id="eye-pick">画像を選ぶ</button></div>
+            <div class="eye-ctrl" id="eye-ctrl" hidden>
+              <label>拡大<input type="range" id="eye-zoom" name="eye-zoom" min="100" max="400" step="5" value="100"></label>
+              <label>左右<input type="range" id="eye-x" name="eye-x" min="-100" max="100" step="2" value="0"></label>
+              <label>上下<input type="range" id="eye-y" name="eye-y" min="-100" max="100" step="2" value="0"></label>
+              <div class="btns">
+                <button type="button" class="btn ghost small" id="eye-copy">画像をコピー</button>
+                <button type="button" class="btn ghost small" id="eye-save">画像を保存</button>
+                <button type="button" class="btn ghost small danger" id="eye-clear">削除</button>
+              </div>
+            </div>
+            <input type="file" id="eye-file" name="eye-file" accept="image/*" hidden>
+            <div class="toast" id="toast3" role="status"></div>
+          </div>
+        </div>
+      </section>
       <div class="rgroups" id="rgroups"></div>
       <p class="rdesc" id="rdesc"></p>
       <div class="rbar">
-        <div class="tabs" role="group" aria-label="設定画の使い方" id="attach-tabs">
-          <button type="button" data-attach="1" aria-pressed="true">設定画を添付する</button>
+        <div class="tabs" role="group" aria-label="画像の添付" id="attach-tabs">
+          <button type="button" data-attach="1" aria-pressed="true">画像を添付する</button>
           <button type="button" data-attach="0" aria-pressed="false">文章だけ</button>
         </div>
         <label class="switch"><input type="checkbox" id="explain" name="explain"> 赤ペンの解説を表示</label>
@@ -395,7 +447,7 @@ footer ul{margin:0;padding-left:1.2em}
     <section class="notes" aria-labelledby="h-notes">
       <h2 id="h-notes">知っておきたいこと</h2>
       <ul>
-        <li><b>画像の添付は18歳以上</b><span>設定画を添付して描かせるのは、Gemini アプリでは「画像の編集」にあたり、18歳以上が対象です。18歳未満の人は「文章だけ」を選んでください。</span></li>
+        <li><b>画像の添付は18歳以上</b><span>基準画像や目の見本を添付して描かせるのは、Gemini アプリでは「画像の編集」にあたり、18歳以上が対象です。18歳未満の人は「文章だけ」を選んでください。</span></li>
         <li><b>モデルは <span translate="no">Flash</span> か <span translate="no">Pro</span></b><span><span translate="no">Flash-Lite</span> を選ぶと画像生成が <span translate="no">Nano Banana 2 Lite</span> になり、参照画像を使った一貫性が弱くなります。</span></li>
         <li><b>生成回数を節約する</b><span>無料版の1日の生成数には上限があります。気になる所は作り直さず、レシピ「部分修正」でその部分だけ直すと、元の子も崩れません。</span></li>
         <li><b>非公式のファンツールです</b><span>Google とは関係ありません。既存のキャラクターや実在の人物に似せる使い方はせず、公式 note の「マナーを守って楽しく遊ぼう」にならって楽しんでください。</span></li>
@@ -409,7 +461,7 @@ footer ul{margin:0;padding-left:1.2em}
           <thead><tr><th scope="col">場面</th><th scope="col">公式モッフィージェネレーター</th><th scope="col">このツール</th></tr></thead>
           <tbody>
             <tr><td>生む</td><td>言葉とタグから、画像と性格を生成。ルールの自動チェックつき</td><td>公式の子を「取り込む」か、パーツを指定して言葉から作る</td></tr>
-            <tr><td>固定する</td><td>画像を保存（ダウンロード）</td><td>三面図と表情の設定画、DNAコード、QRコード</td></tr>
+            <tr><td>固定する</td><td>画像を保存（ダウンロード）</td><td>基準画像・設定画、目の見本、DNAコード、QRコード</td></tr>
             <tr><td>遊ぶ</td><td>着せ替え・おでかけ・ぷくぷくシール</td><td>左の3つに加え、フィギュア・アイコン・スタンプ・季節・4コマ・共演・自分の写真</td></tr>
             <tr><td>直す</td><td>要望を書き足して再生成</td><td>理由つきのルールチェックと、その部分だけを直す部分修正</td></tr>
           </tbody>
@@ -458,9 +510,9 @@ function guessHex(t){for(const [re,h] of COLOR_WORDS) if(re.test(t)) return h; r
 
 // [id, 画面の表示, 指示書に入れる文]
 const PARTS={
- s:{name:"体のかたち",opts:[["auto","おまかせ"],["round","まんまる","体はボールのようなまんまるのかたち"],["egg","たまご型","体はたてに少し長いたまご型"],["pear","ずんぐり洋なし","体は下のほうがふっくらした、ずんぐりした洋なし型"],["mochi","おもち型","体は横に少しつぶれた、おもちのような横長のかたち"]]},
+ s:{name:"体のかたち",opts:[["auto","おまかせ"],["round","まんまる","体はボールのようなまんまるのかたち"],["egg","たまご型","体はたてに少し長いたまご型"],["pear","ずんぐり洋なし","体は下のほうがふっくらした、ずんぐりした洋なし型"],["mochi","おもち型","体は横に少しつぶれた、おもちのような横長のかたち"],["onigiri","おにぎり型","体は角の丸い三角形の、おにぎりのようなかたち"],["block","ブロック型","体は角の丸い四角の、ころんとしたブロックのようなかたち"],["drop","しずく型","体は頭のてっぺんが少しとがった、しずくのようなかたち"],["manju","おまんじゅう型","体は底が平らで上がふっくら丸い、おまんじゅうのようなかたち"],["snow","雪だるま型","体は丸い胴の上に、ひとまわり小さい丸い頭がのった、雪だるまのような2段のかたち"]]},
  u:{name:"毛並み",opts:[["auto","おまかせ"],["soft","長くやわらか","全身が長くやわらかい毛におおわれている"],["spiky","頭の毛が逆立つ","全身が長くやわらかい毛におおわれ、頭のてっぺんの毛だけがツンと逆立っている"],["curly","くるくる","全身がくるくるとカールした、ヒツジのようなやわらかい毛におおわれている"],["extra","もこもこ多め","全身が、とくに毛足の長いもこもこの毛におおわれている"]]},
- h:{name:"ツノ",opts:[["auto","おまかせ"],["none","なし","頭のてっぺんはツノのない、なめらかなまるい毛のライン"],["one","1本","おでこの中央に、小さな円すい形のツノが1本"],["two","2本","頭の左右に、先の丸い小さなツノが2本"],["stripe","しま模様2本","頭の左右に、しま模様の小さなツノが2本"],["curl","巻きヅノ2本","頭の左右に、くるんと巻いたヒツジのようなツノが2本"]]},
+ h:{name:"ツノ",opts:[["auto","おまかせ"],["none","なし","頭のてっぺんはツノのない、なめらかなまるい毛のライン"],["one","1本","おでこの中央に、小さな円すい形のツノが1本"],["two","2本","頭の左右に、先の丸い小さなツノが2本"],["stripe","しま模様2本","頭の左右に、しま模様の小さなツノが2本"],["curl","巻きヅノ2本","頭の左右に、くるんと巻いたヒツジのようなツノが2本"],["crystal","クリスタル2本","頭の左右に、宝石のようにすきとおったクリスタルのツノが2本"],["flower","花が咲くツノ","おでこの中央に小さなツノが1本あり、その先に小さな花が1輪咲いている"],["bolt","雷の形2本","頭の左右に、ギザギザした雷の形のツノが2本"],["antenna","星の触角","頭のてっぺんから、先に小さな星がついた細い触角が2本のびている"],["mush","きのこの触角","頭のてっぺんから、先に小さなきのこがついた短い触角が2本のびている"]]},
  e:{name:"耳",opts:[["auto","おまかせ"],["none","なし","耳は毛にうもれて見えない"],["droop","たれ耳","体の左右に、毛足の長いたれ耳"],["up","立ち耳","頭の上に、ぴんと立った細長い耳が2つ"],["round","まる耳","頭の上に、小さな丸い耳が2つ"]]},
  t:{name:"しっぽ",opts:[["auto","おまかせ"],["none","なし","しっぽは見えず、おしりまでまるい毛のかたまり"],["puff","ポンポン","おしりに、ポンポンのような丸いしっぽ"],["long","ふさふさ長め","先がふさふさした、長いしっぽ"],["dragon","ドラゴン風","先がとがった、ドラゴンのような短いしっぽ"]]},
  w:{name:"はね",opts:[["auto","おまかせ"],["none","なし","背中はまるい毛だけで、はねはない"],["angel","天使のはね","背中に、小さな白い天使のはね"],["bat","こうもりのはね","背中に、小さなこうもりのはね"],["fairy","妖精のはね","背中に、すきとおった小さな妖精のはね"]]},
@@ -477,7 +529,7 @@ const KEYS=[...TEXT_KEYS,"i","x","c",...PART_ORDER];
 const DEFAULT_DNA={n:"ヤマモッフィー",k:"青色、登山が好き、食いしん坊",p:"元気で食いしん坊な山好き",o:"",m:"小さなリュック、コンパス、ほっぺの日焼け",q:"てっぺんまで、もうひと息！",r:"うれしいとしっぽのポンポンがぶんぶん揺れる",g:"山頂で食べるおにぎり",b:"くだり坂",z:"世界中の山のてっぺんでおやつを食べること",i:"g4",x:"mid",c:"sky",s:"round",u:"soft",h:"two",e:"none",t:"puff",w:"none",y:"2",f:"one",a:"scarf"};
 const BLANK_DNA={n:"",k:"",p:"",o:"",m:"",q:"",r:"",g:"",b:"",z:"",i:"g4",x:"mid",c:"auto",s:"auto",u:"auto",h:"auto",e:"auto",t:"auto",w:"auto",y:"2",f:"auto",a:"auto"};
 const INTENSITY={low:["ひかえめ","モチーフは小さめに、アクセントとして控えめに入れる。"],mid:["ふつう","モチーフは、ひと目でわかる大きさで入れる。"],high:["つよめ","モチーフは大きめにはっきり描き、色やシルエットにもその言葉らしさを強く出す。ただし、かわいさとモッフィーのルールは保つ。"]};
-// 言葉 → 目に見えるモチーフ（その子らしさ）。辞書にない言葉は設定画のときに Gemini が考える
+// 言葉 → 目に見えるモチーフ（その子らしさ）。辞書にない言葉は基準画像のときに Gemini が考える
 const MOTIF_DICT={
  "登山":["小さなリュック","コンパス","ほっぺの日焼け"],"山":["小さなリュック","登山帽"],"食いしん坊":["ぽっこりしたおなか","口もとのクッキーのかけら"],
  "ふわふわ":["綿あめのようにとくにふわふわした毛","雲のような毛のかたまり"],"ケーキ":["頭にのせた小さないちごのショートケーキ","クリーム色のおなか"],
@@ -528,9 +580,10 @@ function gacha(){
 }
 // レシピごとの「このあと」
 const NEXT={
- sheet:["出てきた設定画を保存する（以後のレシピで毎回添付します）","一緒に返ってきた JSON をコピーし、「1. モッフィーを決める」の「取り込む」に貼る（おまかせだった所が確定します）","遊ぶレシピを選び、設定画を添付して指示書を貼る"],
- import:["Gemini の返事（JSON）をコピーし、「取り込む」に貼る","レシピ「設定画をつくる」で、もとにする画像を「あり」にして設定画を作る"],
- scene:["気になる所があれば「ルールチェック」か「部分修正」へ","同じチャットなら、続けて「次は〇〇して」と頼むだけでも見た目を保ちやすくなります。チャットが長くなったら、新しいチャットで設定画を添付し直します"],
+ base:["出てきた画像を保存する（以後のレシピで「基準画像」として添付します）","一緒に返ってきた JSON をコピーし、「モッフィーを決める」の「取り込む」に貼る（おまかせだった所が確定します）","目が見本どおりでなければ「部分修正」で目だけ直す","横向きや後ろ姿も描きたいときは「設定画をつくる」へ"],
+ sheet:["設定画は、横向きや後ろ姿を描くときの資料として保存する","ふだんのレシピでは、基準画像のほうを添付します"],
+ import:["Gemini の返事（JSON）をコピーし、「取り込む」に貼る","レシピ「基準画像をつくる」で、もとにする画像を「あり」にして基準画像を作る"],
+ scene:["気になる所があれば「ルールチェック」か「部分修正」へ","同じチャットなら、続けて「次は〇〇して」と頼むだけでも見た目を保ちやすくなります。チャットが長くなったら、新しいチャットで基準画像と目の見本を添付し直します"],
  stamps:["文字がまちがっていたら「部分修正」の「そのほか」に正しい文字を書いて直す","コマ数がずれたら、4コマから試すと安定します"],
  friends:["友だちにも自分の DNA コードを渡すと、相手の画面でも共演の指示書を作れます"],
  check:["返ってきた fix_prompt の文を、判定した画像と同じチャットにそのまま送ると、その部分だけ直せます"],
@@ -544,7 +597,7 @@ const ipHits=t=>[...new Set((String(t||"").match(new RegExp(IP_SRC,"gi"))||[]))]
 const ipClean=t=>String(t||"").replace(new RegExp(IP_SRC,"gi"),"").replace(/[、,]\s*(?=[、,])/g,"").replace(/^[、,\s]+|[、,\s]+$/g,"").trim();
 
 /* ================= 状態 ================= */
-const st={d:{...DEFAULT_DNA},mode:"new",recipe:"sheet",attach:true,explain:false,ro:{}};
+const st={d:{...DEFAULT_DNA},mode:"new",recipe:"base",attach:true,explain:false,ro:{},useEye:true};
 
 /* ================= DNA の読み書き ================= */
 const optOf=(k,v)=>PARTS[k].opts.find(o=>o[0]===v);
@@ -611,23 +664,23 @@ const WHY={
  intent:["画像の用途を伝えると、構図や雰囲気が目的に合いやすくなります。","公式ガイド「Provide Context and Intent」"],
  char:["キーワードを並べるより、文章で具体的に描写したほうが狙いどおりになります。本家の2025年版ジェネレーターも、色・体の形・ツノ・口・毛・アクセサリーを文章にしてつなげる形でした。","公式ガイド「Be Hyper-Specific」／2025年版ジェネレーターのプロンプト"],
  charAttach:["以前に生成した画像を一緒に渡すと、同じキャラクターを保ちやすくなります。文章は確認用で、食いちがったら画像を優先させます。","公式ガイド「Character consistency」"],
- charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、設定画のあとに返ってくる JSON を取り込んで確定させるのがおすすめです。","このツールの仕組み"],
- eye:["スパークルアイはモッフィーの証で、細かいぶん崩れやすい部分です。色・星の大きさ・光り方まで指定します。","公式 note（2026年6月）／2025年版ジェネレーターのプロンプト"],
- nose:["「描かない」だけより、望む状態（目と口のあいだは毛並みが続く）を書くほうが守られやすくなります。本家の大事なルールなので、短い禁止文も残しています。","公式ガイド「Semantic Negative Prompts」"],
- style:["質感をはっきり書くと、場面が変わっても「ふわふわの3DCG」から外れにくくなります。","公式 note（モッフィーは Nano Banana から生まれた3DCGのキャラクター）"],
- ratio:["参照画像を添付すると、出力はその画像の縦横比に引きずられます（設定画は横長）。毎回はっきり指定します。","公式ドキュメント「Aspect ratios and image size」"],
+ charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、基準画像のあとに返ってくる JSON を取り込んで確定させるのがおすすめです。","このツールの仕組み"],
+ rules:["公式ジェネレーターは、鼻・目・頭身などの絶対ルールを、毎回の文章とは別枠（システム指示）で最初に渡しています。ここでも最初に短くまとめ、場面の説明に埋もれないようにします。","公式ジェネレーターの作り方（Canvas のコード）"],
+ rulesEye:["公式ジェネレーターがキラキラの目を安定して出せるのは、目の見本画像を毎回いっしょに渡し、目は見本どおりに、見本のキャラの色や形はまねしないように指示しているからです。同じやり方です。","公式ジェネレーターの作り方（Canvas のコード）"],
+ base:["公式ジェネレーターの最初の1枚は、1体・真正面・左右対称・白い背景・正方形です。目が大きく写り、あとで基準画像として使いやすくなります。","公式ジェネレーターの作り方（Canvas のコード）"],
+ ratio:["参照画像を添付すると、出力はその画像の縦横比に引きずられます。毎回はっきり指定します。","公式ドキュメント「Aspect ratios and image size」"],
  steps:["要素が多い場面は、手順に分けると整理されて描き崩れが減ります。","公式ガイド「Use Step-by-Step Instructions」"],
- check:["描いたあとに自分で見直させます。公式ジェネレーターのチェック項目（鼻なし・口あり・目は3つまで・キラキラの目・ふわふわ）に、このモッフィーのDNAを足しています。","公式 note のルールチェック"],
- sheet:["三面図と表情をそろえた設定画は、あとで別の場面を描くときの「正解の見本」になります。","公式ガイド「Character consistency: 360 view」"],
+ check:["公式ジェネレーターも、描いたあとに別の手順でルールを確かめています。ここでは短く見直しを頼み、きびしい判定はレシピ「ルールチェック」で行います。","公式ジェネレーターの作り方（Canvas のコード）"],
+ sheet:["三面図と表情をそろえた設定画は、横向きや後ろ姿を描くときの資料になります。表情の名前をかぎかっこつきで書くと文字として描かれやすいので、かっこを使わず、文字は描かないと明記します。","公式ガイド「Character consistency: 360 view」"],
  json:["おまかせで決まった見た目を文字で受け取り、このページに取り込むと DNA が確定します。","このツールの仕組み"],
  text:["文字入りの画像は、先に文字を確定させてから描かせるとうまくいきます。コマ数は指定とずれることがあるので、まずは4コマがおすすめです。","公式ドキュメント「Limitations」"],
  fix:["全体を作り直すより「ここだけ直して、ほかは同じに」と頼むほうが、元の子が崩れず、1日の生成回数も節約できます。","公式ガイド「Inpainting (Semantic masking)」"],
  friends:["Nano Banana 2.1 が見た目を保てるキャラクターは4体までです。画像の順番と名前を対応させて、描き分けを頼みます。","公式ドキュメント「Use up to 14 reference images」"],
  import:["公式ジェネレーターで生まれた子を、このツールの DNA に変換します。画像を読むだけなので、画像の生成回数は使いません。","このツールの仕組み"],
- judge:["合否だけでなく理由を書かせると、判定が甘くなりにくく、直す場所もはっきりします。","公式ジェネレーターのチェックを、理由つきに拡張"],
+ judge:["合否だけでなく理由を書かせると、判定が甘くなりにくく、直す場所もはっきりします。公式ジェネレーターも、黒い瞳孔のような目は不合格にしています。","公式ジェネレーターのチェックを、理由つきに拡張"],
  figure:["Google Japan が紹介した「フィギュア化」の遊び方を、DNA 固定つきにしたものです。","Google Japan の投稿（2025年9月）"],
  comic:["公式ガイドの「コマ割りまんが」の使い方です。セリフは少ないほど崩れにくくなります。","公式ガイド「Sequential art」"],
- gem:["Gem にルールを入れておくと、毎回指示書を貼らなくても同じ決まりで作れます。リンクで友だちにも共有できます。","Gemini アプリ ヘルプ「Gem を共有する」"],
+ gem:["Gem のカスタム指示は、公式ジェネレーターのシステム指示と同じく、毎回のやりとりの前提になります。ルールを入れておくと、毎回指示書を貼らなくても同じ決まりで作れます。リンクで友だちにも共有できます。","Gemini アプリ ヘルプ「Gem を共有する」"],
  scene:["背景・モッフィー・なじませ方の順に頼むと、写真のような背景でもモッフィーの質感が保たれます。","公式ガイド「Use Step-by-Step Instructions」"],
  motif:["モデルはモッフィーらしい「かわいい・ふわふわ」に寄せて描くので、言葉のままだと個性が薄まります（体験記：「ドラゴン」と入れたのに「想像よりかなりかわいめ」）。言葉を目に見えるモチーフに置きかえると残りやすくなります。","公式ガイド「Be Hyper-Specific」／モッフィーの体験記"],
  motifDecide:["言葉を、持ち物・模様・体の一部のような目に見えるものに変えてから描かせます。決まったモチーフは JSON で返してもらい、DNA に固定します。","公式ガイド「Be Hyper-Specific」"],
@@ -636,12 +689,6 @@ const WHY={
 };
 const seg=(h,t,why)=>({h,t,why:why?why[0]:"",src:why?why[1]:""});
 const RATIO_LABEL={"1:1":"1:1（正方形）","4:5":"4:5（縦長）","3:4":"3:4（縦長）","9:16":"9:16（縦長）","16:9":"16:9（横長）","3:2":"3:2（横長）"};
-const STYLE="質感は、毛足の長いぬいぐるみのような、やわらかい3DCG。やさしいスタジオライトで、毛の1本1本がふんわりと光を受けている。こわさのない、思わず抱きしめたくなる雰囲気。";
-const STYLE_SCENE="質感は、毛足の長いぬいぐるみのような、やわらかい3DCG。光の向きと色は背景に合わせ、毛の1本1本がふんわりと光を受けている。こわさのない、思わず抱きしめたくなる雰囲気。";
-const gradText=d=>d.i==="classic"?"Google Gemini のブランドカラーの青から紫へ、なめらかに変わるたて方向のグラデーション":"青・赤・黄・緑の4色が、なめらかなグラデーションで溶け合う色";
-const gradShort=d=>d.i==="classic"?"青→紫のグラデーション":"青・赤・黄・緑の4色グラデーション";
-const eyeText=d=>`目は${eyeCount(d)}つ。大きくつぶらな、モッフィーの証「スパークルアイ」。黒目（虹彩）はやや小さめで、${gradText(d)}。虹彩の中央には白く光る大きな四芒星（✦）のハイライトがあり、瞳孔をすっかり覆っているが、虹彩全体は覆っていない。星のふちは少しやわらかく、まわりにほのかな光のにじみ（ブルーム）がある。目全体はやさしく、うるっと光る質感。`;
-function faceText(d,expr){const f=partPhrase(d,"f");return `顔のパーツは目と口だけ。目と口のあいだには鼻がなく、なめらかな毛並みがそのまま続いている（鼻は描かない）。口は小さく、${f||"キバの有無はもとになった言葉に合わせて決める"}。表情：${expr}。`}
 function bodyText(d,how){
  const out=[];const cd=colorDesc(d);
  out.push(`体の色は${cd||"もとになった言葉に合う色"}。`);
@@ -655,19 +702,9 @@ function bodyText(d,how){
  }
  return out.join("");
 }
-function charSeg(d,how){
- const nm=d.n||"名前未定";let t="";
- if(how==="attach")t+=`添付した画像のモッフィー「${nm}」と同じ子を描く。見た目は添付画像を正とし、次の説明と食いちがう所があれば添付画像に合わせる。\n`;
- if(how==="attach-first"){t+=`1枚目の画像（設定画）のモッフィー「${nm}」と同じ子を描く。見た目は1枚目を正とし、次の説明と食いちがう所があれば1枚目に合わせる。\n`;how="attach"}
- t+=`「${nm}」は、ぬいぐるみのようにふわふわした3DCGのモンスター「モッフィー」の1匹。ずんぐりした体つき。`;
- if(d.k)t+=`もとになった言葉は「${d.k}」。`;
- if(d.p)t+=`性格は「${d.p}」。`;
- t+="\n"+bodyText(d,how);
- return seg("キャラクター",t,how==="attach"?WHY.charAttach:how==="text"?WHY.charText:WHY.char);
-}
 const frameSeg=(ratio,camera,bg,allowText)=>seg("構図",`アスペクト比は ${RATIO_LABEL[ratio]||ratio} で出力する。${camera?camera+"。":""}${bg?bg+"。":""}${allowText?"":"画像の中は絵だけにして、文字やロゴは入れない。"}`,WHY.ratio);
-function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,`目がスパークルアイ（${gradShort(d)}と、中央の白い四芒星）`,"全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`),...motifsOf(d).map(m=>`モチーフ「${m}」が見える`)]}
-// その子らしさ（言葉→モチーフ）。how: "decide"=設定画で決める / それ以外=決まったモチーフを使う
+function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,d.i==="classic"?"すべての目が同じ青→紫のグラデーションで、白いふちがある":"すべての目が同じ虹色で、白いふちがある","虹彩の真ん中に大きな白い四芒星があり、大きな黒い瞳孔が見えない","1.5〜2.5頭身で、手足が短く丸い","全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`),...motifsOf(d).map(m=>`モチーフ「${m}」が見える`)]}
+// その子らしさ（言葉→モチーフ）。how: "decide"=基準画像で決める / それ以外=決まったモチーフを使う
 function motifSeg(d,how){
  const ms=motifsOf(d),inten=(INTENSITY[d.x]||INTENSITY.mid)[1];
  if(ms.length)return seg("その子らしさ",`もとになった言葉を、次のモチーフで見た目に表す。\n${ms.map(m=>"・"+m).join("\n")}\n${inten}`,WHY.motif);
@@ -690,12 +727,13 @@ const NO_EXTRA=["import","check","fix","gem","friends"];
 function composeSegs(r,d,o,ratio,c){
  const segs=r.build(d,o,ratio,c);
  if(NO_EXTRA.includes(r.id))return segs;
- const i=segs.findIndex(s=>s.h==="キャラクター");
- const extra=[motifSeg(d,r.id==="sheet"?"decide":"use"),r.id==="sheet"?null:profileSeg(d,r.id)].filter(Boolean);
+ const i=segs.findIndex(s=>s.h==="この子の特徴");
+ const decide=r.id==="base"||(r.id==="sheet"&&!c.n("base")),ref=r.id==="base"||r.id==="sheet";
+ const extra=[motifSeg(d,decide?"decide":"use"),ref?null:profileSeg(d,r.id)].filter(Boolean);
  if(i>=0)segs.splice(i+1,0,...extra);
  return segs;
 }
-const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、次の項目を1つずつ見直し、合わない所があればその部分だけを直してから出力する。\n${[...checkList(d),...extra].map(x=>"・"+x).join("\n")}\n画像は1枚だけ出力する。`,WHY.check);
+const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、絶対に守るルールと特徴のとおりかを見直し、合わない所があればその部分だけを直してから出力する。${extra.length?`とくに：${extra.join("、")}。`:""}画像は1枚だけ出力する。`,WHY.check);
 const JSON_TEMPLATE=`{
   "name": "名前",
   "keywords": "もとになった言葉",
@@ -718,31 +756,93 @@ const JSON_TEMPLATE=`{
   "dislikes": "苦手なもの",
   "dream": "夢"
 }`;
-function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"設定画のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);const ms=motifsOf(d);if(ms.length)parts.push(`モチーフは${ms.join("・")}`);return parts.join("、")}
+function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"基準画像のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);const ms=motifsOf(d);if(ms.length)parts.push(`モチーフは${ms.join("・")}`);return parts.join("、")}
+
+/* ================= 公式方式の部品（絶対ルールを先頭に・目の見本・基準画像） ================= */
+const RULE_PROP="1.5〜2.5頭身。頭が体の半分以上の大きさで、手足は短く丸い。全体が丸〜楕円に収まるコロンとした形。";
+const RULE_FUR="全身がふわふわの長い毛でおおわれた、ぬいぐるみのような3DCG。こわさのない、思わず抱きしめたくなる雰囲気。";
+function eyeDesc(d){
+ const iris=d.i==="classic"?"虹彩は青から紫へなめらかに変わるグラデーション":"虹彩は青・紫・赤・オレンジ・黄・緑の色がふちに沿って一周する、あざやかな虹色";
+ return `白いふちがあり、${iris}。虹彩の真ん中に、虹彩の幅の半分以上ある大きな白い四芒星（✦）がぴったり重なり、瞳孔は見えない。星はぼかさず、ふちのはっきりした白。左上に白い三日月形のツヤ。体の色に関係なく、すべての目を同じ色にする。大きな黒い瞳孔は描かない。`;
+}
+// 絶対ルール（公式はシステム指示として毎回渡している部分）。multi=複数匹、fur=質感の差し替え（フィギュアなど）
+function rulesSeg(d,c,expr,multi,fur){
+ const eyeRef=c&&c.n?c.n("eye"):"";
+ const fk=partPhrase(d,"f");
+ const L=[
+  `${multi?"目の数はそれぞれの子のとおり（3つまで）。":`目は${eyeCount(d)}つ。`}${eyeRef?`目の描き方は${eyeRef}の目の見本とそっくり同じにする（まねするのは目だけで、見本のキャラクターの色や形はまねしない）。`:""}${eyeDesc(d)}`,
+  "鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。",
+  `口は描く。${!multi&&fk?fk+"。":""}表情：${expr}。`,
+  RULE_PROP,
+  fur||RULE_FUR,
+ ];
+ return seg("絶対に守るルール",L.map((x,i)=>`${i+1}. ${x}`).join("\n"),eyeRef?WHY.rulesEye:WHY.rules);
+}
+// この子の特徴（公式も特徴を箇条書きで渡している）。mode: "decide"=おまかせを決める / それ以外
+function featSeg(d,c,mode){
+ const refK=c&&c.n?(c.n("base")||c.n("src")):"";
+ const head=[`名前は「${d.n||"名前未定"}」。`,d.k?`もとになった言葉は「${d.k}」。`:"",d.p?`性格は「${d.p}」。`:""].join("");
+ const L=[`毛の色：${colorDesc(d)||(refK?`${refK}の画像のとおり`:"もとになった言葉に合う色")}`];
+ for(const k of LOOK_KEYS){const p=partPhrase(d,k);if(p)L.push(p)}
+ if(d.o)L.push(`そのほか：${d.o}`);
+ const au=autoNames(d).filter(x=>x!=="キバ"&&x!=="毛の色");
+ let tail="";
+ if(au.length)tail=refK?`${au.join("・")}は${refK}の画像のとおりにする。`:mode==="decide"?`${au.join("・")}は、もとになった言葉に合わせて自由に決める。`:`${au.join("・")}は、もとになった言葉に合わせて、なるべくシンプルに描く。`;
+ const pre=refK?`見た目は${refK}の画像のモッフィーを正とし、下の特徴と食いちがう所があれば画像に合わせる。\n`:"";
+ return seg("この子の特徴",`${pre}${head}\n${L.map(x=>"・"+x).join("\n")}${tail?"\n"+tail:""}`,refK?WHY.charAttach:mode==="decide"?WHY.char:WHY.charText);
+}
+function fixedProfile(d){const fx=PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}「${d[k]}」`).concat(d.p?[`性格「${d.p}」`]:[]);return fx.length?`決まっているもの（${fx.join("、")}）は、そのまま書きます。`:""}
+// Gemini に添付する画像の順番（目の見本はいつも先頭）
+function refsFor(r,o,c){
+ if(r.id==="import")return [["src","取り込みたいモッフィーの画像"]];
+ if(r.id==="gem")return [];
+ if(r.id==="check"||r.id==="fix"){const L=[["target",r.id==="check"?"判定したい画像":"直したい画像"]];if(c.eye&&(r.id==="check"||(o.parts||[]).includes("目（スパークルアイ）")))L.push(["eye","目の見本"]);return L}
+ const L=[];
+ if(c.eye)L.push(["eye","目の見本"]);
+ if(r.id==="base"){if(c.attach&&String(o.src||"").startsWith("あり"))L.push(["src","もとにする画像（公式の子や設定画）"]);return L}
+ if(c.attach){L.push(["base","基準画像"]);if(r.id==="friends")c.friends.forEach((f,i)=>L.push([`friend${i}`,`友だち「${f.n||"名前未定"}」の基準画像`]))}
+ if(r.id==="photo")L.push(["photo","自分で撮った写真"]);
+ return L;
+}
+function buildCtx(r,o,opts){
+ const attach=r.usesAttach?!!opts.attach:false;
+ const eyeOK=r.usesAttach?attach:(r.id==="check"||r.id==="fix");
+ const c={attach,eye:!!(opts.eye&&eyeOK),friends:opts.friends||[]};
+ c.refs=refsFor(r,o,c);
+ c.n=k=>{const i=c.refs.findIndex(x=>x[0]===k);return i<0?"":`${i+1}枚目`};
+ return c;
+}
+const sceneMode=c=>c.n("base")?"keep":"text";
 
 /* ================= レシピ ================= */
-const ATTACH_SHEET="設定画（1枚）";
 const RECIPES=[
- {id:"sheet",group:"はじめる",label:"設定画をつくる",ratio:"16:9",usesAttach:false,
-  desc:"最初に1回だけ使います。三面図と表情4つで見た目を固定し、以後のレシピで毎回添付する「見本」にします。",
-  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式ジェネレーターの画像など）"]}],
-  attachNote:o=>o.src.startsWith("あり")?"もとにするモッフィーの画像（1枚）":"なし",
-  build(d,o,r){const img=o.src.startsWith("あり");return [
-   seg("目的",img?"添付した画像のモッフィーを、今後ずっと同じ見た目で描くための「設定画」を1枚つくってください。見た目は添付画像を正とします。":"新しいモッフィーの「設定画」を1枚つくってください。このキャラクターを今後ずっと同じ見た目で描くための基準になる資料です。",WHY.intent),
-   charSeg(d,img?"attach":"decide"),
-   seg("目",eyeText(d),WHY.eye),
-   seg("顔",faceText(d,"愛らしく、こわさのない表情"),WHY.nose),
-   seg("質感",STYLE,WHY.style),
-   seg("レイアウト","上の段に、全身の「正面」「横向き」「後ろ向き」を、同じ大きさ・同じ高さで3つ並べる。下の段に、顔のアップで表情を4つ並べる（にっこり／びっくり／うるうる泣き顔／ねむい顔）。7つとも同じ子に見えるよう、毛の色・ツノ・耳・しっぽ・はね・持ち物の位置と形をそろえる。",WHY.sheet),
-   frameSeg(r,"正面から見た、ゆがみのない平らな構図","背景は無地の明るいグレー。ラベルや矢印もつけない"),
+ {id:"base",group:"はじめる",label:"基準画像をつくる",ratio:"1:1",usesAttach:true,
+  desc:"最初に作る1枚です。公式ジェネレーターと同じく、1体・真正面・白い背景・正方形で描きます。以後のレシピでは、この画像を「基準画像」として添付します。",
+  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式の子や設定画）"]}],
+  build(d,o,r,c){const src=c.n("src");return [
+   seg("目的",src?`${src}の画像のモッフィーを、基準画像として描き直してください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。`:"新しいモッフィーの基準画像を1枚つくってください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。",WHY.base),
+   rulesSeg(d,c,"にっこり笑った、愛らしい表情"),
+   featSeg(d,c,"decide"),
+   frameSeg(r,"1体だけを、全身が入るように真正面から描く。顔も体もカメラに正対し、左右対称に立つ","背景は真っ白。床・影・背景の小物は描かない"),
    checkSeg(d),
-   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、設定画で決めた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${d.p||d.q||d.r||d.g||d.b||d.z?`決まっているもの（${PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}「${d[k]}」`).concat(d.p?[`性格「${d.p}」`]:[]).join("、")}）は、そのまま書きます。`:""}\n${JSON_TEMPLATE}`,WHY.json),
+   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、描いた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${fixedProfile(d)}\n${JSON_TEMPLATE}`,WHY.json),
+  ]}},
+ {id:"sheet",group:"はじめる",label:"設定画をつくる（任意）",ratio:"16:9",usesAttach:true,
+  desc:"横向きや後ろ姿も描きたいときの資料です。基準画像を添付して、三面図と表情4つを1枚にまとめます。",
+  fields:[],
+  build(d,o,r,c){const b=c.n("base");return [
+   seg("目的",`${b?`${b}の基準画像のモッフィー`:"このモッフィー"}の設定画を1枚つくってください。横向きや後ろ姿を描くときの資料にします。`,WHY.intent),
+   rulesSeg(d,c,"コマごとに指定した表情"),
+   featSeg(d,c,"decide"),
+   seg("レイアウト","上の段に全身を3つ（正面・横向き・後ろ向き）、同じ大きさ・同じ高さで並べる。下の段に顔のアップを4つ（笑顔、驚いた顔、涙ぐんだ顔、眠そうな顔）並べる。コマはこの7つだけにして、目のアップなど、ほかのコマは足さない。7つとも同じ子に見えるよう、毛の色・ツノ・耳・しっぽ・はね・持ち物の形と位置をそろえる。見出しや表情の名前などの文字は描かない。",WHY.sheet),
+   frameSeg(r,"正面から見た、ゆがみのない平らな構図","背景は無地の明るいグレー。ラベルや矢印もつけない"),
+   checkSeg(d,["コマが7つだけで、文字がない"]),
   ]}},
  {id:"import",group:"はじめる",label:"公式の子を取り込む",ratio:null,usesAttach:false,
   desc:"公式ジェネレーターなどで作ったモッフィーの画像から、DNA を読み取ります。Gemini の返事（JSON）を、上の「取り込む」に貼ってください。",
-  fields:[],attachNote:()=>"取り込みたいモッフィーの画像（1枚）",
-  build(d){return [
-   seg("目的","添付した画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。",WHY.import),
+  fields:[],
+  build(d,o,r,c){return [
+   seg("目的",`${c.n("src")}の画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。`,WHY.import),
    seg("書き方","見えている特徴だけを書く。確かめられない項目は「不明」と書く。色は「淡いそらいろ」のように具体的に。ツノ・しっぽ・はね・キバは、数・形・位置まで書く。目の数は数字で書く。名前がわからなければ、見た目に合う名前を考える。",WHY.char),
    seg("出力",`次の JSON だけを出力してください。\n${JSON_TEMPLATE}`,WHY.json),
   ]}},
@@ -751,7 +851,8 @@ const RECIPES=[
   fields:[{k:"place",label:"場所",type:"text",def:"京都の竹林の小道"},{k:"time",label:"時間帯",type:"select",opts:["昼","朝","夕焼け","夜"]},{k:"act",label:"していること",type:"text",def:"抹茶ソフトクリームを食べている"}],
   build(d,o,r,c){return [
    seg("目的",`SNSに投稿する「おでかけ写真」をつくってください。モッフィーの「${d.n||"名前未定"}」が、${o.time}の${o.place}で${o.act}ところです。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"その場を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
+   rulesSeg(d,c,"その場を楽しんでいる、うれしそうな表情"),
+   featSeg(d,c,sceneMode(c)),
    seg("手順",`1. まず、${o.time}の${o.place}の風景を、写真のようにリアルに描く。\n2. 次に、その風景の中にモッフィーを全身で置く。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 最後に、光の向き・影・色味を風景に合わせて、本当にその場にいるように自然になじませる。`,WHY.scene),
    frameSeg(r,"目線の高さから、モッフィーの全身と風景が入る構図",""),checkSeg(d),
   ]}},
@@ -760,8 +861,9 @@ const RECIPES=[
   fields:[{k:"wear",label:"着るもの",type:"text",def:"黄色いレインコートと長ぐつ"}],
   build(d,o,r,c){return [
    seg("目的",`「${d.n||"名前未定"}」の着せ替え画像をつくってください。着るものは「${o.wear}」です。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"おしゃれを楽しむ、ちょっと得意げな表情"),WHY.nose),seg("質感",STYLE,WHY.style),
-   seg("着せ方",`${o.wear}を、モッフィーの体型に合わせて上から着せる。毛は服のふちからふわっとはみ出す。ツノ・耳・しっぽ・はねは服の外に出し、形を変えない。体の色と毛並みはそのまま。`,WHY.steps),
+   rulesSeg(d,c,"おしゃれを楽しむ、ちょっと得意げな表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("着せ方",`${o.wear}を、モッフィーの体型に合わせて上から着せる。毛は服のふちからふわっとはみ出す。ツノ・耳・しっぽ・はねは服の外に出し、形を変えない。体の色と毛並み、短い手足はそのまま。`,WHY.steps),
    frameSeg(r,"全身が入る、ファッション写真のような正面寄りの構図","背景は、服の色が映えるやわらかい無地のグラデーション"),checkSeg(d),
   ]}},
  {id:"sticker",group:"あそぶ",label:"ぷくぷくシール",ratio:"1:1",usesAttach:true,
@@ -769,8 +871,9 @@ const RECIPES=[
   fields:[{k:"pose",label:"ポーズ",type:"select",opts:["正面でにっこり","手をふっている","ジャンプしている","ねそべっている"]}],
   build(d,o,r,c){return [
    seg("目的",`「${d.n||"名前未定"}」の「ぷくぷくシール」をつくってください。子どものころに集めた、ツヤツヤでぷっくりふくらんだ立体シールのような画像です。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"にっこり笑った表情"),WHY.nose),
-   seg("仕上げ",`ポーズは「${o.pose}」。シール全体がぷっくりと盛り上がり、表面にツヤのある光の反射が入る。キャラクターのまわりを太めの白いフチで切り抜いた形（ダイカット）にする。`,WHY.steps),
+   rulesSeg(d,c,"にっこり笑った表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("仕上げ",`ポーズは「${o.pose}」。シール全体がぷっくりと盛り上がり、表面にツヤのある光の反射が入る。キャラクターの輪郭に沿って、太めの白いフチで切り抜いた形（ダイカット）にする。`,WHY.steps),
    frameSeg(r,"シール1枚を真上から見た構図","背景は無地の白"),checkSeg(d),
   ]}},
  {id:"figure",group:"あそぶ",label:"フィギュアにする",ratio:"4:5",usesAttach:true,
@@ -778,17 +881,19 @@ const RECIPES=[
   fields:[{k:"box",label:"パッケージ箱",type:"select",opts:["あり","なし"]}],
   build(d,o,r,c){return [
    seg("目的",`「${d.n||"名前未定"}」を、1/7スケールの市販フィギュアにした写真をつくってください。`,WHY.figure),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"愛らしい表情"),WHY.nose),
-   seg("シーン",`実写のような写真。フィギュアは文字のない円形の透明アクリル台座に立ち、木の机の上に置かれている。毛並みは彫刻で表現され、PVCのやわらかいツヤがある。${o.box==="あり"?"フィギュアの横に、このモッフィーのイラストが印刷されたおもちゃのパッケージ箱を置く。":""}背景は明るくおしゃれな部屋で、少しぼかす。`,WHY.scene),
+   rulesSeg(d,c,"愛らしい表情",false,"見た目はふわふわのモッフィーのまま、素材はPVCのフィギュアにする（毛並みは彫刻で表現し、やわらかいツヤを出す）。"),
+   featSeg(d,c,sceneMode(c)),
+   seg("シーン",`実写のような写真。フィギュアは文字のない円形の透明アクリル台座に立ち、木の机の上に置かれている。${o.box==="あり"?"フィギュアの横に、このモッフィーのイラストが印刷されたおもちゃのパッケージ箱を置く。":""}背景は明るくおしゃれな部屋で、少しぼかす。`,WHY.scene),
    frameSeg(r,"机の高さから少し見下ろす、斜め45度の構図",""),checkSeg(d,["フィギュアの質感になっている（生き物ではなく置物）"]),
   ]}},
  {id:"icon",group:"あそぶ",label:"SNSアイコン",ratio:"1:1",usesAttach:true,
-  desc:"プロフィール用の正方形アイコンです。丸く切り抜いても顔が欠けない余白をとります。",
+  desc:"プロフィール用の正方形アイコンです。目がいちばん目立つ構図で、丸く切り抜いても顔が欠けない余白をとります。",
   fields:[{k:"expr",label:"表情",type:"select",opts:["にっこり","ウインク","びっくり","すまし顔"]},{k:"bg",label:"背景",type:"text",def:"毛の色が映えるやさしい単色"}],
   build(d,o,r,c){return [
    seg("目的",`「${d.n||"名前未定"}」をSNSのプロフィールアイコンにします。小さく表示されても顔がはっきりわかる画像をつくってください。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,o.expr),WHY.nose),seg("質感",STYLE,WHY.style),
-   frameSeg(r,"顔と胸から上を中央に大きく入れる、少しだけ見上げる構図。丸く切り抜いても顔が欠けないよう、まわりに余白をとる",`背景は${o.bg}`),checkSeg(d),
+   rulesSeg(d,c,o.expr),
+   featSeg(d,c,sceneMode(c)),
+   frameSeg(r,"顔と胸から上を中央に大きく入れる、少しだけ見上げる構図。目が画面でいちばん目立つようにする。丸く切り抜いても顔が欠けないよう、まわりに余白をとる",`背景は${o.bg}`),checkSeg(d),
   ]}},
  {id:"stamps",group:"あそぶ",label:"スタンプ",ratio:null,ratioBy:o=>({"4":"1:1","6":"3:2","8":"16:9"})[o.panels]||"1:1",usesAttach:true,
   desc:"メッセージで使う一言スタンプを、1枚の画像にまとめて作ります。文字を先に決めてから描かせます。",
@@ -796,7 +901,8 @@ const RECIPES=[
   build(d,o,r,c){const n=+o.panels;const pool=String(o.words).split(/[、,，]/).map(x=>x.trim()).filter(Boolean);const fill=["おはよう","ありがとう","おつかれ","おやすみ","了解","すき","ごめんね","わーい"];while(pool.length<n)pool.push(fill[pool.length%fill.length]);const w=pool.slice(0,n);const lay={4:"2列×2段",6:"3列×2段",8:"4列×2段"}[n];return [
    seg("目的",`メッセージで送る一言スタンプを、1枚の画像に${n}コマでつくってください。主役は「${d.n||"名前未定"}」です。`,WHY.intent),
    seg("文字（先に確定）",`コマに入れる文字は、次の${n}つだけです。表記をこのとおり正確に書きます。\n${w.map((x,i)=>`${i+1}. 「${x}」`).join("\n")}`,WHY.text),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"コマごとに、言葉に合う表情"),WHY.nose),
+   rulesSeg(d,c,"コマごとに、言葉に合う表情"),
+   featSeg(d,c,sceneMode(c)),
    seg("レイアウト",`画像を${lay}の${n}コマに分ける。各コマに、言葉に合う表情とポーズのモッフィーを1匹ずつ描き、言葉はコマの下に、太めの丸い文字で大きく入れる。各コマは白い背景で、コマどうしは白い余白で区切る。キャラクターには白いフチどりをつける。`,WHY.steps),
    frameSeg(r,"","",true),checkSeg(d,[`コマが${n}つあり、文字が指定どおり`]),
   ]}},
@@ -805,79 +911,79 @@ const RECIPES=[
   fields:[{k:"event",label:"イベント",type:"select",opts:["お花見","夏祭り","ハロウィン","クリスマス","お正月","学園祭","卒業式","誕生日"]},{k:"extra",label:"追加したいこと（任意）",type:"text",def:""}],
   build(d,o,r,c){return [
    seg("目的",`${o.event}の時期にSNSへ投稿する、「${d.n||"名前未定"}」の季節の画像をつくってください。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,`${o.event}を楽しんでいる表情`),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
+   rulesSeg(d,c,`${o.event}を楽しんでいる表情`),
+   featSeg(d,c,sceneMode(c)),
    seg("シーン",`${o.event}らしい背景の中に、モッフィーを全身で描く。${o.event}らしい小物を1〜2個だけ持たせるか身につけさせる。体の色・ツノ・耳・しっぽ・はねは変えない。${o.extra?`追加：${o.extra}。`:""}`,WHY.scene),
    frameSeg(r,"全身が入る、季節感のある構図",""),checkSeg(d),
   ]}},
  {id:"comic",group:"あそぶ",label:"4コマまんが",ratio:"9:16",usesAttach:true,
   desc:"モッフィーが主役の4コマまんがを1枚で作ります。セリフは少ないほど崩れにくくなります。",
   fields:[{k:"story",label:"お話のテーマ",type:"text",def:"テスト前日、勉強しようとして寝てしまう"},{k:"talk",label:"セリフ",type:"select",opts:["なし（絵だけ）","短いセリフあり"]}],
-  build(d,o,r,c){return [
+  build(d,o,r,c){const talk=String(o.talk).startsWith("短い");return [
    seg("目的",`「${d.n||"名前未定"}」が主役の4コマまんがを、1枚の画像でつくってください。テーマは「${o.story}」です。`,WHY.comic),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"コマごとに、場面に合う表情"),WHY.nose),
-   seg("コマ割り",`画像をたてに4つのコマに分け、上から「起・承・転・結」の順に描く。どのコマのモッフィーも同じ見た目にそろえる。${o.talk.startsWith("短い")?"セリフは各コマ1つまで、10文字以内の短い吹き出しにする。":"セリフや文字は入れず、絵だけで伝える。"}`,WHY.comic),
-   frameSeg(r,"","各コマの背景は、場面がわかる程度のシンプルな描き込み",o.talk.startsWith("短い")),checkSeg(d,["4つのコマのモッフィーが同じ見た目"]),
+   rulesSeg(d,c,"コマごとに、場面に合う表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("コマ割り",`画像をたてに4つのコマに分け、上から順に、始まり・展開・意外なできごと・オチの流れで描く。どのコマのモッフィーも同じ見た目にそろえる。コマに見出しや番号の文字は入れない。${talk?"セリフは各コマ1つまで、10文字以内の短い吹き出しにする。":"セリフや文字は入れず、絵だけで伝える。"}`,WHY.comic),
+   frameSeg(r,"","各コマの背景は、場面がわかる程度のシンプルな描き込み",talk),checkSeg(d,["4つのコマのモッフィーが同じ見た目"]),
   ]}},
  {id:"friends",group:"あそぶ",label:"友だちと共演",ratio:"16:9",usesAttach:true,
   desc:"友だちのDNAコードを貼ると、2〜4匹が同じ場面に並ぶ画像を作れます（Nano Banana が見た目を保てるのは4体まで）。",
   fields:[{k:"codes",label:"友だちのDNAコード（1行に1匹、3匹まで）",type:"textarea",def:""},{k:"place",label:"場所",type:"text",def:"大学の芝生の広場"},{k:"act",label:"していること",type:"text",def:"ピクニックをしている"}],
-  attachNote:(o,c)=>c.attach?`設定画 ${1+c.friends.length}枚（自分、友だちの順）`:"なし（文章だけ）",
   build(d,o,r,c){const all=[d,...c.friends];const n=all.length;
-   const list=all.map((x,i)=>`${c.attach?`${i+1}枚目の画像`:`${i+1}匹目`}：「${x.n||"名前未定"}」…${c.attach?shortDesc(x):bodyText(x,"text")+eyeText(x)}`).join("\n");
+   const list=all.map((x,i)=>{const ord=c.n(i===0?"base":`friend${i-1}`);return `${i+1}匹目「${x.n||"名前未定"}」：${ord?`${ord}の基準画像の子。${shortDesc(x)}`:`${bodyText(x,"text")}目は${eyeCount(x)}つ。`}`}).join("\n");
    return [
-   seg("目的",`${c.attach?`添付した${n}枚の設定画のモッフィーたち`:`次の${n}匹のモッフィー`}を、1枚の画像に一緒に描いてください。${o.place}で${o.act}ところです。${n===1?"（友だちのDNAコードを貼ると、ここに友だちが入ります）":""}`,WHY.friends),
+   seg("目的",`${n}匹のモッフィーを、1枚の画像に一緒に描いてください。${o.place}で${o.act}ところです。${n===1?"（友だちのDNAコードを貼ると、ここに友だちが入ります）":""}`,WHY.friends),
+   rulesSeg(d,c,"みんなで楽しんでいる表情",true),
    seg("登場するモッフィー",list,c.attach?WHY.charAttach:WHY.charText),
-   seg("全員に共通するルール",`全員が、ぬいぐるみのようにふわふわした3DCGのモンスター「モッフィー」。顔のパーツは目と口だけで、鼻はない（目と口のあいだは毛並みが続く）。目はスパークルアイ（虹彩の中で色がなめらかに溶け合い、中央に白く光る四芒星）。こわさのない愛らしい表情。`,WHY.nose),
    seg("描き分け",`${n}匹の毛の色やパーツを混ぜない。どの子が誰か、ひと目でわかるように描き分ける。全員の全身が見えるように並べる。`,WHY.friends),
    frameSeg(r,"全員の全身が入る、少し引いた構図",""),
-   seg("見直し",`描き終えたら、${n}匹それぞれについて、鼻がないこと・目の数・毛の色・ツノやはねなどのパーツが${c.attach?"設定画":"説明"}どおりかを見直し、合わない所はその部分だけを直してから出力する。画像は1枚だけ出力する。`,WHY.check),
+   seg("見直し",`描き終えたら、${n}匹それぞれについて、絶対に守るルールと、${c.attach?"基準画像":"説明"}のとおりのパーツかを見直し、合わない所はその部分だけを直してから出力する。画像は1枚だけ出力する。`,WHY.check),
   ]}},
  {id:"photo",group:"あそぶ",label:"自分の写真に連れていく",ratio:null,usesAttach:true,
   desc:"自分で撮った景色の写真に、モッフィーを連れていきます。背景が自分だけのものになるので、仕上がりが人と被りません。写真をアップロードするので18歳以上が対象です。人や個人情報（表札・住所・車のナンバーなど）が写っていない写真を使ってください。",
   fields:[{k:"pos",label:"どこにいる？",type:"select",opts:["写真の手前の地面に立っている","テーブルや台の上にちょこんと座っている","写真の真ん中で手をふっている","写真のすみからそっとのぞいている"]},{k:"size",label:"大きさ",type:"select",opts:["手のひらくらい","子犬くらい","子どもくらい"]},{k:"act",label:"していること",type:"text",def:"景色を見てうれしそうにしている"}],
-  attachNote:(o,c)=>c.attach?"設定画（1枚目）と、自分で撮った写真（2枚目）":"自分で撮った写真（1枚）",
-  build(d,o,r,c){const ph=c.attach?"2枚目の写真":"添付した写真";return [
+  build(d,o,r,c){const ph=`${c.n("photo")}の写真`;return [
    seg("目的",`${ph}は、私が撮った景色の写真です。この写真の中に、モッフィー「${d.n||"名前未定"}」を連れてきたような画像をつくってください。`,WHY.photo),
-   charSeg(d,c.attach?"attach-first":"text"),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"景色を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
+   rulesSeg(d,c,"景色を楽しんでいる、うれしそうな表情"),
+   featSeg(d,c,sceneMode(c)),
    seg("手順",`1. ${ph}の景色・光・色・写っている物は、そのまま残す。新しい人や物は足さない。\n2. モッフィーを「${o.pos}」ようすで、${o.size}の大きさで置く。${o.act}。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 写真の光の向きと色に合わせてモッフィーに光と影をつけ、地面や台に触れている所には自然な影を落とす。`,WHY.scene),
    seg("構図",`アスペクト比は、${ph}と同じにする。写真の構図は変えない。画像の中は絵だけにして、文字やロゴは入れない。`,WHY.ratio),
    checkSeg(d,["写真の景色がそのまま残っている","モッフィーの足もとに自然な影がある"]),
   ]}},
  {id:"check",group:"なおす",label:"ルールチェック",ratio:null,usesAttach:false,
-  desc:"生成した画像を添付して、ルールどおりかを判定してもらいます。不合格の所を直すための指示文も返ってきます。",
-  fields:[],attachNote:()=>"判定したい画像（1枚）",
-  build(d){const items=checkList(d);return [
-   seg("目的",`添付した画像のキャラクターが、モッフィー「${d.n||"名前未定"}」として正しく描けているか判定してください。甘めにせず、画像から確かめられないものは不合格にします。画像は生成しないでください。`,WHY.judge),
+  desc:"生成した画像を添付して、ルールどおりかを判定してもらいます。目の見本があれば、目の描き方が見本と同じかも判定します。不合格の所を直すための指示文も返ってきます。",
+  fields:[],
+  build(d,o,r,c){const t=c.n("target"),e=c.n("eye");const items=[...checkList(d),...(e?[`目の描き方が${e}の目の見本と同じ（白いふち・虹色・真ん中の大きな白い星）`]:[])];return [
+   seg("目的",`${t}の画像のキャラクターが、モッフィー「${d.n||"名前未定"}」として正しく描けているか判定してください。甘めにせず、画像から確かめられないものは不合格にします。大きな黒い瞳孔が見える目は不合格です。画像は生成しないでください。`,WHY.judge),
    seg("判定する項目",items.map((x,i)=>`${i+1}. ${x}`).join("\n"),WHY.check),
    seg("出力",`次の JSON だけを出力してください。\n{\n  "results": [\n    {"item": "項目", "pass": true, "reason": "画像のどこを見てそう判断したか"}\n  ],\n  "score": "合格数/${items.length}",\n  "fix_prompt": "不合格の項目だけを直すための、そのまま画像編集に使える指示文（全部合格なら空文字）"\n}`,WHY.judge),
   ]}},
  {id:"fix",group:"なおす",label:"部分修正",ratio:null,usesAttach:false,
-  desc:"気になる所だけを直します。作り直しより元の子が崩れにくく、生成回数も節約できます。",
-  fields:[{k:"parts",label:"直したい所",type:"multi",opts:["目（スパークルアイ）","鼻が出ている","目の数","毛の色","ツノ","しっぽ","はね","身につけている物","毛並み"],def:["目（スパークルアイ）"]},{k:"note",label:"そのほか（任意）",type:"text",def:""}],
-  attachNote:()=>"直したい画像（1枚）",
-  build(d,o){const fixes=[];const P=o.parts||[];
-   if(P.includes("目（スパークルアイ）"))fixes.push(eyeText(d));
+  desc:"気になる所だけを直します。作り直しより元の子が崩れにくく、生成回数も節約できます。目の見本があれば、目は見本どおりに直します。",
+  fields:[{k:"parts",label:"直したい所",type:"multi",opts:["目（スパークルアイ）","鼻が出ている","目の数","毛の色","ツノ","しっぽ","はね","身につけている物","毛並み","頭身・手足"],def:["目（スパークルアイ）"]},{k:"note",label:"そのほか（任意）",type:"text",def:""}],
+  build(d,o,r,c){const t=c.n("target"),e=c.n("eye");const fixes=[];const P=o.parts||[];
+   if(P.includes("目（スパークルアイ）"))fixes.push(`目は${eyeCount(d)}つ。${e?`目の描き方は${e}の目の見本とそっくり同じにする（まねするのは目だけ）。`:""}${eyeDesc(d)}`);
    if(P.includes("鼻が出ている"))fixes.push("鼻を消し、目と口のあいだを、まわりと同じなめらかな毛並みでつなぐ。");
    if(P.includes("目の数"))fixes.push(`目は${eyeCount(d)}つにする。`);
-   if(P.includes("毛の色"))fixes.push(`毛の色を${colorDesc(d)||"設定画と同じ色"}にする。`);
+   if(P.includes("毛の色"))fixes.push(`毛の色を${colorDesc(d)||"基準画像と同じ色"}にする。`);
    const pmap={"ツノ":"h","しっぽ":"t","はね":"w","身につけている物":"a","毛並み":"u"};
-   for(const [lab,k] of Object.entries(pmap))if(P.includes(lab))fixes.push((partPhrase(d,k)||`${PARTS[k].name}は設定画と同じにする`)+"。");
+   for(const [lab,k] of Object.entries(pmap))if(P.includes(lab))fixes.push((partPhrase(d,k)||`${PARTS[k].name}は基準画像と同じにする`)+"。");
+   if(P.includes("頭身・手足"))fixes.push(RULE_PROP);
    if(o.note)fixes.push(`そのほか：${o.note}。`);
-   const targets=[...P,...(o.note?["そのほか"]:[])].join("・")||"（直したい所を選んでください）";
+   const targets=[...P.map(x=>x==="目（スパークルアイ）"?"目":x),...(o.note?["そのほか"]:[])].join("・")||"（直したい所を選んでください）";
    return [
-   seg("目的",`添付した画像の「${targets}」だけを直してください。それ以外（ポーズ・表情・背景・光・構図・ほかのパーツ）は、まったく同じに保ちます。`,WHY.fix),
+   seg("目的",`${t}の画像の「${targets}」だけを直してください。それ以外（ポーズ・表情・背景・光・構図・ほかのパーツ）は、まったく同じに保ちます。`,WHY.fix),
    seg("正しい状態",fixes.length?fixes.map(x=>"・"+x).join("\n"):"・（直したい所を選んでください）",WHY.fix),
    seg("構図","アスペクト比と構図は、元の画像と同じにする。画像は1枚だけ出力する。",WHY.ratio),
   ]}},
  {id:"gem",group:"ひろげる",label:"Gemにする",ratio:null,usesAttach:false,copyEach:true,
-  desc:"Gemini の Gem（カスタム版の Gemini）に入れる文章です。パソコンで gemini.google.com を開き、Gem マネージャー →「新しい Gem」で、名前・説明・カスタム指示にそれぞれ貼ります。共有から「リンクを知っている全員」にすると、リンクで配れます。",
+  desc:"Gemini の Gem（カスタム版の Gemini）に入れる文章です。Gem のカスタム指示は、公式ジェネレーターの「システム指示」と同じく、毎回のやりとりの前提になります。パソコンで gemini.google.com を開き、Gem マネージャー →「新しい Gem」で、名前・説明・カスタム指示にそれぞれ貼ります。共有から「リンクを知っている全員」にすると、リンクで配れます。",
   fields:[{k:"scope",label:"Gem の種類",type:"select",opts:["このモッフィー専用","だれでも使える工房"]}],
-  attachNote:o=>o.scope==="このモッフィー専用"?"（任意）設定画を Gem の「知識」に追加":"なし",
   build(d,o){const own=o.scope==="このモッフィー専用";const nm=d.n||"マイモッフィー";
-   const rules=["# モッフィーのデザインルール（必ず守る）","- ぬいぐるみのようにふわふわした3DCGのモンスター。ずんぐりした体で、全身が長くやわらかい毛におおわれている","- 目は1〜3つの「スパークルアイ」。虹彩の中で色がなめらかに溶け合い（2026年版は青・赤・黄・緑の4色）、中央に白く光る大きな四芒星（✦）がある","- 顔のパーツは目と口だけ。目と口のあいだは毛並みが続き、鼻は描かない","- こわさのない、思わず抱きしめたくなる表情","- 画像には、頼まれたとき以外は文字を入れない"];
-   const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。知識に設定画があれば、それを見本にする。","3. 毎回、用途に合うアスペクト比を決めて指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、デザインルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. DNA をもとに、三面図（正面・横・後ろ）と表情4つの設定画（16:9）を作る。","4. 以後のリクエストでは、DNA と設定画の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、デザインルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
-   const ms=motifsOf(d);
-   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,ms.length?`その子らしさのモチーフ：${ms.join("、")}（毎回入れる）`:"",eyeText(d),faceText(d,"愛らしく、こわさのない表情"),...PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}：${d[k]}`),d.r?"クセは、しぐさや表情にさりげなく出す。口ぐせは、セリフを入れるときに使う。":"",`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
+   const rules=["# 絶対に守るルール（毎回）",`1. ${own?`目は${eyeCount(d)}つ。${eyeDesc(d)}`:`目は1〜3つ。${eyeDesc({i:"g4"})}`}`,"2. ユーザーが目の見本画像を送ってきたら、目の描き方はその見本とそっくり同じにする（まねするのは目だけで、見本のキャラクターの色や形はまねしない）。","3. 鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。","4. 口は描く。",`5. ${RULE_PROP}`,`6. ${RULE_FUR}`,"7. 画像には、頼まれたとき以外は文字を入れない。"];
+   const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。基準画像や目の見本が送られてきたら、それを見本にする。","3. 毎回、用途に合うアスペクト比を指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、ルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。目の見本画像があれば、一緒に送ってもらう。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. まず基準画像を1枚作る：1体だけ・全身・真正面・左右対称・真っ白な背景・正方形（1:1）。","4. 以後のリクエストでは、基準画像の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、ルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
+   const ms=motifsOf(d),fk=partPhrase(d,"f");
+   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,ms.length?`その子らしさのモチーフ：${ms.join("、")}（毎回入れる）`:"",fk?`口：${fk}`:"",...PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}：${d[k]}`),d.r?"クセは、しぐさや表情にさりげなく出す。口ぐせは、セリフを入れるときに使う。":"",`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
    const ins=["# 役割",own?`あなたは、モッフィー「${nm}」専属のイラストレーターです。ユーザーの頼みに合わせて、「${nm}」を同じ見た目のまま、いろいろな場面の画像にします。`:"あなたは「モッフィー工房」の案内役です。ユーザーと一緒にオリジナルのモッフィーを作り、同じ見た目のまま、いろいろな場面の画像を作ります。","",...rules,"",...flow,...fixed,"","# 話し方","やさしく短く。画像を出したあとに、次に試せる遊び方を1つだけ提案する。"].join("\n");
    return [
     seg("名前",own?`${nm}のアトリエ（非公式）`:"モッフィー工房（非公式）",null),
@@ -889,9 +995,9 @@ const GROUPS=["はじめる","あそぶ","なおす","ひろげる"];
 
 /* ================= プレビュー（SVG を組み立て） ================= */
 const HEUR={
- s:[[/たまご|卵|縦/,"egg"],[/洋なし|ずんぐり|下ぶくれ/,"pear"],[/もち|横長/,"mochi"],[/./,"round"]],
+ s:[[/雪だるま|2段|二段/,"snow"],[/おにぎり|三角/,"onigiri"],[/ブロック|四角|キューブ/,"block"],[/しずく|雫|水滴/,"drop"],[/まんじゅう|饅頭|底が平/,"manju"],[/たまご|卵|縦/,"egg"],[/洋なし|ずんぐり|下ぶくれ/,"pear"],[/もち|横長/,"mochi"],[/./,"round"]],
  u:[[/逆立|ツン|とげ/,"spiky"],[/カール|くる|巻/,"curly"],[/もこ/,"extra"],[/./,"soft"]],
- h:[[/^なし|ない$/,"none"],[/巻/,"curl"],[/しま|縞/,"stripe"],[/1本|一本|ひとつ|一つ|中央/,"one"],[/./,"two"]],
+ h:[[/^なし|ない$/,"none"],[/クリスタル|水晶|宝石|結晶/,"crystal"],[/花/,"flower"],[/雷|稲妻|ギザギザ/,"bolt"],[/星/,"antenna"],[/きのこ|キノコ/,"mush"],[/触角|アンテナ/,"antenna"],[/巻/,"curl"],[/しま|縞/,"stripe"],[/1本|一本|ひとつ|一つ|中央/,"one"],[/./,"two"]],
  e:[[/^なし|うも|埋|見えない/,"none"],[/たれ|垂/,"droop"],[/丸|まる/,"round"],[/./,"up"]],
  t:[[/^なし|見えない/,"none"],[/ドラゴン|とが|竜/,"dragon"],[/長|なが|ふさ/,"long"],[/./,"puff"]],
  w:[[/^なし|ない$/,"none"],[/こうもり|コウモリ|悪魔/,"bat"],[/妖精|透/,"fairy"],[/./,"angel"]],
@@ -900,67 +1006,114 @@ const HEUR={
 };
 function kind(d,k){const v=d[k];if(!isCustom(v))return v;const t=v.slice(1);for(const [re,id] of HEUR[k]||[])if(re.test(t))return id;return "auto"}
 function shade(hex,p){const n=parseInt(hex.slice(1),16);const ch=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p))));return "#"+ch.map(v=>v.toString(16).padStart(2,"0")).join("")}
-function blob(x,y,r,f){let s=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${f}"/>`;for(let a=0;a<360;a+=45){const t=a*Math.PI/180;s+=`<circle cx="${(x+Math.cos(t)*r*.8).toFixed(1)}" cy="${(y+Math.sin(t)*r*.8).toFixed(1)}" r="${(r*.45).toFixed(1)}" fill="${f}"/>`}return s}
 // キャラ表のラフ（青鉛筆の線画）。色はうすく置き、目だけは本番の色で描く
 let lastSketch="";
-function fluffPath(cx,cy,rx,ry,n,amp,pear){
- const pt=a=>{const ex=pear&&Math.sin(a)>.2?1.1:1;return [cx+Math.cos(a)*rx*ex,cy+Math.sin(a)*ry]};
+// 体の輪郭：角度 a（画面座標。下が +π/2）→ 点。かたちごとに式を変える
+function shapePt(form,cx,cy,rx,ry,a){
+ const c=Math.cos(a),s=Math.sin(a),sp=(v,p)=>Math.sign(v)*Math.pow(Math.abs(v),p);
+ switch(form){
+  case "pear":{const ex=s>.2?1.1:1;return [cx+c*rx*ex,cy+s*ry]}
+  case "block":return [cx+sp(c,.45)*rx,cy+sp(s,.45)*ry];
+  case "onigiri":{ // 角の丸い三角形（上が頂点）
+   const th=-a,ns=[-Math.PI/2,Math.PI/6,5*Math.PI/6];let dl=Math.PI;
+   for(const n of ns){let x=Math.abs(((th-n)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI);if(x<dl)dl=x}
+   const k=.42,r=1+k*(1/Math.cos(Math.min(dl,Math.PI/3))-1),sx=rx/((1+k)*.866),sy=ry*2/(2+k);
+   return [cx+c*r*sx,cy+k/2*sy+s*r*sy];
+  }
+  case "drop":{ // しずく（上がとがる）
+   const t=a+Math.PI/2,w=Math.sin(t)*Math.pow(Math.abs(Math.sin(t/2)),1.15);
+   return [cx+w*rx/.74,cy-Math.cos(t)*ry];
+  }
+  case "manju":return [cx+c*rx*(s>0?1.03:1),cy+(s>0?.5*Math.pow(s,.35):s)*ry];
+  default:return [cx+c*rx,cy+s*ry];
+ }
+}
+function fluffPath(cx,cy,rx,ry,n,amp,form){
+ const pt=a=>shapePt(form||"round",cx,cy,rx,ry,a);
  const [x0,y0]=pt(0);let d=`M${x0.toFixed(1)} ${y0.toFixed(1)}`;
- for(let i=1;i<=n;i++){const a=i/n*2*Math.PI,am=(i-.5)/n*2*Math.PI,[x,y]=pt(a),ex=pear&&Math.sin(am)>.2?1.1:1;
-  d+=` Q${(cx+Math.cos(am)*rx*ex*(1+amp)).toFixed(1)} ${(cy+Math.sin(am)*ry*(1+amp)).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`}
+ for(let i=1;i<=n;i++){const [x,y]=pt(i/n*2*Math.PI),[mx,my]=pt((i-.5)/n*2*Math.PI);
+  d+=` Q${(cx+(mx-cx)*(1+amp)).toFixed(1)} ${(cy+(my-cy)*(1+amp)).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`}
  return d+"Z";
+}
+// かたちの寸法（輪郭の点から、上端・下端・幅を測る）
+const BODY={round:["round",66,66,112],egg:["round",58,74,114],pear:["pear",62,68,116],mochi:["round",78,54,122],onigiri:["onigiri",72,68,112],block:["block",62,60,114],drop:["drop",60,72,112],manju:["manju",76,66,136]};
+function bodyGeom(sk){
+ const mk=(form,rx,ry,cy)=>{const pts=[];for(let i=0;i<120;i++)pts.push(shapePt(form,100,cy,rx,ry,i/120*2*Math.PI));const ys=pts.map(p=>p[1]),top=Math.min(...ys),bottom=Math.max(...ys);return {form,rx,ry,cy,pts,top,bottom,mid:(top+bottom)/2,hh:(bottom-top)/2,bw:Math.max(...pts.map(p=>Math.abs(p[0]-100)))}};
+ if(sk==="snow"){const body=mk("round",56,50,150),head=mk("round",46,43,82);return {body,head,snow:true}}
+ const [f,rx,ry,cy]=BODY[sk]||BODY.round,b=mk(f,rx,ry,cy);return {body:b,head:b,snow:false};
+}
+// 高さ y での体の半幅（輪郭の点のあいだを直線でつないで求める）
+function halfW(g,y){let w=0;const Q=g.pts;for(let i=0;i<Q.length;i++){const [x1,y1]=Q[i],[x2,y2]=Q[(i+1)%Q.length];if(y1===y2){if(y1===y)w=Math.max(w,Math.abs(x1-100),Math.abs(x2-100));continue}if((y1-y)*(y2-y)<=0)w=Math.max(w,Math.abs(x1+(x2-x1)*(y-y1)/(y2-y1)-100))}return w||g.bw*.5}
+const star4=(x,y,s,k=.16)=>`M${x} ${(y-s).toFixed(2)} Q${(x+s*k).toFixed(2)} ${(y-s*k).toFixed(2)} ${(x+s).toFixed(2)} ${y} Q${(x+s*k).toFixed(2)} ${(y+s*k).toFixed(2)} ${x} ${(y+s).toFixed(2)} Q${(x-s*k).toFixed(2)} ${(y+s*k).toFixed(2)} ${(x-s).toFixed(2)} ${y} Q${(x-s*k).toFixed(2)} ${(y-s*k).toFixed(2)} ${x} ${(y-s).toFixed(2)}Z`;
+const IRIS=["#4285F4","#9B72CB","#EA4335","#F5A35C","#FBBC04","#34A853"];
+// 公式の目に近い形：白いふち → 虹色の虹彩（ふちに沿って一周）→ 真ん中に大きな白い四芒星 → 左上に小さなツヤ
+function eyeSVG(x,y,er,i,classic){
+ let s=`<circle class="eye-rim" cx="${x}" cy="${y}" r="${(er+2.4).toFixed(2)}"/>`,defs=`<clipPath id="ec${i}"><circle cx="${x}" cy="${y}" r="${er.toFixed(2)}"/></clipPath>`;
+ if(classic)s+=`<circle cx="${x}" cy="${y}" r="${er.toFixed(2)}" fill="url(#egc)"/>`;
+ else{const R=er*1.4;s+=`<g clip-path="url(#ec${i})"><g filter="url(#esoft)">`+IRIS.map((col,k)=>{const a0=k/6*2*Math.PI-Math.PI/2,a1=(k+1)/6*2*Math.PI-Math.PI/2;return `<path d="M${x} ${y} L${(x+Math.cos(a0)*R).toFixed(2)} ${(y+Math.sin(a0)*R).toFixed(2)} A${R.toFixed(2)} ${R.toFixed(2)} 0 0 1 ${(x+Math.cos(a1)*R).toFixed(2)} ${(y+Math.sin(a1)*R).toFixed(2)}Z" fill="${col}"/>`}).join("")+`</g></g>`}
+ s+=`<circle cx="${x}" cy="${y}" r="${er.toFixed(2)}" fill="url(#ecore)"/><path d="${star4(x,y,er*.76)}" fill="#FFFFFF"/><circle cx="${(x-er*.5).toFixed(2)}" cy="${(y-er*.52).toFixed(2)}" r="${(er*.17).toFixed(2)}" fill="#FFFFFF"/>`;
+ return {s,defs};
 }
 function drawPreview(d){
  const fur=colorHex(d)||"#C9CED8";
- const sk=kind(d,"s");const [rx,ry,cy]=({egg:[58,74,114],pear:[62,68,116],mochi:[78,54,122]})[sk]||[66,66,112];
- const top=cy-ry-6,P=(dd,cls="ln")=>`<path class="${cls}" d="${dd}" pathLength="1"/>`;
- let back="",body="",front="";
+ const sk=kind(d,"s"),G=bodyGeom(sk),B=G.body,H=G.head;
+ const top=H.top-6,P=(dd,cls="ln")=>`<path class="${cls}" d="${dd}" pathLength="1"/>`;
+ const dx=Math.max(12,Math.min(32,halfW(H,top+18)*.79)),L=100-dx,R=100+dx;
+ let back="",body="",front="",defs="";
  // しっぽ・はね・耳（体のうしろ）
- const tk=kind(d,"t");
- if(tk==="puff")back+=P(fluffPath(100+rx*.86,cy+ry*.5,13,13,9,.18),"ln fur");
- if(tk==="long")back+=P(`M${100+rx*.7} ${cy+ry*.5} C ${100+rx+30} ${cy+ry*.45}, ${100+rx+34} ${cy-10}, ${100+rx+18} ${cy-26}`)+P(fluffPath(100+rx+16,cy-32,10,10,8,.2),"ln fur");
- if(tk==="dragon")back+=P(`M${100+rx*.55} ${cy+ry*.4} Q ${100+rx+26} ${cy+ry*.6} ${100+rx+36} ${cy+ry*.12} L ${100+rx+22} ${cy+ry*.32} Z`,"ln fur");
- const wk=kind(d,"w"),wl=100-rx+4,wr=100+rx-4,wy=cy-ry*.18;
+ const tk=kind(d,"t"),ty=B.top+(B.bottom-B.top)*.75,tx=100+halfW(B,ty)*.98;
+ if(tk==="puff")back+=P(fluffPath(tx,ty,13,13,9,.18),"ln fur");
+ if(tk==="long")back+=P(`M${(tx-8).toFixed(1)} ${ty.toFixed(1)} C ${(100+B.bw+30).toFixed(1)} ${(ty-2).toFixed(1)}, ${(100+B.bw+34).toFixed(1)} ${(B.mid-10).toFixed(1)}, ${(100+B.bw+18).toFixed(1)} ${(B.mid-26).toFixed(1)}`)+P(fluffPath(100+B.bw+16,B.mid-32,10,10,8,.2),"ln fur");
+ if(tk==="dragon")back+=P(`M${(tx-14).toFixed(1)} ${(ty-4).toFixed(1)} Q ${(100+B.bw+26).toFixed(1)} ${(ty+6).toFixed(1)} ${(100+B.bw+36).toFixed(1)} ${(ty-22).toFixed(1)} L ${(100+B.bw+22).toFixed(1)} ${(ty-10).toFixed(1)} Z`,"ln fur");
+ const wk=kind(d,"w"),wy=B.mid-B.hh*.18,wl=100-halfW(B,wy)+4,wr=200-wl;
  if(wk==="angel")back+=P(`M${wl} ${wy} q-30 -26 -36 4 q14 -2 10 10 q12 -6 26 -14Z`,"ln part")+P(`M${wr} ${wy} q30 -26 36 4 q-14 -2 -10 10 q-12 -6 -26 -14Z`,"ln part");
  if(wk==="bat")back+=P(`M${wl+4} ${wy} l-34 -20 l7 15 l-13 1 l11 12 l-8 7 z`,"ln part bat")+P(`M${wr-4} ${wy} l34 -20 l-7 15 l13 1 l-11 12 l8 7 z`,"ln part bat");
  if(wk==="fairy")back+=`<ellipse class="ln part fairy" cx="${wl-10}" cy="${wy-8}" rx="20" ry="11" transform="rotate(-35 ${wl-10} ${wy-8})" pathLength="1"/><ellipse class="ln part fairy" cx="${wr+10}" cy="${wy-8}" rx="20" ry="11" transform="rotate(35 ${wr+10} ${wy-8})" pathLength="1"/>`;
  const ek=kind(d,"e");
- if(ek==="up")back+=`<ellipse class="ln fur" cx="76" cy="${cy-ry+4}" rx="10" ry="24" pathLength="1"/><ellipse class="ln fur" cx="124" cy="${cy-ry+4}" rx="10" ry="24" pathLength="1"/>`;
- if(ek==="round")back+=`<circle class="ln fur" cx="72" cy="${cy-ry+14}" r="14" pathLength="1"/><circle class="ln fur" cx="128" cy="${cy-ry+14}" r="14" pathLength="1"/>`;
- // 体（毛のふちを波線で）
+ if(ek==="up")back+=`<ellipse class="ln fur" cx="${L+6}" cy="${top+10}" rx="10" ry="24" pathLength="1"/><ellipse class="ln fur" cx="${R-6}" cy="${top+10}" rx="10" ry="24" pathLength="1"/>`;
+ if(ek==="round")back+=`<circle class="ln fur" cx="${L+2}" cy="${top+20}" r="14" pathLength="1"/><circle class="ln fur" cx="${R-2}" cy="${top+20}" r="14" pathLength="1"/>`;
+ // 体（毛のふちを波線で）。雪だるま型は胴と頭の2段
  const uk=kind(d,"u"),n=uk==="curly"?30:uk==="extra"?20:24,amp=uk==="extra"?.17:uk==="curly"?.09:.12;
- body+=`<ellipse class="ground" cx="100" cy="${cy+ry+10}" rx="${(rx*.72).toFixed(1)}" ry="6"/>`+P(fluffPath(100,cy,rx,ry,n,amp,sk==="pear"),"ln fur");
- if(uk==="spiky")body+=P(`M86 ${cy-ry+6} L89 ${cy-ry-16} L95 ${cy-ry+2} L100 ${cy-ry-21} L105 ${cy-ry+2} L111 ${cy-ry-16} L114 ${cy-ry+6}`,"ln fur");
- if(uk==="curly")for(const [x,y] of [[74,cy+12],[124,cy+18],[98,cy+34],[66,cy-14],[134,cy-10]])body+=P(`M${x} ${y} a4 4 0 1 1 5 3`,"ln thin");
- if(ek==="droop"){const ey0=(cy-ry*.3).toFixed(1);front+=`<ellipse class="ln fur" cx="${100-rx+6}" cy="${ey0}" rx="11" ry="24" transform="rotate(22 ${100-rx+6} ${ey0})" pathLength="1"/><ellipse class="ln fur" cx="${100+rx-6}" cy="${ey0}" rx="11" ry="24" transform="rotate(-22 ${100+rx-6} ${ey0})" pathLength="1"/>`}
- // ツノ・頭の持ち物
+ body+=`<ellipse class="ground" cx="100" cy="${(B.bottom+10).toFixed(1)}" rx="${(B.bw*.72).toFixed(1)}" ry="6"/>`+P(fluffPath(100,B.cy,B.rx,B.ry,n,amp,B.form),"ln fur");
+ if(G.snow)body+=P(fluffPath(100,H.cy,H.rx,H.ry,Math.round(n*.8),amp,H.form),"ln fur");
+ if(uk==="spiky")body+=P(`M86 ${top+12} L89 ${top-10} L95 ${top+8} L100 ${top-15} L105 ${top+8} L111 ${top-10} L114 ${top+12}`,"ln fur");
+ if(uk==="curly")for(const [x,y] of [[74,12],[124,18],[98,34],[66,-14],[134,-10]])body+=P(`M${(100+(x-100)*B.bw/66).toFixed(1)} ${(B.mid+y*B.hh/66).toFixed(1)} a4 4 0 1 1 5 3`,"ln thin");
+ if(ek==="droop"){const yy=H.top+(H.bottom-H.top)*.35,xo=halfW(H,yy)-6,e0=yy.toFixed(1);front+=`<ellipse class="ln fur" cx="${(100-xo).toFixed(1)}" cy="${e0}" rx="11" ry="24" transform="rotate(22 ${(100-xo).toFixed(1)} ${e0})" pathLength="1"/><ellipse class="ln fur" cx="${(100+xo).toFixed(1)}" cy="${e0}" rx="11" ry="24" transform="rotate(-22 ${(100+xo).toFixed(1)} ${e0})" pathLength="1"/>`}
+ // ツノ・触角・頭の持ち物
  const hk=kind(d,"h");
  if(hk==="one")front+=P(`M94 ${top+10} L100 ${top-18} L106 ${top+10}`,"ln part horn");
- if(hk==="two"||hk==="stripe"){front+=P(`M70 ${top+18} Q66 ${top-4} 78 ${top-6} Q80 ${top+8} 84 ${top+14}`,"ln part horn")+P(`M130 ${top+18} Q134 ${top-4} 122 ${top-6} Q120 ${top+8} 116 ${top+14}`,"ln part horn");if(hk==="stripe")front+=P(`M70 ${top+8} l11 -2 M71 ${top+2} l9 -2 M130 ${top+8} l-11 -2 M129 ${top+2} l-9 -2`,"ln thin")}
- if(hk==="curl")front+=P(`M72 ${top+18} c-14 -8 -12 -26 2 -26 c8 0 9 9 3 10`)+P(`M128 ${top+18} c14 -8 12 -26 -2 -26 c-8 0 -9 9 -3 10`);
+ if(hk==="two"||hk==="stripe"){front+=P(`M${L} ${top+18} Q${L-4} ${top-4} ${L+8} ${top-6} Q${L+10} ${top+8} ${L+14} ${top+14}`,"ln part horn")+P(`M${R} ${top+18} Q${R+4} ${top-4} ${R-8} ${top-6} Q${R-10} ${top+8} ${R-14} ${top+14}`,"ln part horn");if(hk==="stripe")front+=P(`M${L} ${top+8} l11 -2 M${L+1} ${top+2} l9 -2 M${R} ${top+8} l-11 -2 M${R-1} ${top+2} l-9 -2`,"ln thin")}
+ if(hk==="curl")front+=P(`M${L+2} ${top+18} c-14 -8 -12 -26 2 -26 c8 0 9 9 3 10`)+P(`M${R-2} ${top+18} c14 -8 12 -26 -2 -26 c-8 0 -9 9 -3 10`);
+ if(hk==="crystal")front+=P(`M${L-2} ${top+16} L${L-4} ${top-6} L${L+4} ${top-20} L${L+11} ${top-4} L${L+12} ${top+14} Z M${L+4} ${top-20} L${L+4} ${top+15}`,"ln part crystal")+P(`M${R+2} ${top+16} L${R+4} ${top-6} L${R-4} ${top-20} L${R-11} ${top-4} L${R-12} ${top+14} Z M${R-4} ${top-20} L${R-4} ${top+15}`,"ln part crystal");
+ if(hk==="flower"){front+=P(`M95 ${top+10} L100 ${top-6} L105 ${top+10}`,"ln part horn");for(let k=0;k<5;k++){const a=k/5*2*Math.PI-Math.PI/2;front+=`<circle class="ln part pink" cx="${(100+Math.cos(a)*6.5).toFixed(1)}" cy="${(top-12+Math.sin(a)*6.5).toFixed(1)}" r="4.6" pathLength="1"/>`}front+=`<circle class="ln part gold" cx="100" cy="${top-12}" r="3.4" pathLength="1"/>`}
+ if(hk==="bolt")front+=P(`M${L+6} ${top+16} L${L-3} ${top+2} L${L+5} ${top+1} L${L-4} ${top-18}`,"ln gold-ln")+P(`M${R-6} ${top+16} L${R+3} ${top+2} L${R-5} ${top+1} L${R+4} ${top-18}`,"ln gold-ln");
+ if(hk==="antenna")front+=P(`M${L+10} ${top+12} Q${L+2} ${top-2} ${L-4} ${top-14} M${R-10} ${top+12} Q${R-2} ${top-2} ${R+4} ${top-14}`,"ln thin")+P(star4(L-4,top-19,7,.3),"ln part gold")+P(star4(R+4,top-19,7,.3),"ln part gold");
+ if(hk==="mush")front+=P(`M${L+10} ${top+12} L${L+5} ${top-6} M${R-10} ${top+12} L${R-5} ${top-6}`,"ln thin")+P(`M${L-5} ${top-5} Q${L+5} ${top-25} ${L+15} ${top-5} Z`,"ln part red")+P(`M${R+5} ${top-5} Q${R-5} ${top-25} ${R-15} ${top-5} Z`,"ln part red")+`<circle cx="${L+3}" cy="${top-11}" r="1.8" fill="#FFFFFF"/><circle cx="${R-3}" cy="${top-11}" r="1.8" fill="#FFFFFF"/>`;
  const ak=kind(d,"a");
  if(ak==="leaf")front+=P(`M100 ${top+6} q14 -24 30 -16 q-10 18 -30 16z`,"ln part leaf");
  if(ak==="ribbon")front+=P(`M100 ${top+12} l-22 -12 l0 22 z M100 ${top+12} l22 -12 l0 22 z`,"ln part red");
  if(ak==="crown")front+=P(`M86 ${top+10} L86 ${top-6} L93 ${top+2} L100 ${top-10} L107 ${top+2} L114 ${top-6} L114 ${top+10} Z`,"ln part gold");
- // 目（ここだけ本番の色）
- const ne=eyeCount(d),ey=cy-ry*.15,er=ne===1?17:ne===3?10:12.5;
- const xs=ne===1?[100]:ne===2?[80,120]:[74,100,126],yy=ne===3?[ey+3,ey-6,ey+3]:xs.map(()=>ey);
- xs.forEach((x,i)=>{const y=yy[i],s=er*.55;front+=`<circle class="eye-rim" cx="${x}" cy="${y}" r="${er+2}"/><circle cx="${x}" cy="${y}" r="${er}" fill="url(#eg)"/><path d="M${x} ${y-s} Q${x+s*.18} ${y-s*.18} ${x+s} ${y} Q${x+s*.18} ${y+s*.18} ${x} ${y+s} Q${x-s*.18} ${y+s*.18} ${x-s} ${y} Q${x-s*.18} ${y-s*.18} ${x} ${y-s}Z" fill="#FFFFFF"/>`});
- if(ak==="glasses"&&ne>=2)front+=`<circle class="ln ink" cx="${xs[0]}" cy="${yy[0]}" r="${er+5}" pathLength="1"/><circle class="ln ink" cx="${xs[ne-1]}" cy="${yy[ne-1]}" r="${er+5}" pathLength="1"/>`;
+ // 目（ここだけ本番の色）。頭の幅に合わせて間隔と大きさを縮める
+ const ne=eyeCount(d),ey=H.top+(H.bottom-H.top)*.42,sc=Math.min(1,halfW(H,ey)/62),er=(ne===1?17:ne===3?10:12.5)*sc;
+ const xs=(ne===1?[100]:ne===2?[80,120]:[74,100,126]).map(x=>+(100+(x-100)*sc).toFixed(1)),yy=ne===3?[ey+3*sc,ey-6*sc,ey+3*sc]:xs.map(()=>ey);
+ xs.forEach((x,i)=>{const e=eyeSVG(x,+yy[i].toFixed(1),er,i,d.i==="classic");front+=e.s;defs+=e.defs});
+ if(ak==="glasses"&&ne>=2)front+=`<circle class="ln ink" cx="${xs[0]}" cy="${yy[0].toFixed(1)}" r="${(er+5).toFixed(1)}" pathLength="1"/><circle class="ln ink" cx="${xs[ne-1]}" cy="${yy[ne-1].toFixed(1)}" r="${(er+5).toFixed(1)}" pathLength="1"/>`;
  // 口・キバ（鼻は描かない）
- const my=ey+er+14;
+ const my=+(ey+er+14*Math.max(.8,sc)).toFixed(1);
  front+=P(`M90 ${my} Q100 ${my+10} 110 ${my}`,"ln ink");
  const fk=kind(d,"f");
  if(fk==="one")front+=P(`M104 ${my+2} l3 7 l3 -6 z`,"ln thin tooth");
  if(fk==="two")front+=P(`M93 ${my+1} l3 7 l3 -5 z M104 ${my+2} l3 7 l3 -6 z`,"ln thin tooth");
- if(ak==="scarf")front+=P(`M${100-rx*.8} ${my+16} Q100 ${my+30} ${100+rx*.8} ${my+16} L${100+rx*.8} ${my+28} Q100 ${my+42} ${100-rx*.8} ${my+28} Z`,"ln part red")+P(`M${100+rx*.35} ${my+30} h14 v26 h-14 z`,"ln part red");
- if(ak==="headphones")front+=P(`M${100-rx*.6} ${my+22} Q100 ${my+44} ${100+rx*.6} ${my+22}`,"ln ink")+`<circle class="ln ink-fill" cx="${100-rx*.62}" cy="${my+18}" r="8" pathLength="1"/><circle class="ln ink-fill" cx="${100+rx*.62}" cy="${my+18}" r="8" pathLength="1"/>`;
- if(ak==="bag")front+=P(`M${100+rx-10} ${cy+4} h26 v30 h-26 z`,"ln part orange")+P(`M${100+rx-4} ${cy+4} q8 -16 14 0`);
- const eg=d.i==="classic"?`<linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset="1" stop-color="#9B72CB"/></linearGradient>`:`<linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset=".38" stop-color="#EA4335"/><stop offset=".66" stop-color="#FBBC04"/><stop offset="1" stop-color="#34A853"/></linearGradient>`;
+ // 首まわり（雪だるま型は頭と胴のあいだ）
+ const ny=+(G.snow?H.bottom-14:my+16).toFixed(1),nw=+(G.snow?36:Math.min(B.bw*.8,halfW(B,ny))).toFixed(1);
+ if(ak==="scarf")front+=P(`M${100-nw} ${ny} Q100 ${ny+14} ${100+nw} ${ny} L${100+nw} ${ny+12} Q100 ${ny+26} ${100-nw} ${ny+12} Z`,"ln part red")+P(`M${(100+nw*.44).toFixed(1)} ${ny+14} h14 v26 h-14 z`,"ln part red");
+ if(ak==="headphones")front+=P(`M${(100-nw*.75).toFixed(1)} ${ny+6} Q100 ${ny+28} ${(100+nw*.75).toFixed(1)} ${ny+6}`,"ln ink")+`<circle class="ln ink-fill" cx="${(100-nw*.78).toFixed(1)}" cy="${ny+2}" r="8" pathLength="1"/><circle class="ln ink-fill" cx="${(100+nw*.78).toFixed(1)}" cy="${ny+2}" r="8" pathLength="1"/>`;
+ if(ak==="bag")front+=P(`M${(100+B.bw-10).toFixed(1)} ${(B.mid+4).toFixed(1)} h26 v30 h-26 z`,"ln part orange")+P(`M${(100+B.bw-4).toFixed(1)} ${(B.mid+4).toFixed(1)} q8 -16 14 0`);
+ defs+=`<linearGradient id="egc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset="1" stop-color="#9B72CB"/></linearGradient><radialGradient id="ecore"><stop offset="0" stop-color="#1A2366" stop-opacity=".5"/><stop offset=".5" stop-color="#1A2366" stop-opacity=".22"/><stop offset="1" stop-color="#1A2366" stop-opacity="0"/></radialGradient><filter id="esoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${(er*.12).toFixed(2)}"/></filter>`;
  const sig=JSON.stringify([d.c,d.s,d.u,d.h,d.e,d.t,d.w,d.y,d.f,d.a,d.i]),drawing=lastSketch!==""&&sig!==lastSketch;lastSketch=sig;
- $("#preview").innerHTML=`<svg viewBox="-24 -8 248 226" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="${drawing?"drawing":""}" style="--fur:${fur}"><defs>${eg}</defs>${back}${body}${front}</svg>`;
+ $("#preview").innerHTML=`<svg viewBox="-24 -8 248 226" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="${drawing?"drawing":""}" style="--fur:${fur}"><defs>${defs}</defs>${back}${body}${front}</svg>`;
  const au=autoNames(d);
- $("#autocap").textContent=au.length?`おまかせ：${au.join("・")}（設定画で Gemini が決めます）`:"すべてのパーツが決まっています";
+ $("#autocap").textContent=au.length?`おまかせ：${au.join("・")}（基準画像で Gemini が決めます）`:"すべてのパーツが決まっています";
 }
 
 /* ================= 画面の組み立て（最初に1回） ================= */
@@ -989,9 +1142,9 @@ function renderCard(){
  const d=st.d;
  $("#c-name").textContent=d.n||"名前未定";
  $("#c-id").textContent=dnaId(d);
- $("#c-p").textContent=d.p||"未定（設定画で Gemini が考えます）";
+ $("#c-p").textContent=d.p||"未定（基準画像で Gemini が考えます）";
  const hex=colorHex(d);
- $("#chip").innerHTML=`<span class="swatch"${hex?` style="background:${hex}"`:" data-auto"} aria-hidden="true"></span><span><b>毛</b>${esc(colorDesc(d)||"おまかせ（設定画で決まります）")}</span><span class="swatch eye${d.i==="classic"?" classic":""}" aria-hidden="true"></span><span><b>目</b>${d.i==="classic"?"青→紫のグラデーション":"青・赤・黄・緑のグラデーション"}と、白い四芒星</span>`;
+ $("#chip").innerHTML=`<span class="swatch"${hex?` style="background:${hex}"`:" data-auto"} aria-hidden="true"></span><span><b>毛</b>${esc(colorDesc(d)||"おまかせ（基準画像で決まります）")}</span><span class="swatch eye${d.i==="classic"?" classic":""}" aria-hidden="true"></span><span><b>目</b>${d.i==="classic"?"青→紫のグラデーション":"虹色（青・紫・赤・オレンジ・黄・緑）"}と、真ん中の大きな白い四芒星</span>`;
  const ms=motifsOf(d);
  const rows=[...(ms.length?[["その子らしさ",`${ms.join("、")}（${(INTENSITY[d.x]||INTENSITY.mid)[0]}）`]]:[]),...PART_ORDER.map(k=>[PARTS[k].name,partLabel(d,k)])];
  if(d.o)rows.push(["そのほか",d.o]);
@@ -1030,18 +1183,23 @@ function renderRecipeUI(){
 function buildSegs(){
  const r=recipe(),o=ropts(r),d=promptDNA(st.d);
  const fr=r.id==="friends"?friendsOf(o):{list:[],errs:[]};
- const c={attach:r.usesAttach?st.attach:false,how:r.usesAttach&&st.attach?"attach":"text",friends:fr.list};
+ const c=buildCtx(r,o,{attach:st.attach,eye:eyeActive(),friends:fr.list});
  if(r.id==="friends"){const m=$(`#f-friends-codes-msg`);if(m)m.innerHTML=fr.errs.length?`<div class="warn">${esc(fr.errs.join(" / "))}</div>`:(fr.list.length?`<div class="okmsg">${fr.list.map(x=>esc(x.n||"名前未定")).join("、")} を読み込みました</div>`:"")}
  return {r,o,c,segs:composeSegs(r,d,o,ratioOf(r,o),c)};
 }
 const plain=segs=>segs.map(s=>(s.h?`【${s.h}】\n`:"")+s.t).join("\n\n");
 function renderOut(){
  const {r,o,c,segs}=buildSegs();
- const note=r.attachNote?r.attachNote(o,c):(c.attach?ATTACH_SHEET:"なし（文章だけ）");
- const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。設定画のあとに返ってくる JSON を取り込むと安定します。":"";
- const needsImage=!/^なし/.test(note)&&r.id!=="gem";
- const how=r.id==="gem"?"":`モデルは Flash か Pro を選びます。${needsImage?"貼り方：入力欄の「＋」（ファイルを追加）から画像を選び、指示書を貼って送信します。":"指示書を貼って送信します。"}`;
- $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div><p><b>${r.id==="gem"?"Gem に入れるもの":"Gemini に添付するもの"}</b>${esc(note)}</p>${how?`<p class="hint">${esc(how)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
+ const gem=r.id==="gem",refs=c.refs;
+ let list;
+ if(gem)list=`<p><b>Gem に入れるもの</b>${esc(o.scope==="このモッフィー専用"?"（任意）基準画像と目の見本を、Gem の「知識」に追加":"なし")}</p>`;
+ else if(!refs.length)list=`<p><b>Gemini に添付するもの</b>なし${r.usesAttach&&!st.attach?"（文章だけ）":""}</p>`;
+ else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28">`:""}</li>`).join("")}</ul>`;
+ const eyeUsable=r.usesAttach?st.attach:(r.id==="check"||r.id==="fix");
+ const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に、キラキラの目の画像を入れておくと、目が公式の子に近づきます。":"";
+ const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。基準画像のあとに返ってくる JSON を取り込むと安定します。":"";
+ const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?"貼り方：入力欄の「＋」（ファイルを追加）から、この順番で画像を添付し、指示書を貼って送信します。":"指示書を貼って送信します。"}`;
+ $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
  const nx=NEXT[r.id]||NEXT.scene;
  $("#nextline").innerHTML=`<h3>このあと</h3><ol>${nx.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
  const out=$("#out");out.classList.toggle("explain",st.explain);
@@ -1066,12 +1224,98 @@ async function copyText(text,toast,fallbackEl){
  catch(e){if(fallbackEl){const r=document.createRange();r.selectNodeContents(fallbackEl);const s=getSelection();s.removeAllRanges();s.addRange(r)}flash(toast,"自動でコピーできませんでした。選択した部分を手動でコピーしてください")}
 }
 function flash(sel,msg){const el=$(sel);el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=""},2600)}
-function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro}))}catch(e){}}
-function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)?o.recipe:"sheet";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{}}}catch(e){}}
+function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro,useEye:st.useEye}))}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false}}catch(e){}}
 function savedList(){try{return JSON.parse(localStorage.getItem("moffy-maker-saved")||"[]")}catch(e){return []}}
 function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span class="hint">保存したモッフィー：</span>`+l.map((x,i)=>`<button type="button" data-load="${i}">${esc(x.name)}</button>`).join(""):""}
 function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}
 function setMode(m){st.mode=m;$("#pane-new").hidden=m!=="new";$("#pane-import").hidden=m!=="import";document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.mode===m)))}
+
+/* ================= 目の見本（画像はこのブラウザの中だけで扱い、どこにも送信しない） ================= */
+const EYE_KEY="moffy-eye-sample",EYE_OUT=768;
+const eye={img:null,src:"",zoom:1,x:0,y:0,out:"",canvas:null,t:0};
+const eyeActive=()=>!!(eye.out&&st.useEye!==false);
+const eyeMsg=m=>flash("#toast3",m);
+function eyeLoadFile(file){
+ if(!file||!/^image\//.test(file.type||"")){eyeMsg("画像ファイルを選んでください");return}
+ if(file.size>20*1024*1024){eyeMsg("20MB より小さい画像を選んでください");return}
+ const fr=new FileReader();
+ fr.onload=()=>eyeSetSource(String(fr.result),{});
+ fr.onerror=()=>eyeMsg("画像を読み込めませんでした");
+ fr.readAsDataURL(file);
+}
+// 読み込んだ画像は、長い辺 1024px までの JPEG にしてから持つ（保存の容量を抑える。透明な所は白）
+function eyeSetSource(url,opt){
+ const im=new Image();
+ im.onload=()=>{
+  if(!opt.ready){
+   const W=im.naturalWidth,H=im.naturalHeight,k=Math.min(1,1024/Math.max(W,H,1));
+   const cv=document.createElement("canvas");cv.width=Math.max(1,Math.round(W*k));cv.height=Math.max(1,Math.round(H*k));
+   const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,cv.width,cv.height);g.drawImage(im,0,0,cv.width,cv.height);
+   eyeSetSource(cv.toDataURL("image/jpeg",.9),{...opt,ready:true});return;
+  }
+  eye.img=im;eye.src=url;
+  if(!opt.restore){eye.zoom=1;eye.x=0;eye.y=0}
+  eyeRender();
+  if(!opt.restore){eyeSave();eyeMsg("目の見本を入れました。指示書の添付の順番に入っています")}
+  renderOut();
+ };
+ im.onerror=()=>{if(!opt.restore)eyeMsg("画像を読み込めませんでした")};
+ im.src=url;
+}
+// 公式ジェネレーターと同じく、白い正方形に収める。拡大すると中心付近を切り出し、左右・上下でずらせる
+function eyeRender(){
+ if(!eye.img){eye.out="";eye.canvas=null;eyeUI();return}
+ const im=eye.img,W=im.naturalWidth,H=im.naturalHeight,cv=document.createElement("canvas");cv.width=cv.height=EYE_OUT;
+ const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,EYE_OUT,EYE_OUT);
+ const f=Math.min(EYE_OUT/W,EYE_OUT/H)*eye.zoom,dw=W*f,dh=H*f;
+ const ox=(EYE_OUT-dw)/2-eye.x*Math.max(0,(dw-EYE_OUT)/2),oy=(EYE_OUT-dh)/2-eye.y*Math.max(0,(dh-EYE_OUT)/2);
+ g.save();g.beginPath();g.rect(0,0,EYE_OUT,EYE_OUT);g.clip();g.drawImage(im,ox,oy,dw,dh);g.restore();
+ eye.canvas=cv;eye.out=cv.toDataURL("image/jpeg",.92);
+ eyeUI();
+}
+function eyeUI(){
+ const has=!!eye.out,th=$("#eye-thumb");
+ if(has)th.src=eye.out;else th.removeAttribute("src");
+ th.hidden=!has;$("#eye-empty").hidden=has;$("#eye-ctrl").hidden=!has;
+ $("#eye-zoom").value=String(Math.round(eye.zoom*100));$("#eye-x").value=String(Math.round(eye.x*100));$("#eye-y").value=String(Math.round(eye.y*100));
+ const use=$("#eye-use");use.checked=st.useEye!==false;use.disabled=!has;
+ $("#eye-pick").textContent=has?"別の画像にする":"画像を選ぶ";
+}
+function eyeSave(){try{if(eye.src)localStorage.setItem(EYE_KEY,JSON.stringify({src:eye.src,zoom:eye.zoom,x:eye.x,y:eye.y}));else localStorage.removeItem(EYE_KEY)}catch(e){eyeMsg("このブラウザには保存できませんでした（このページを開いているあいだは使えます）")}}
+async function eyeCopy(){
+ if(!eye.canvas)return;
+ try{
+  if(!window.ClipboardItem||!navigator.clipboard||!navigator.clipboard.write)throw new Error("unsupported");
+  await navigator.clipboard.write([new ClipboardItem({"image/png":new Promise((res,rej)=>eye.canvas.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png"))})]);
+  eyeMsg("コピーしました。Gemini の入力欄に貼り付けられます");
+ }catch(e){eyeMsg("このブラウザでは画像をコピーできません。「画像を保存」してから添付してください")}
+}
+function eyeDownload(){if(!eye.out)return;const a=document.createElement("a");a.href=eye.out;a.download="moffy-eye-sample.jpg";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました")}
+function eyeClear(b){
+ if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと削除";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent="削除"},4000);return}
+ clearTimeout(b._t);b.dataset.armed="";b.textContent="削除";
+ Object.assign(eye,{img:null,src:"",zoom:1,x:0,y:0});
+ eyeSave();eyeRender();renderOut();eyeMsg("目の見本を削除しました");
+}
+function initEye(){
+ const drop=$("#eye-drop"),file=$("#eye-file");
+ $("#eye-pick").addEventListener("click",()=>file.click());
+ file.addEventListener("change",()=>{const f=file.files&&file.files[0];if(f)eyeLoadFile(f);file.value=""});
+ for(const t of ["dragenter","dragover"])drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")});
+ for(const t of ["dragleave","dragend"])drop.addEventListener(t,()=>drop.classList.remove("over"));
+ drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");const f=[...((e.dataTransfer&&e.dataTransfer.files)||[])].find(x=>/^image\//.test(x.type));if(f)eyeLoadFile(f);else eyeMsg("画像ファイルをドロップしてください")});
+ // 画像の貼り付けだけを受け取る（文字の貼り付けはそのまま）
+ document.addEventListener("paste",e=>{const it=[...((e.clipboardData&&e.clipboardData.items)||[])].find(x=>x.kind==="file"&&/^image\//.test(x.type));if(!it)return;const f=it.getAsFile();if(!f)return;e.preventDefault();eyeLoadFile(f)});
+ const slide=()=>{eye.zoom=+$("#eye-zoom").value/100;eye.x=+$("#eye-x").value/100;eye.y=+$("#eye-y").value/100;eyeRender();clearTimeout(eye.t);eye.t=setTimeout(()=>{eyeSave();renderOut()},250)};
+ for(const id of ["eye-zoom","eye-x","eye-y"])$("#"+id).addEventListener("input",slide);
+ $("#eye-use").addEventListener("change",e=>{st.useEye=e.target.checked;renderOut()});
+ $("#eye-copy").addEventListener("click",eyeCopy);
+ $("#eye-save").addEventListener("click",eyeDownload);
+ $("#eye-clear").addEventListener("click",e=>eyeClear(e.currentTarget));
+ try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eye.zoom=+o.zoom||1;eye.x=+o.x||0;eye.y=+o.y||0;eyeSetSource(o.src,{restore:true,ready:true})}}catch(e){}
+ eyeUI();
+}
 
 /* ================= イベント ================= */
 document.addEventListener("click",e=>{
@@ -1089,7 +1333,7 @@ document.addEventListener("click",e=>{
   case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}
   case "share-dna":{const fail=()=>flash("#toast1","共有メニューを開けませんでした。DNAコードのコピーを使ってください");try{navigator.share({title:"モッフィーのDNA",text:`モッフィー「${st.d.n||"名前未定"}」のDNAコード\n${shareTarget()}`}).catch(err=>{if(err&&err.name!=="AbortError")fail()})}catch(err){fail()}break}
   case "gacha":{loadDNA(gacha());flash("#toast1","ガチャで新しいモッフィーを決めました");break}
-  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、設定画のときに Gemini がモチーフを考えて JSON で返します。"}break}
+  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、基準画像のときに Gemini がモチーフを考えて JSON で返します。"}break}
   case "copy-code":copyText(dnaCode(st.d),"#toast1",$("#c-code"));break;
   case "copy-link":copyText(shareTarget(),"#toast1");break;
   case "qr-btn":{const box=$("#qr");box.hidden=!box.hidden;b.setAttribute("aria-expanded",String(!box.hidden));if(!box.hidden)renderQR();break}
@@ -1116,6 +1360,7 @@ document.addEventListener("change",e=>{
 /* ================= 起動 ================= */
 restore();
 buildStatic();
+initEye();
 let fromLink="";
 try{const q=new URLSearchParams(location.search).get("dna");if(q){st.d={...BLANK_DNA,...parseDNA(q)};fromLink=st.d.n||"名前未定"}}catch(e){}
 syncInputs();$("#explain").checked=st.explain;

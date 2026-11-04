@@ -12,7 +12,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok(errs.length === 0, 'ページの読み込みでエラーなし ' + errs.join(' | '));
   // 全レシピで指示書が出る
   const ids = await p.$$eval('[data-recipe]', bs => bs.map(b => b.dataset.recipe));
-  ok(ids.length === 15, 'レシピ数 15 = ' + ids.length);
+  ok(ids.length === 16, 'レシピ数 16 = ' + ids.length);
+  ok((await p.getAttribute('#r-base', 'aria-pressed')) === 'true', '最初のレシピは「基準画像をつくる」');
   for (const id of ids) {
     await p.click(`#r-${id}`);
     const t = await p.textContent('#out');
@@ -23,7 +24,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const a1 = await p.textContent('#out');
   await p.click('[data-attach="0"]');
   const a0 = await p.textContent('#out');
-  ok(a1.includes('添付した画像') && !a0.includes('添付した画像'), '添付あり/文章だけの切り替え');
+  ok(a1.includes('1枚目の画像のモッフィーを正とし') && !/枚目/.test(a0), '添付あり/文章だけの切り替え');
+  ok(a1.indexOf('絶対に守るルール') < a1.indexOf('この子の特徴') && a1.includes('1.5〜2.5頭身'), 'ルールが先頭にあり、頭身の指定がある');
   ok(/アスペクト比は 4:5/.test(a0), 'おでかけにアスペクト比が入る');
   await p.click('[data-attach="1"]');
   // 解説モード
@@ -50,13 +52,13 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   // 既存キャラ名
   await p.click('#mode-new'); await p.fill('#kw', 'ピカチュウみたいな黄色、雷');
   ok(!(await p.$eval('#ipwarn', e => e.hidden)), '既存キャラ名の警告');
-  await p.click('#r-sheet');
+  await p.click('#r-base');
   ok(!(await p.textContent('#out')).includes('ピカチュウ'), '指示書から既存キャラ名を除去');
   // 友だち
   const code2 = await p.textContent('#c-code');
   await p.click('#r-friends'); await p.fill('#f-friends-codes', code + '\nおかしな行');
   const fr = await p.textContent('#out');
-  ok(fr.includes('2枚の設定画') || fr.includes('2匹'), '友だち共演（読めた1匹＋自分）');
+  ok(fr.includes('2匹') && fr.includes('2枚目の基準画像'), '友だち共演（読めた1匹＋自分）');
   ok((await p.textContent('#rfields')).includes('2行目'), '友だち共演（読めない行のエラー）');
   // スタンプのコマ数と比率
   await p.click('#r-stamps'); await p.selectOption('#f-stamps-panels', '8');
@@ -90,13 +92,13 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const mo = await p.inputValue('#mo');
   ok(mo.includes('リュック') && mo.includes('なると'), '言葉からモチーフを提案 (' + mo + ')');
   await p.selectOption('#xi', 'high');
-  await p.click('#r-sheet');
+  await p.click('#r-base');
   const sh = await p.textContent('#out');
-  ok(sh.includes('その子らしさ') && sh.includes('リュック') && sh.includes('強く出す'), '設定画にモチーフと強さが入る');
-  ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '設定画の JSON にモチーフとプロフィールの欄');
+  ok(sh.includes('その子らしさ') && sh.includes('リュック') && sh.includes('強く出す'), '基準画像にモチーフと強さが入る');
+  ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '基準画像の JSON にモチーフとプロフィールの欄');
   await p.fill('#mo', ''); await p.fill('#kw', 'ほげほげ'); await p.click('#mo-suggest');
   ok((await p.textContent('#mo-hint')).includes('辞書にない'), '辞書にない言葉の案内');
-  ok((await p.textContent('#out')).includes('目に見えるモチーフ2〜3個'), 'モチーフ未定なら設定画で決めさせる');
+  ok((await p.textContent('#out')).includes('目に見えるモチーフ2〜3個'), 'モチーフ未定なら基準画像で決めさせる');
   await p.click('#prof summary');
   await p.fill('#pq', 'まかせて！'); await p.fill('#pr', '驚くと毛がぶわっとふくらむ'); await p.fill('#pb', '雷の音');
   await p.click('#r-comic'); await p.selectOption('#f-comic-talk', '短いセリフあり');
@@ -114,11 +116,76 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok((await p.textContent('#attachline')).includes('2枚目') && (await p.textContent('#out')).includes('2枚目の写真と同じ'), '自分の写真レシピ（2枚添付、写真の縦横比）');
   await p.click('[data-attach="0"]');
   const ph0 = await p.textContent('#out');
-  ok(!ph0.includes('設定画') && ph0.includes('添付した写真'), '自分の写真レシピ（文章だけ）');
+  ok(!/基準画像|目の見本/.test(ph0) && ph0.includes('1枚目の写真'), '自分の写真レシピ（文章だけ）');
   await p.click('[data-attach="1"]');
   await p.click('#mode-new'); await p.click('[data-sample="1"]');
   await p.click('#qr-btn'); await p.click('#qr-btn'); await p.waitForTimeout(300);
   ok(await p.$('#qr canvas, #qr img') !== null, '長い DNA コードでも QR を表示');
+  // サイクル6: 基準画像・設定画・ルールチェック・体のかたちとツノ
+  await p.click('#r-base');
+  const bs = await p.textContent('#out');
+  ok(bs.includes('真正面') && bs.includes('左右対称') && bs.includes('1.5〜2.5頭身') && bs.includes('1:1'), '基準画像は1体・真正面・頭身・正方形');
+  ok(!bs.includes('黒目') && bs.includes('大きな黒い瞳孔は描かない'), '「黒目」と書かず、黒い瞳孔を描かない指定');
+  await p.selectOption('#f-base-src', { index: 1 });
+  ok((await p.textContent('#out')).includes('1枚目の画像のモッフィーを、基準画像として描き直して'), '基準画像（もとにする画像あり）');
+  await p.selectOption('#f-base-src', { index: 0 });
+  await p.click('#r-sheet');
+  const st6 = await p.textContent('#out');
+  ok(!st6.includes('にっこり') && st6.includes('文字は描かない') && st6.includes('コマはこの7つだけ'), '設定画は文字なし・7コマだけ');
+  await p.click('#r-check');
+  ok((await p.textContent('#out')).includes('大きな黒い瞳孔が見える目は不合格'), 'ルールチェックで黒い瞳孔を不合格にする');
+  await p.click('#mode-new'); await p.evaluate(() => { document.querySelector('#adv').open = true; });
+  const sOpts = await p.$$eval('#p-s option', os => os.map(o => o.value));
+  const hOpts = await p.$$eval('#p-h option', os => os.map(o => o.value));
+  ok(sOpts.length === 10 && hOpts.length === 11, `体のかたち ${sOpts.length - 1} 種・ツノ ${hOpts.length - 2} 種（おまかせ・なしを除く）`);
+  let drawn = 0;
+  for (const v of sOpts) { await p.selectOption('#p-s', v); if (await p.$('#preview svg path')) drawn++; }
+  for (const v of hOpts) { await p.selectOption('#p-h', v); if (await p.$('#preview svg path')) drawn++; }
+  ok(drawn === sOpts.length + hOpts.length && errs.length === 0, 'すべての体のかたち・ツノでラフが描ける');
+  await p.selectOption('#p-s', 'round'); await p.selectOption('#p-h', 'two');
+  // サイクル6: 目の見本（このブラウザの中だけ。ファイル選択・貼り付け・保存・削除）
+  const mk = (color) => p.evaluate((color) => { const c = document.createElement('canvas'); c.width = 320; c.height = 200; const g = c.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, 320, 200); g.fillStyle = '#fff'; g.beginPath(); g.arc(160, 100, 50, 0, 7); g.fill(); return c.toDataURL('image/png').split(',')[1]; }, color);
+  const pngA = Buffer.from(await mk('#3366ff'), 'base64');
+  // 画像を外に出す通信（GET 以外・本文つき・URL に画像データ）がないこと。フォントや QR ライブラリの読み込み（GET）は対象外
+  const reqs = []; p.on('request', r => { const u = r.url(); if (/^(data|file|blob):/.test(u)) return; if (r.method() !== 'GET' || (r.postData() || '').length || /base64|data:image/.test(u)) reqs.push(r.method() + ' ' + u.slice(0, 80)); });
+  const before6 = reqs.length;
+  await p.click('#r-outing');
+  ok((await p.textContent('#attachline')).includes('目の見本'), '目の見本がないときに案内を出す');
+  await p.setInputFiles('#eye-file', { name: 'eye.png', mimeType: 'image/png', buffer: pngA });
+  await p.waitForSelector('#eye-thumb:not([hidden])', { timeout: 3000 }).catch(() => {});
+  const nat = await p.$eval('#eye-thumb', i => [i.naturalWidth, i.naturalHeight, i.hidden]);
+  ok(nat[0] === 768 && nat[1] === 768 && !nat[2], '目の見本を白い正方形に整えて表示 ' + nat.join('x'));
+  let ou = await p.textContent('#out');
+  ok(ou.includes('1枚目の目の見本') && ou.includes('2枚目の画像のモッフィーを正とし'), '目の見本が1枚目、基準画像が2枚目');
+  ok(await p.$('#attachline .attach-thumb') !== null && (await p.textContent('#attachline')).includes('2枚（この順番で）'), '添付の順番に目の見本のサムネイル');
+  await p.uncheck('#eye-use');
+  ou = await p.textContent('#out');
+  ok(!ou.includes('目の見本') && ou.includes('1枚目の画像のモッフィーを正とし'), '「指示書で使う」を外すと目の見本が消える');
+  await p.check('#eye-use');
+  await p.click('[data-attach="0"]');
+  ok(!(await p.textContent('#out')).includes('目の見本'), '文章だけでは目の見本を使わない');
+  await p.click('[data-attach="1"]');
+  await p.click('#r-check');
+  ok((await p.textContent('#out')).includes('2枚目の目の見本と同じ'), 'ルールチェックで目を見本と比べる');
+  await p.click('#r-fix');
+  ok((await p.textContent('#out')).includes('2枚目の目の見本とそっくり'), '部分修正で目を見本どおりに直す');
+  await p.fill('#eye-zoom', '200'); await p.dispatchEvent('#eye-zoom', 'input'); await p.waitForTimeout(400);
+  const srcA = await p.$eval('#eye-thumb', i => i.src);
+  const pngB = await mk('#ff3366');
+  await p.evaluate((b64) => { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); const dt = new DataTransfer(); dt.items.add(new File([u], 'paste.png', { type: 'image/png' })); document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }, pngB);
+  await p.waitForTimeout(600);
+  ok((await p.$eval('#eye-thumb', i => i.src)) !== srcA && (await p.inputValue('#eye-zoom')) === '100', '画像の貼り付けで目の見本を入れかえる');
+  await p.setViewportSize({ width: 360, height: 900 });
+  ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 360, '目の見本を入れても幅 360px で横スクロールなし');
+  await p.setViewportSize({ width: 1280, height: 1000 });
+  await p.click('#r-outing');
+  await p.reload(); await p.waitForTimeout(800);
+  ok(!(await p.$eval('#eye-thumb', i => i.hidden)) && (await p.textContent('#out')).includes('1枚目の目の見本'), '再読み込みしても目の見本が残る');
+  await p.click('#eye-clear');
+  ok((await p.textContent('#eye-clear')).includes('もう一度') && !(await p.$eval('#eye-thumb', i => i.hidden)), '削除は1回目で確認');
+  await p.click('#eye-clear');
+  ok((await p.$eval('#eye-thumb', i => i.hidden)) && !(await p.textContent('#out')).includes('目の見本とそっくり'), '2回押すと目の見本を削除');
+  ok(reqs.length === before6, '目の見本の画像をどこにも送信しない ' + reqs.slice(before6).join(' '));
   ok(errs.length === 0, '操作中のエラーなし ' + errs.join(' | '));
   await b.close();
   console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
