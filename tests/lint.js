@@ -14,7 +14,8 @@ const file = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '.
     const dnas = [...SAMPLES.map(s => ({ ...s })), { ...BLANK_DNA, n: 'オマカセ' }];
     for (let i = 0; i < 60; i++) dnas.push(gacha());
     // 既存キャラ名入り、取り込み由来の自由記述入り
-    dnas.push({ ...DEFAULT_DNA, n: 'ピカチュウモッフィー', k: 'ミッフィーみたいな白、ドラえもん' });
+    dnas.push({ ...DEFAULT_DNA, n: 'ピカチュウモッフィー', k: 'ミッフィーみたいな白、ドラえもん', q: 'ピカチュウって呼んで' });
+    dnas.push({ ...DEFAULT_DNA, n: 'モチーフなし', m: '', q: '', r: '', g: '', b: '', z: '' });
     dnas.push(normalize({ name: 'ソラ', color: '水色とラベンダーのグラデーション', horn: '小さな金色のツノが3本', tail: 'なし', eyes: '３つ', other: 'おなかに星の模様' }));
     const friendsCodes = [dnaCode(SAMPLES[1]), dnaCode(SAMPLES[2]), dnaCode(gacha())].join('\n');
     for (const d0 of dnas) {
@@ -28,10 +29,11 @@ const file = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '.
           if (r.id === 'friends') o.codes = friendsCodes;
           if (r.id === 'comic') o.talk = cases % 2 ? '短いセリフあり' : 'なし（絵だけ）';
           if (r.id === 'sheet') o.src = cases % 2 ? 'あり（公式ジェネレーターの画像など）' : 'なし（言葉から作る）';
+          if (r.id === 'photo') o.pos = r.fields[0].opts[cases % 4];
           const friends = r.id === 'friends' ? o.codes.split('\n').map(x => promptDNA(parseDNA(x))) : [];
           const c = { attach, how: attach ? 'attach' : 'text', friends };
           const ratio = r.ratioBy ? r.ratioBy(o) : r.ratio;
-          const segs = r.build(d, o, ratio, c);
+          const segs = composeSegs(r, d, o, ratio, c);
           const t = segs.map(s => (s.h ? `【${s.h}】\n` : '') + s.t).join('\n\n');
           const tag = `${r.id}/${attach ? '添付' : '文章'}/${d0.n}`;
           cases++;
@@ -40,7 +42,16 @@ const file = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '.
           if (IMAGE(r) && r.id !== 'fix' && !/アスペクト比は/.test(t)) note('アスペクト比の指定がない', tag);
           if (r.id === 'fix' && !/元の画像と同じ/.test(t)) note('部分修正で構図の維持がない', tag);
           if (IMAGE(r) && !/画像は1枚だけ/.test(t)) note('出力枚数の指定がない', tag);
-          if (r.usesAttach && !attach && /添付/.test(t)) note('文章だけなのに「添付」が出る', tag);
+          if (r.usesAttach && !attach && r.id !== 'photo' && /添付/.test(t)) note('文章だけなのに「添付」が出る', tag);
+          if (r.id === 'photo' && !attach && /設定画/.test(t)) note('写真レシピの文章だけモードに「設定画」が出る', tag);
+          if (r.id === 'photo' && !/アスペクト比は、[^。]*写真と同じ/.test(t)) note('写真レシピの縦横比が写真に合っていない', tag);
+          if (r.id === 'photo' && attach && !/1枚目/.test(t)) note('写真レシピで設定画の順番がない', tag);
+          if (['outing', 'season', 'photo', 'figure'].includes(r.id) && /スタジオライト/.test(t)) note('背景がある場面なのに「スタジオライト」（光の指示が矛盾）', tag);
+          const ms = motifsOf(d);
+          if (ms.length && IMAGE(r) && !['fix', 'friends'].includes(r.id) && !ms.every(m => t.includes(m))) note('モチーフが指示書に入っていない', tag);
+          if (!ms.length && d.k && r.id === 'sheet' && !/目に見えるモチーフ2〜3個/.test(t)) note('設定画でモチーフを決める指示がない', tag);
+          if (d.r && IMAGE(r) && !['sheet', 'fix', 'friends'].includes(r.id) && !t.includes(d.r)) note('クセがしぐさに入っていない', tag);
+          if (r.id === 'comic' && o.talk.startsWith('短い') && d.q && !t.includes(d.q)) note('4コマに口ぐせが入っていない', tag);
           if (r.id !== 'sheet' && /おまかせ/.test(t)) note('「おまかせ」が指示書に漏れる', tag);
           if (/ピカチュウ|ミッフィー|ドラえもん/.test(t)) note('既存キャラ名が残る', tag);
           if (t.length > 3200) note('長すぎる（3200字超）', tag + ' ' + t.length);

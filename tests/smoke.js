@@ -12,7 +12,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok(errs.length === 0, 'ページの読み込みでエラーなし ' + errs.join(' | '));
   // 全レシピで指示書が出る
   const ids = await p.$$eval('[data-recipe]', bs => bs.map(b => b.dataset.recipe));
-  ok(ids.length === 14, 'レシピ数 14 = ' + ids.length);
+  ok(ids.length === 15, 'レシピ数 15 = ' + ids.length);
   for (const id of ids) {
     await p.click(`#r-${id}`);
     const t = await p.textContent('#out');
@@ -83,6 +83,42 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok((await p.textContent('#nextline')).includes('fix_prompt'), '「このあと」がレシピに合わせて変わる');
   ok((await p.textContent('#attachline')).includes('貼り方'), '画像が必要なレシピで貼り方を表示');
   ok((await p.evaluate(() => document.documentElement.lang)) === 'ja', 'html の言語が ja');
+  // サイクル4: その子らしさ・プロフィール帳・自分の写真
+  await p.click('#mode-new');
+  await p.fill('#kw', '登山が好き、ラーメン、みかん色'); await p.fill('#mo', '');
+  await p.click('#mo-suggest');
+  const mo = await p.inputValue('#mo');
+  ok(mo.includes('リュック') && mo.includes('なると'), '言葉からモチーフを提案 (' + mo + ')');
+  await p.selectOption('#xi', 'high');
+  await p.click('#r-sheet');
+  const sh = await p.textContent('#out');
+  ok(sh.includes('【その子らしさ】') && sh.includes('リュック') && sh.includes('強く出す'), '設定画にモチーフと強さが入る');
+  ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '設定画の JSON にモチーフとプロフィールの欄');
+  await p.fill('#mo', ''); await p.fill('#kw', 'ほげほげ'); await p.click('#mo-suggest');
+  ok((await p.textContent('#mo-hint')).includes('辞書にない'), '辞書にない言葉の案内');
+  ok((await p.textContent('#out')).includes('目に見えるモチーフ2〜3個'), 'モチーフ未定なら設定画で決めさせる');
+  await p.click('#prof summary');
+  await p.fill('#pq', 'まかせて！'); await p.fill('#pr', '驚くと毛がぶわっとふくらむ'); await p.fill('#pb', '雷の音');
+  await p.click('#r-comic'); await p.selectOption('#f-comic-talk', '短いセリフあり');
+  const cm = await p.textContent('#out');
+  ok(cm.includes('まかせて！') && cm.includes('雷の音') && cm.includes('ぶわっと'), '4コマに口ぐせ・苦手・クセが入る');
+  await p.click('#r-outing');
+  ok((await p.textContent('#out')).includes('【しぐさとお話】'), 'おでかけにクセが入る');
+  const code3 = await p.textContent('#c-code');
+  await p.click('[data-sample="2"]');
+  await p.click('#mode-import'); await p.fill('#imp', code3); await p.click('#imp-go');
+  ok((await p.inputValue('#pq')) === 'まかせて！' && (await p.$eval('#xi', s => s.value)) === 'high', 'プロフィールと強さが DNA コードで往復');
+  await p.fill('#imp', '{"name":"テスト","motifs":["小さな傘","毛先のしずく"],"catchphrase":"ぴちょん","quirk":"雨音でおどる","intensity":"つよめ"}'); await p.click('#imp-go');
+  ok((await p.inputValue('#mo')) === '小さな傘、毛先のしずく' && (await p.inputValue('#pq')) === 'ぴちょん', 'JSON のモチーフ（配列）とプロフィールを取り込む');
+  await p.click('#r-photo');
+  ok((await p.textContent('#attachline')).includes('2枚目') && (await p.textContent('#out')).includes('2枚目の写真と同じ'), '自分の写真レシピ（2枚添付、写真の縦横比）');
+  await p.click('[data-attach="0"]');
+  const ph0 = await p.textContent('#out');
+  ok(!ph0.includes('設定画') && ph0.includes('添付した写真'), '自分の写真レシピ（文章だけ）');
+  await p.click('[data-attach="1"]');
+  await p.click('#mode-new'); await p.click('[data-sample="1"]');
+  await p.click('#qr-btn'); await p.click('#qr-btn'); await p.waitForTimeout(300);
+  ok(await p.$('#qr canvas, #qr img') !== null, '長い DNA コードでも QR を表示');
   ok(errs.length === 0, '操作中のエラーなし ' + errs.join(' | '));
   await b.close();
   console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');

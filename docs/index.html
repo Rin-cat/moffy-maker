@@ -183,13 +183,37 @@ footer ul{margin:0;padding-left:1.2em}
         <div class="field">
           <label for="kw">好きな言葉</label>
           <textarea id="kw"></textarea>
-          <div class="chips" id="tags" aria-label="キーワードタグ"></div>
+          <div class="chips" id="tags" role="group" aria-label="キーワードタグ"></div>
           <div class="warn" id="ipwarn" hidden></div>
+        </div>
+        <div class="field">
+          <label for="mo">その子らしさ（言葉を絵にするモチーフ）</label>
+          <input type="text" id="mo" placeholder="例：小さなリュック、コンパス、ほっぺの日焼け">
+          <div class="btns">
+            <button type="button" class="btn ghost small" id="mo-suggest">言葉から提案</button>
+            <label class="switch" for="xi">らしさの強さ
+              <select id="xi" style="width:auto"><option value="low">ひかえめ</option><option value="mid">ふつう</option><option value="high">つよめ</option></select>
+            </label>
+          </div>
+          <p class="hint" id="mo-hint">好きな言葉を、持ち物・模様・体の一部のような「目に見えるもの」に置きかえると、かわいさに埋もれずに残ります。</p>
         </div>
         <div class="row2">
           <div class="field"><label for="nm">名前</label><input type="text" id="nm"></div>
           <div class="field"><label for="ps">性格（任意）</label><input type="text" id="ps" placeholder="空欄なら設定画で Gemini が考えます"></div>
         </div>
+        <details class="adv" id="prof">
+          <summary>プロフィール帳（任意）</summary>
+          <div class="adv-body">
+            <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄は設定画のときに Gemini が考えます。</p>
+            <div class="row2">
+              <div class="field"><label for="pq">口ぐせ</label><input type="text" id="pq" placeholder="例：てっぺんまで、もうひと息！"></div>
+              <div class="field"><label for="pr">クセ</label><input type="text" id="pr" placeholder="例：うれしいとしっぽが揺れる"></div>
+              <div class="field"><label for="pg">好きなもの</label><input type="text" id="pg" placeholder="例：山頂で食べるおにぎり"></div>
+              <div class="field"><label for="pb">苦手なもの</label><input type="text" id="pb" placeholder="例：くだり坂"></div>
+            </div>
+            <div class="field"><label for="pz">夢</label><input type="text" id="pz" placeholder="例：世界中の山のてっぺんでおやつを食べること"></div>
+          </div>
+        </details>
         <details class="adv" id="adv" open>
           <summary>見た目を指定する（任意）</summary>
           <div class="adv-body">
@@ -356,16 +380,50 @@ const PARTS={
 };
 const PART_ORDER=["s","u","h","e","t","w","y","f","a"];
 const LOOK_KEYS=["s","u","h","e","t","w","a"];
-const TEXT_KEYS=["n","k","p","o"];
-const KEYS=[...TEXT_KEYS,"i","c",...PART_ORDER];
-const DEFAULT_DNA={n:"ヤマモッフィー",k:"青色、登山が好き、食いしん坊",p:"",o:"",i:"g4",c:"sky",s:"round",u:"soft",h:"two",e:"none",t:"puff",w:"none",y:"2",f:"one",a:"scarf"};
-const BLANK_DNA={n:"",k:"",p:"",o:"",i:"g4",c:"auto",s:"auto",u:"auto",h:"auto",e:"auto",t:"auto",w:"auto",y:"2",f:"auto",a:"auto"};
+// n名前 k言葉 p性格 o特徴 m モチーフ / プロフィール帳：q口ぐせ rクセ g好き b苦手 z夢
+const TEXT_KEYS=["n","k","p","o","m","q","r","g","b","z"];
+const PROFILE=[["q","口ぐせ"],["r","クセ"],["g","好きなもの"],["b","苦手なもの"],["z","夢"]];
+const KEYS=[...TEXT_KEYS,"i","x","c",...PART_ORDER];
+const DEFAULT_DNA={n:"ヤマモッフィー",k:"青色、登山が好き、食いしん坊",p:"元気で食いしん坊な山好き",o:"",m:"小さなリュック、コンパス、ほっぺの日焼け",q:"てっぺんまで、もうひと息！",r:"うれしいとしっぽのポンポンがぶんぶん揺れる",g:"山頂で食べるおにぎり",b:"くだり坂",z:"世界中の山のてっぺんでおやつを食べること",i:"g4",x:"mid",c:"sky",s:"round",u:"soft",h:"two",e:"none",t:"puff",w:"none",y:"2",f:"one",a:"scarf"};
+const BLANK_DNA={n:"",k:"",p:"",o:"",m:"",q:"",r:"",g:"",b:"",z:"",i:"g4",x:"mid",c:"auto",s:"auto",u:"auto",h:"auto",e:"auto",t:"auto",w:"auto",y:"2",f:"auto",a:"auto"};
+const INTENSITY={low:["ひかえめ","モチーフは小さめに、アクセントとして控えめに入れる。"],mid:["ふつう","モチーフは、ひと目でわかる大きさで入れる。"],high:["つよめ","モチーフは大きめにはっきり描き、色やシルエットにもその言葉らしさを強く出す。ただし、かわいさとモッフィーのルールは保つ。"]};
+// 言葉 → 目に見えるモチーフ（その子らしさ）。辞書にない言葉は設定画のときに Gemini が考える
+const MOTIF_DICT={
+ "登山":["小さなリュック","コンパス","ほっぺの日焼け"],"山":["小さなリュック","登山帽"],"食いしん坊":["ぽっこりしたおなか","口もとのクッキーのかけら"],
+ "ふわふわ":["綿あめのようにとくにふわふわした毛","雲のような毛のかたまり"],"ケーキ":["頭にのせた小さないちごのショートケーキ","クリーム色のおなか"],
+ "雷":["しっぽの先の稲妻の形","ほっぺの小さな稲妻の模様"],"レトロ":["丸いレトロなサングラス","水玉のスカーフ"],"いたずら":["いたずらっぽいウインク","ポケットからのぞくおもちゃのカエル"],
+ "宇宙":["毛の中にきらめく星くずの模様","小さな土星のヘアピン"],"夏祭り":["首にかけた小さなうちわ","頭の横にずらしたキツネのお面"],"ねぼすけ":["ナイトキャップ","少し眠そうな半目"],
+ "お花":["頭に咲いた小さな花","花びらの形の模様"],"花":["頭に咲いた小さな花","花びらの形の模様"],"ゲーム":["手に持った小さなゲームコントローラー","ドット絵のような模様"],
+ "図書館":["小脇にかかえた分厚い本","しっぽに結んだしおりのリボン"],"本":["小脇にかかえた分厚い本","しおりのリボン"],"ラーメン":["頭にのせたなると","首に巻いたタオル"],
+ "星空":["毛先が夜空のグラデーション","毛の中の星の粒"],"夜空":["毛先が夜空のグラデーション","毛の中の星の粒"],"海":["波の形のしっぽの毛","小さな貝がらの髪飾り"],
+ "チョコミント":["ミント色とチョコ色の2色の毛","チョコチップのような模様"],"カメラ":["首にかけた小さなカメラ","ストラップの星のチャーム"],"雪":["毛先についた雪の結晶","ふわふわの耳あて"],
+ "ダンス":["足首のリボン","はずむようなポーズ"],"お昼寝":["小さな枕","うとうとした顔"],"昼寝":["小さな枕","うとうとした顔"],"パン":["小さなコック帽","ほっぺの小麦粉"],
+ "サッカー":["足もとのサッカーボール","はちまき"],"ピアノ":["鍵盤もようのしっぽ","音符のヘアピン"],"音楽":["首にかけたヘッドホン","音符のヘアピン"],"温泉":["頭にのせた手ぬぐい","ほかほかの湯気"],
+ "アイドル":["手に持ったペンライト","星のバッジ"],"ロボット":["頭の小さなアンテナ","ボルトのような小さな模様"],"猫":["ねこのような三角の毛の束","ひげのような白い毛"],
+ "コーヒー":["湯気の立つ小さなマグカップ","コーヒー豆の模様"],"研究":["白衣","ほっぺについたインクのしみ"],"プログラミング":["小さなノートパソコン","しっぽの先の光るカーソル"],
+ "旅":["小さなトランク","ステッカーだらけのリュック"],"雨":["小さな傘","毛先のしずく"],"森":["頭の葉っぱ","毛の中のどんぐり"],"桜":["毛にからんだ桜の花びら","ピンクの毛先"],
+ "ドラゴン":["背中の小さなトゲ","うろこ模様のしっぽ","口もとの小さな炎"],"天使":["頭の上の光る輪","小さな白い羽"],"忍者":["首に巻いた忍者のスカーフ","小さな手裏剣の模様"],
+};
+function suggestMotifs(k){
+ const words=String(k||"").split(/[、,，\s]+/).map(w=>w.trim()).filter(Boolean),per=[];
+ for(const w of words){const keys=Object.keys(MOTIF_DICT).filter(key=>w.includes(key)).sort((a,b)=>b.length-a.length);if(keys.length)per.push(MOTIF_DICT[keys[0]])}
+ const out=[];for(let round=0;round<3&&out.length<3;round++)for(const list of per){if(list[round]&&!out.includes(list[round])&&out.length<3)out.push(list[round])}
+ return out;
+}
+const motifsOf=d=>String(d.m||"").split(/[、,，\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,4);
 const TAGS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン"];
 const SAMPLES=[
  {...DEFAULT_DNA},
- {n:"ヨミモッフィー",k:"図書館、ねぼすけ、夜空",p:"本を読みながら寝落ちするのが特技の、のんびり屋",o:"",i:"g4",c:"navy",s:"egg",u:"extra",h:"none",e:"droop",t:"long",w:"none",y:"1",f:"none",a:"glasses"},
- {n:"ハナビモッフィー",k:"夏祭り、いたずら、みかん色",p:"花火の音を聞くとしっぽが震える、元気ないたずらっ子",o:"",i:"g4",c:"orange",s:"mochi",u:"spiky",h:"one",e:"round",t:"dragon",w:"bat",y:"3",f:"two",a:"ribbon"},
+ {n:"ヨミモッフィー",k:"図書館、ねぼすけ、夜空",p:"本を読みながら寝落ちするのが特技の、のんびり屋",o:"",m:"小脇にかかえた分厚い本、しっぽに結んだしおりのリボン、毛先が夜空のグラデーション",q:"あと1ページだけ……",r:"眠くなるとメガネがずり落ちる",g:"図書館の窓ぎわの席",b:"目覚まし時計",z:"世界中の絵本を読むこと",i:"g4",x:"mid",c:"navy",s:"egg",u:"extra",h:"none",e:"droop",t:"long",w:"none",y:"1",f:"none",a:"glasses"},
+ {n:"ハナビモッフィー",k:"夏祭り、いたずら、みかん色",p:"元気ないたずらっ子",o:"",m:"首にかけた小さなうちわ、頭の横にずらしたキツネのお面、いたずらっぽいウインク",q:"ドーンといこう！",r:"花火の音を聞くとしっぽが震える",g:"りんごあめ",b:"静かな図書館",z:"夜空いっぱいの花火を自分で打ち上げること",i:"g4",x:"high",c:"orange",s:"mochi",u:"spiky",h:"one",e:"round",t:"dragon",w:"bat",y:"3",f:"two",a:"ribbon"},
 ];
+const PROFILE_POOL={
+ q:["まかせて！","ふわっといこう","おなかすいた〜","なんとかなるって！","ちょっとだけね","いっしょに行こ！"],
+ r:["驚くと毛がぶわっとふくらむ","考えごとをすると体がまるくなる","眠くなると目がとろんと半分になる","照れるとほっぺが少し濃い色になる","うれしいとその場で小さく跳ねる"],
+ g:["焼きたてのパン","雨上がりのにおい","星をながめること","お昼寝","ボードゲーム","知らない道の散歩"],
+ b:["雷の音","ピーマン","早起き","高いところ","おばけ","静かすぎる部屋"],
+ z:["世界一大きなケーキを作ること","みんなが集まる秘密基地を作ること","空を飛ぶこと","自分の絵本を出すこと","友だちを100匹つくること"],
+};
 const GACHA_WORDS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン","星空","海","チョコミント","カメラ好き","雪","ダンス","お昼寝","パン屋さん","サッカー","ピアノ","温泉","アイドル好き","ロボット"];
 const NAME_PARTS=["ポム","モコ","ルル","チャチャ","ソラ","ミル","ココ","フワ","ピノ","ムギ","ララ","ニコ","トト","マロ","キキ"];
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -374,6 +432,8 @@ function gacha(){
  const d={...BLANK_DNA,n:pick(NAME_PARTS)+pick(NAME_PARTS)+"モッフィー",k:words.join("、"),i:Math.random()<.85?"g4":"classic",c:pick(COLORS.filter(c=>c.id!=="auto")).id};
  for(const k of ["s","u","h","e","t","w","f","a"])d[k]=pick(PARTS[k].opts.filter(o=>o[0]!=="auto"))[0];
  d.y=Math.random()<.7?"2":pick(["1","3"]);
+ d.m=suggestMotifs(d.k).join("、");d.x=pick(["low","mid","mid","high"]);
+ for(const [k] of PROFILE)d[k]=pick(PROFILE_POOL[k]);
  return d;
 }
 // レシピごとの「このあと」
@@ -386,6 +446,7 @@ const NEXT={
  check:["返ってきた fix_prompt の文を、判定した画像と同じチャットにそのまま送ると、その部分だけ直せます"],
  fix:["直らないときは、直したい所を1つずつに分けて頼むと成功しやすくなります"],
  gem:["Gem を保存したら、共有 →「リンクを知っている全員」でリンクを配れます","Gem の中で画像が作れないときは、Gem が出した指示書を通常のチャットに貼ってください"],
+ photo:["なじまないときは「モッフィーの影だけ濃くして」「光の向きを写真に合わせて」と、その部分だけを頼む","同じ写真でポーズを変えると、旅の記録のようなシリーズになります"],
 };
 // 既存キャラクター名（オリジナル性と権利面の注意用。網羅ではない）
 const IP_SRC="ミッフィー|miffy|ピカチュウ|pikachu|ポケモン|pok[eé]mon|ハローキティ|キティちゃん|hello ?kitty|ドラえもん|doraemon|スヌーピー|snoopy|ミッキー|mickey|ディズニー|disney|マリオ|mario|カービィ|kirby|ちいかわ|chiikawa|リラックマ|すみっコ|トトロ|totoro|ジバニャン|ぐでたま|シナモロール|cinnamoroll|アンパンマン|ムーミン|moomin";
@@ -416,7 +477,9 @@ const dnaCode=d=>"MF1."+b64u(JSON.stringify(dnaCompact(d)));
 function hashStr(str){let h=2166136261;for(const ch of str){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(36).toUpperCase().padStart(7,"0").slice(-6)}
 const dnaId=d=>"MF-"+hashStr(JSON.stringify(dnaCompact(d)));
 
-const LONG={name:"n",keywords:"k",personality:"p",other:"o",eye_style:"i",color:"c",shape:"s",fur:"u",horn:"h",horns:"h",ear:"e",ears:"e",tail:"t",wing:"w",wings:"w",eyes:"y",fang:"f",fangs:"f",accessory:"a"};
+const LONG={name:"n",keywords:"k",personality:"p",other:"o",eye_style:"i",color:"c",shape:"s",fur:"u",horn:"h",horns:"h",ear:"e",ears:"e",tail:"t",wing:"w",wings:"w",eyes:"y",fang:"f",fangs:"f",accessory:"a",
+ motifs:"m",motif:"m",intensity:"x",catchphrase:"q",quirk:"r",quirks:"r",likes:"g",like:"g",dislikes:"b",dislike:"b",dream:"z",
+ "名前":"n","性格":"p","モチーフ":"m","口ぐせ":"q","クセ":"r","好きなもの":"g","苦手なもの":"b","夢":"z"};
 const UNKNOWN=/^(不明|わからない|わかりません|unknown|n\/a|-|なし（不明）)$/i;
 function matchColor(v){if(COLORS.some(c=>c.id===v))return v;if(isCustom(v))return v;const c=COLORS.find(c=>c.id!=="auto"&&(v===c.name||v===c.desc));return c?c.id:"*"+v}
 function matchPart(k,v){const opts=PARTS[k].opts;if(opts.some(o=>o[0]===v))return v;if(isCustom(v))return v;const o=opts.find(o=>v===o[1]||v===o[2]);if(o)return o[0];if(/^(なし|ない|無し|none|ありません)$/i.test(v))return "none";return "*"+v.slice(0,80)}
@@ -427,7 +490,9 @@ function normalize(src){
  for(const [key,val] of Object.entries(src)){
   const k=LONG[key]||key;if(!KEYS.includes(k))continue;
   const v=val==null?"":String(val).trim();if(!v||UNKNOWN.test(v))continue;hit++;
-  if(TEXT_KEYS.includes(k))out[k]=v.slice(0,120);
+  if(k==="m"&&Array.isArray(val))out.m=val.map(String).join("、").slice(0,160);
+  else if(TEXT_KEYS.includes(k))out[k]=v.slice(0,k==="m"?160:120);
+  else if(k==="x")out.x=/low|ひかえ/.test(v)?"low":/high|つよ|強/.test(v)?"high":"mid";
   else if(k==="i")out.i=/classic|紫|クラシック/.test(v)?"classic":"g4";
   else if(k==="c")out.c=matchColor(v);
   else if(k==="y")out.y=eyesFrom(v);
@@ -474,10 +539,15 @@ const WHY={
  comic:["公式ガイドの「コマ割りまんが」の使い方です。セリフは少ないほど崩れにくくなります。","公式ガイド「Sequential art」"],
  gem:["Gem にルールを入れておくと、毎回指示書を貼らなくても同じ決まりで作れます。リンクで友だちにも共有できます。","Gemini アプリ ヘルプ「Gem を共有する」"],
  scene:["背景・モッフィー・なじませ方の順に頼むと、写真のような背景でもモッフィーの質感が保たれます。","公式ガイド「Use Step-by-Step Instructions」"],
+ motif:["モデルはモッフィーらしい「かわいい・ふわふわ」に寄せて描くので、言葉のままだと個性が薄まります（体験記：「ドラゴン」と入れたのに「想像よりかなりかわいめ」）。言葉を目に見えるモチーフに置きかえると残りやすくなります。","公式ガイド「Be Hyper-Specific」／モッフィーの体験記"],
+ motifDecide:["言葉を、持ち物・模様・体の一部のような目に見えるものに変えてから描かせます。決まったモチーフは JSON で返してもらい、DNA に固定します。","公式ガイド「Be Hyper-Specific」"],
+ profile:["公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。クセや口ぐせを絵やセリフに出すと、見た目が似ていてもその子らしさが伝わります。","公式 note「モッフィーのひみつ」"],
+ photo:["自分で撮った写真は、自分にしかない素材です。みんなが同じレシピを使っても、背景が違えば仕上がりは被りません。写真の光に合わせて影をつけると自然になじみます。","公式ガイド「Advanced composition: Combining multiple images」"],
 };
 const seg=(h,t,why)=>({h,t,why:why?why[0]:"",src:why?why[1]:""});
 const RATIO_LABEL={"1:1":"1:1（正方形）","4:5":"4:5（縦長）","3:4":"3:4（縦長）","9:16":"9:16（縦長）","16:9":"16:9（横長）","3:2":"3:2（横長）"};
 const STYLE="質感は、毛足の長いぬいぐるみのような、やわらかい3DCG。やさしいスタジオライトで、毛の1本1本がふんわりと光を受けている。こわさのない、思わず抱きしめたくなる雰囲気。";
+const STYLE_SCENE="質感は、毛足の長いぬいぐるみのような、やわらかい3DCG。光の向きと色は背景に合わせ、毛の1本1本がふんわりと光を受けている。こわさのない、思わず抱きしめたくなる雰囲気。";
 const gradText=d=>d.i==="classic"?"Google Gemini のブランドカラーの青から紫へ、なめらかに変わるたて方向のグラデーション":"青・赤・黄・緑の4色が、なめらかなグラデーションで溶け合う色";
 const gradShort=d=>d.i==="classic"?"青→紫のグラデーション":"青・赤・黄・緑の4色グラデーション";
 const eyeText=d=>`目は${eyeCount(d)}つ。大きくつぶらな、モッフィーの証「スパークルアイ」。黒目（虹彩）はやや小さめで、${gradText(d)}。虹彩の中央には白く光る大きな四芒星（✦）のハイライトがあり、瞳孔をすっかり覆っているが、虹彩全体は覆っていない。星のふちは少しやわらかく、まわりにほのかな光のにじみ（ブルーム）がある。目全体はやさしく、うるっと光る質感。`;
@@ -498,6 +568,7 @@ function bodyText(d,how){
 function charSeg(d,how){
  const nm=d.n||"名前未定";let t="";
  if(how==="attach")t+=`添付した画像のモッフィー「${nm}」と同じ子を描く。見た目は添付画像を正とし、次の説明と食いちがう所があれば添付画像に合わせる。\n`;
+ if(how==="attach-first"){t+=`1枚目の画像（設定画）のモッフィー「${nm}」と同じ子を描く。見た目は1枚目を正とし、次の説明と食いちがう所があれば1枚目に合わせる。\n`;how="attach"}
  t+=`「${nm}」は、ぬいぐるみのようにふわふわした3DCGのモンスター「モッフィー」の1匹。ずんぐりした体つき。`;
  if(d.k)t+=`もとになった言葉は「${d.k}」。`;
  if(d.p)t+=`性格は「${d.p}」。`;
@@ -505,7 +576,35 @@ function charSeg(d,how){
  return seg("キャラクター",t,how==="attach"?WHY.charAttach:how==="text"?WHY.charText:WHY.char);
 }
 const frameSeg=(ratio,camera,bg,allowText)=>seg("構図",`アスペクト比は ${RATIO_LABEL[ratio]||ratio} で出力する。${camera?camera+"。":""}${bg?bg+"。":""}${allowText?"":"画像の中は絵だけにして、文字やロゴは入れない。"}`,WHY.ratio);
-function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,`目がスパークルアイ（${gradShort(d)}と、中央の白い四芒星）`,"全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`)]}
+function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,`目がスパークルアイ（${gradShort(d)}と、中央の白い四芒星）`,"全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`),...motifsOf(d).map(m=>`モチーフ「${m}」が見える`)]}
+// その子らしさ（言葉→モチーフ）。how: "decide"=設定画で決める / それ以外=決まったモチーフを使う
+function motifSeg(d,how){
+ const ms=motifsOf(d),inten=(INTENSITY[d.x]||INTENSITY.mid)[1];
+ if(ms.length)return seg("その子らしさ",`もとになった言葉を、次のモチーフで見た目に表す。\n${ms.map(m=>"・"+m).join("\n")}\n${inten}`,WHY.motif);
+ if(how==="decide"&&d.k)return seg("その子らしさ",`もとになった言葉「${d.k}」を、持ち物・模様・体の一部のような目に見えるモチーフ2〜3個に置きかえてから描く。かわいさに寄せすぎて、言葉の個性が消えないようにする。${inten}`,WHY.motifDecide);
+ return null;
+}
+// プロフィール帳 → しぐさ・お話・セリフ
+function profileSeg(d,rid){
+ const L=[];
+ if(d.r)L.push(`クセ「${d.r}」を、しぐさや表情にさりげなく出す。`);
+ if(rid==="comic"){
+  if(d.g||d.b)L.push(`お話には、${[d.g?`好きなもの「${d.g}」`:"",d.b?`苦手なもの「${d.b}」`:""].filter(Boolean).join("か")}をからめる。`);
+  if(d.q)L.push(`セリフを入れるときは、口ぐせ「${d.q}」をどこかで1回使う。`);
+ }
+ if(rid==="stamps"&&d.q)L.push(`言葉に口ぐせ「${d.q}」があれば、そのコマはとくにこの子らしいポーズにする。`);
+ return L.length?seg("しぐさとお話",L.join("\n"),WHY.profile):null;
+}
+// レシピの部品に「その子らしさ」と「しぐさ」を差しこむ（画面とテストの両方で使う）
+const NO_EXTRA=["import","check","fix","gem","friends"];
+function composeSegs(r,d,o,ratio,c){
+ const segs=r.build(d,o,ratio,c);
+ if(NO_EXTRA.includes(r.id))return segs;
+ const i=segs.findIndex(s=>s.h==="キャラクター");
+ const extra=[motifSeg(d,r.id==="sheet"?"decide":"use"),r.id==="sheet"?null:profileSeg(d,r.id)].filter(Boolean);
+ if(i>=0)segs.splice(i+1,0,...extra);
+ return segs;
+}
 const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、次の項目を1つずつ見直し、合わない所があればその部分だけを直してから出力する。\n${[...checkList(d),...extra].map(x=>"・"+x).join("\n")}\n画像は1枚だけ出力する。`,WHY.check);
 const JSON_TEMPLATE=`{
   "name": "名前",
@@ -521,9 +620,15 @@ const JSON_TEMPLATE=`{
   "eyes": 2,
   "fang": "キバ（なければ「なし」）",
   "accessory": "いつも身につけている物（なければ「なし」）",
-  "other": "そのほかの特徴（模様など）"
+  "other": "そのほかの特徴（模様など）",
+  "motifs": "言葉から作ったモチーフ（読点で区切って2〜3個）",
+  "catchphrase": "口ぐせ",
+  "quirk": "クセ（しぐさに出るもの）",
+  "likes": "好きなもの",
+  "dislikes": "苦手なもの",
+  "dream": "夢"
 }`;
-function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"設定画のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);return parts.join("、")}
+function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"設定画のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);const ms=motifsOf(d);if(ms.length)parts.push(`モチーフは${ms.join("・")}`);return parts.join("、")}
 
 /* ================= レシピ ================= */
 const ATTACH_SHEET="設定画（1枚）";
@@ -541,7 +646,7 @@ const RECIPES=[
    seg("レイアウト","上の段に、全身の「正面」「横向き」「後ろ向き」を、同じ大きさ・同じ高さで3つ並べる。下の段に、顔のアップで表情を4つ並べる（にっこり／びっくり／うるうる泣き顔／ねむい顔）。7つとも同じ子に見えるよう、毛の色・ツノ・耳・しっぽ・はね・持ち物の位置と形をそろえる。",WHY.sheet),
    frameSeg(r,"正面から見た、ゆがみのない平らな構図","背景は無地の明るいグレー。ラベルや矢印もつけない"),
    checkSeg(d),
-   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、設定画で決めた内容を入れます。性格は、もとになった言葉から考えてください。\n${JSON_TEMPLATE}`,WHY.json),
+   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、設定画で決めた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${d.p||d.q||d.r||d.g||d.b||d.z?`決まっているもの（${PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}「${d[k]}」`).concat(d.p?[`性格「${d.p}」`]:[]).join("、")}）は、そのまま書きます。`:""}\n${JSON_TEMPLATE}`,WHY.json),
   ]}},
  {id:"import",group:"はじめる",label:"公式の子を取り込む",ratio:null,usesAttach:false,
   desc:"公式ジェネレーターなどで作ったモッフィーの画像から、DNA を読み取ります。Gemini の返事（JSON）を、上の「取り込む」に貼ってください。",
@@ -556,7 +661,7 @@ const RECIPES=[
   fields:[{k:"place",label:"場所",type:"text",def:"京都の竹林の小道"},{k:"time",label:"時間帯",type:"select",opts:["昼","朝","夕焼け","夜"]},{k:"act",label:"していること",type:"text",def:"抹茶ソフトクリームを食べている"}],
   build(d,o,r,c){return [
    seg("目的",`SNSに投稿する「おでかけ写真」をつくってください。モッフィーの「${d.n||"名前未定"}」が、${o.time}の${o.place}で${o.act}ところです。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"その場を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE,WHY.style),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"その場を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
    seg("手順",`1. まず、${o.time}の${o.place}の風景を、写真のようにリアルに描く。\n2. 次に、その風景の中にモッフィーを全身で置く。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 最後に、光の向き・影・色味を風景に合わせて、本当にその場にいるように自然になじませる。`,WHY.scene),
    frameSeg(r,"目線の高さから、モッフィーの全身と風景が入る構図",""),checkSeg(d),
   ]}},
@@ -610,7 +715,7 @@ const RECIPES=[
   fields:[{k:"event",label:"イベント",type:"select",opts:["お花見","夏祭り","ハロウィン","クリスマス","お正月","学園祭","卒業式","誕生日"]},{k:"extra",label:"追加したいこと（任意）",type:"text",def:""}],
   build(d,o,r,c){return [
    seg("目的",`${o.event}の時期にSNSへ投稿する、「${d.n||"名前未定"}」の季節の画像をつくってください。`,WHY.intent),
-   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,`${o.event}を楽しんでいる表情`),WHY.nose),seg("質感",STYLE,WHY.style),
+   charSeg(d,c.how),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,`${o.event}を楽しんでいる表情`),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
    seg("シーン",`${o.event}らしい背景の中に、モッフィーを全身で描く。${o.event}らしい小物を1〜2個だけ持たせるか身につけさせる。体の色・ツノ・耳・しっぽ・はねは変えない。${o.extra?`追加：${o.extra}。`:""}`,WHY.scene),
    frameSeg(r,"全身が入る、季節感のある構図",""),checkSeg(d),
   ]}},
@@ -636,6 +741,17 @@ const RECIPES=[
    seg("描き分け",`${n}匹の毛の色やパーツを混ぜない。どの子が誰か、ひと目でわかるように描き分ける。全員の全身が見えるように並べる。`,WHY.friends),
    frameSeg(r,"全員の全身が入る、少し引いた構図",""),
    seg("見直し",`描き終えたら、${n}匹それぞれについて、鼻がないこと・目の数・毛の色・ツノやはねなどのパーツが${c.attach?"設定画":"説明"}どおりかを見直し、合わない所はその部分だけを直してから出力する。画像は1枚だけ出力する。`,WHY.check),
+  ]}},
+ {id:"photo",group:"あそぶ",label:"自分の写真に連れていく",ratio:null,usesAttach:true,
+  desc:"自分で撮った景色の写真に、モッフィーを連れていきます。背景が自分だけのものになるので、仕上がりが人と被りません。写真をアップロードするので18歳以上が対象です。人や個人情報（表札・住所・車のナンバーなど）が写っていない写真を使ってください。",
+  fields:[{k:"pos",label:"どこにいる？",type:"select",opts:["写真の手前の地面に立っている","テーブルや台の上にちょこんと座っている","写真の真ん中で手をふっている","写真のすみからそっとのぞいている"]},{k:"size",label:"大きさ",type:"select",opts:["手のひらくらい","子犬くらい","子どもくらい"]},{k:"act",label:"していること",type:"text",def:"景色を見てうれしそうにしている"}],
+  attachNote:(o,c)=>c.attach?"設定画（1枚目）と、自分で撮った写真（2枚目）":"自分で撮った写真（1枚）",
+  build(d,o,r,c){const ph=c.attach?"2枚目の写真":"添付した写真";return [
+   seg("目的",`${ph}は、私が撮った景色の写真です。この写真の中に、モッフィー「${d.n||"名前未定"}」を連れてきたような画像をつくってください。`,WHY.photo),
+   charSeg(d,c.attach?"attach-first":"text"),seg("目",eyeText(d),WHY.eye),seg("顔",faceText(d,"景色を楽しんでいる、うれしそうな表情"),WHY.nose),seg("質感",STYLE_SCENE,WHY.style),
+   seg("手順",`1. ${ph}の景色・光・色・写っている物は、そのまま残す。新しい人や物は足さない。\n2. モッフィーを「${o.pos}」ようすで、${o.size}の大きさで置く。${o.act}。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 写真の光の向きと色に合わせてモッフィーに光と影をつけ、地面や台に触れている所には自然な影を落とす。`,WHY.scene),
+   seg("構図",`アスペクト比は、${ph}と同じにする。写真の構図は変えない。画像の中は絵だけにして、文字やロゴは入れない。`,WHY.ratio),
+   checkSeg(d,["写真の景色がそのまま残っている","モッフィーの足もとに自然な影がある"]),
   ]}},
  {id:"check",group:"なおす",label:"ルールチェック",ratio:null,usesAttach:false,
   desc:"生成した画像を添付して、ルールどおりかを判定してもらいます。不合格の所を直すための指示文も返ってきます。",
@@ -670,7 +786,8 @@ const RECIPES=[
   build(d,o){const own=o.scope==="このモッフィー専用";const nm=d.n||"マイモッフィー";
    const rules=["# モッフィーのデザインルール（必ず守る）","- ぬいぐるみのようにふわふわした3DCGのモンスター。ずんぐりした体で、全身が長くやわらかい毛におおわれている","- 目は1〜3つの「スパークルアイ」。虹彩の中で色がなめらかに溶け合い（2026年版は青・赤・黄・緑の4色）、中央に白く光る大きな四芒星（✦）がある","- 顔のパーツは目と口だけ。目と口のあいだは毛並みが続き、鼻は描かない","- こわさのない、思わず抱きしめたくなる表情","- 画像には、頼まれたとき以外は文字を入れない"];
    const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。知識に設定画があれば、それを見本にする。","3. 毎回、用途に合うアスペクト比を決めて指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、デザインルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. DNA をもとに、三面図（正面・横・後ろ）と表情4つの設定画（16:9）を作る。","4. 以後のリクエストでは、DNA と設定画の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、デザインルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
-   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,eyeText(d),faceText(d,"愛らしく、こわさのない表情"),`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
+   const ms=motifsOf(d);
+   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,ms.length?`その子らしさのモチーフ：${ms.join("、")}（毎回入れる）`:"",eyeText(d),faceText(d,"愛らしく、こわさのない表情"),...PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}：${d[k]}`),d.r?"クセは、しぐさや表情にさりげなく出す。口ぐせは、セリフを入れるときに使う。":"",`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
    const ins=["# 役割",own?`あなたは、モッフィー「${nm}」専属のイラストレーターです。ユーザーの頼みに合わせて、「${nm}」を同じ見た目のまま、いろいろな場面の画像にします。`:"あなたは「モッフィー工房」の案内役です。ユーザーと一緒にオリジナルのモッフィーを作り、同じ見た目のまま、いろいろな場面の画像を作ります。","",...rules,"",...flow,...fixed,"","# 話し方","やさしく短く。画像を出したあとに、次に試せる遊び方を1つだけ提案する。"].join("\n");
    return [
     seg("名前",own?`${nm}のアトリエ（非公式）`:"モッフィー工房（非公式）",null),
@@ -758,6 +875,7 @@ function siteUrl(){const m=document.querySelector('meta[name="moffy-site-url"]')
 function syncInputs(){
  const d=st.d;
  $("#kw").value=d.k;$("#nm").value=d.n;$("#ps").value=d.p;$("#ot").value=d.o;$("#eyestyle").value=d.i;
+ $("#mo").value=d.m||"";$("#xi").value=INTENSITY[d.x]?d.x:"mid";for(const [k] of PROFILE)$("#p"+k).value=d[k]||"";
  for(const k of PART_ORDER){const sel=$("#p-"+k);let html=PARTS[k].opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("");if(isCustom(d[k]))html+=`<option value="${esc(d[k])}">取り込んだ値：${esc(d[k].slice(1))}</option>`;sel.innerHTML=html;sel.value=d[k]}
  syncColor();syncTags();
 }
@@ -770,12 +888,14 @@ function renderCard(){
  $("#c-name").textContent=d.n||"名前未定";
  $("#c-id").textContent=dnaId(d);
  $("#c-p").textContent=d.p?`性格：${d.p}`:"";
- const rows=[["毛の色",colorLabel(d)],...PART_ORDER.map(k=>[PARTS[k].name,partLabel(d,k)]),["目のスタイル",d.i==="classic"?"クラシック（青→紫）":"2026年版（4色）"]];
+ const ms=motifsOf(d);
+ const rows=[...(ms.length?[["その子らしさ",`${ms.join("・")}（${(INTENSITY[d.x]||INTENSITY.mid)[0]}）`]]:[]),["毛の色",colorLabel(d)],...PART_ORDER.map(k=>[PARTS[k].name,partLabel(d,k)]),["目のスタイル",d.i==="classic"?"クラシック（青→紫）":"2026年版（4色）"]];
  if(d.o)rows.push(["そのほか",d.o]);
+ for(const [k,l] of PROFILE)if(d[k])rows.push([l,d[k]]);
  $("#c-dl").innerHTML=rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
  $("#rules").innerHTML=checkList(d).map(r=>`<span class="rule">${esc(r)}</span>`).join("");
  $("#c-code").textContent=dnaCode(d);
- const hits=ipHits([d.n,d.k,d.p,d.o].join(" "));
+ const hits=ipHits(TEXT_KEYS.map(k=>d[k]||"").join(" "));
  $("#ipwarn").hidden=!hits.length;
  if(hits.length)$("#ipwarn").textContent=`「${hits.join("」「")}」は既存のキャラクター名です。オリジナルのモッフィーにするため、指示書からは外しています。`;
  drawPreview(d);
@@ -807,7 +927,7 @@ function buildSegs(){
  const fr=r.id==="friends"?friendsOf(o):{list:[],errs:[]};
  const c={attach:r.usesAttach?st.attach:false,how:r.usesAttach&&st.attach?"attach":"text",friends:fr.list};
  if(r.id==="friends"){const m=$(`#f-friends-codes-msg`);if(m)m.innerHTML=fr.errs.length?`<div class="warn">${esc(fr.errs.join(" / "))}</div>`:(fr.list.length?`<div class="okmsg">${fr.list.map(x=>esc(x.n||"名前未定")).join("、")} を読み込みました</div>`:"")}
- return {r,o,c,segs:r.build(d,o,ratioOf(r,o),c)};
+ return {r,o,c,segs:composeSegs(r,d,o,ratioOf(r,o),c)};
 }
 const plain=segs=>segs.map(s=>(s.h?`【${s.h}】\n`:"")+s.t).join("\n\n");
 function renderOut(){
@@ -830,7 +950,8 @@ function renderQR(){
  const box=$("#qr");box.innerHTML="";
  if(typeof QRCode==="undefined"){box.innerHTML=`<p class="hint">QRコードの部品を読み込めませんでした。DNAコードをコピーして渡してください。</p>`;return}
  const holder=document.createElement("div");box.appendChild(holder);
- try{new QRCode(holder,{text:shareTarget(),width:184,height:184,colorDark:"#24233A",colorLight:"#FFFFFF",correctLevel:QRCode.CorrectLevel.M})}catch(e){box.innerHTML=`<p class="hint">QRコードを作れませんでした（${esc(e.message)}）。</p>`;return}
+ const text=shareTarget(),big=text.length>320,size=big?248:184;
+ try{new QRCode(holder,{text,width:size,height:size,colorDark:"#24233A",colorLight:"#FFFFFF",correctLevel:big?QRCode.CorrectLevel.L:QRCode.CorrectLevel.M})}catch(e){box.innerHTML=`<p class="hint">QRコードを作れませんでした（${esc(e.message)}）。DNAコードをコピーして渡してください。</p>`;return}
  const p=document.createElement("p");p.className="hint";p.textContent=siteUrl()?"スマホのカメラで読むと、このツールにDNA入りで開きます。":"読み取ると DNA コードの文字が出ます。友だちはそれを「取り込む」に貼ります。";box.appendChild(p);
 }
 async function copyText(text,toast,fallbackEl){
@@ -861,6 +982,7 @@ document.addEventListener("click",e=>{
   case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}
   case "share-dna":{const fail=()=>flash("#toast1","共有メニューを開けませんでした。DNAコードのコピーを使ってください");try{navigator.share({title:"モッフィーのDNA",text:`モッフィー「${st.d.n||"名前未定"}」のDNAコード\n${shareTarget()}`}).catch(err=>{if(err&&err.name!=="AbortError")fail()})}catch(err){fail()}break}
   case "gacha":{loadDNA(gacha());flash("#toast1","ガチャで新しいモッフィーを決めました");break}
+  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、設定画のときに Gemini がモチーフを考えて JSON で返します。"}break}
   case "copy-code":copyText(dnaCode(st.d),"#toast1",$("#c-code"));break;
   case "copy-link":copyText(shareTarget(),"#toast1");break;
   case "qr-btn":{const box=$("#qr");box.hidden=!box.hidden;b.setAttribute("aria-expanded",String(!box.hidden));if(!box.hidden)renderQR();break}
@@ -871,7 +993,7 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("input",e=>{
  const t=e.target;
- const map={kw:"k",nm:"n",ps:"p",ot:"o"};
+ const map={kw:"k",nm:"n",ps:"p",ot:"o",mo:"m",pq:"q",pr:"r",pg:"g",pb:"b",pz:"z"};
  if(map[t.id]){st.d[map[t.id]]=t.value;if(t.id==="kw")syncTags();renderAll();return}
  if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.tagName!=="SELECT")renderOut();return}
 });
@@ -879,6 +1001,7 @@ document.addEventListener("change",e=>{
  const t=e.target;
  if(t.dataset.part){st.d[t.dataset.part]=t.value;renderAll();return}
  if(t.id==="eyestyle"){st.d.i=t.value;renderAll();return}
+ if(t.id==="xi"){st.d.x=t.value;renderAll();return}
  if(t.id==="explain"){st.explain=t.checked;renderOut();return}
  if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.dataset.f==="panels")delete o.__ratio;renderRecipeUI();return}
 });
