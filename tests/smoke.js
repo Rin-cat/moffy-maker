@@ -125,7 +125,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await p.click('#r-base');
   const bs = await p.textContent('#out');
   ok(bs.includes('真正面') && bs.includes('左右対称') && bs.includes('1.5〜2.5頭身') && bs.includes('1:1'), '基準画像は1体・真正面・頭身・正方形');
-  ok(!bs.includes('黒目') && bs.includes('大きな黒い瞳孔は描かない'), '「黒目」と書かず、黒い瞳孔を描かない指定');
+  ok(!bs.includes('黒目') && bs.includes('黒いだけの目') && bs.includes('左上に白い四角いツヤ'), '「黒目」と書かず、実物の目のとおりに描き方を書く');
   await p.selectOption('#f-base-src', { index: 1 });
   ok((await p.textContent('#out')).includes('2枚目の画像のモッフィーを、基準画像として描き直して'), '基準画像（もとにする画像あり）');
   await p.selectOption('#f-base-src', { index: 0 });
@@ -133,7 +133,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const st6 = await p.textContent('#out');
   ok(!st6.includes('にっこり') && st6.includes('文字は描かない') && st6.includes('コマはこの7つだけ'), '設定画は文字なし・7コマだけ');
   await p.click('#r-check');
-  ok((await p.textContent('#out')).includes('大きな黒い瞳孔が見える目は不合格'), 'ルールチェックで黒い瞳孔を不合格にする');
+  ok((await p.textContent('#out')).includes('白い四芒星がない目（黒いだけの目や点の目）は不合格'), 'ルールチェックで黒いだけの目を不合格にする');
   await p.click('#mode-new'); await p.evaluate(() => { document.querySelector('#adv').open = true; });
   const sOpts = await p.$$eval('#p-s option', os => os.map(o => o.value));
   const hOpts = await p.$$eval('#p-h option', os => os.map(o => o.value));

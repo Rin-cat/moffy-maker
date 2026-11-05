@@ -2,8 +2,8 @@
 //   docs/og.jpg              リンクを貼ったときのプレビュー（1200x630、Discord・X・LINE など）
 //   docs/social-preview.jpg  GitHub の Settings → Social preview 用（1280x640）
 //   gem-instructions.md      Gem「モッフィー工房」に貼る文章
-//   docs/eye-sample.png      標準の目の見本（虹色）。ツールと同じ関数 drawEyeSample で描く（1024x1024）
-//   docs/eye-sample-classic.png  標準の目の見本（クラシック：青→紫）
+//   docs/eye-sample.png      標準の目の見本（虹色、768x768）。ツールと同じ関数 drawEyeSample で描く（もとの絵は tools/make_eye.py が作る）
+//   docs/eye-sample-classic.png  標準の目の見本（クラシック：虹彩を青→紫に置きかえたもの）
 // 絵は assets/og-base.jpg（Gemini / Nano Banana で生成した文字なしの絵）を使い、文字はサイトと同じフォントで重ねる。
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -40,7 +40,7 @@ function cardHTML(w, h, s, img) {
   fs.writeFileSync(path.join(ROOT, 'gem-instructions.md'), `# Gem「モッフィー工房（非公式）」\n\nツールのレシピ「Gemにする」→「だれでも使える工房」と同じ内容です。gemini.google.com（パソコン）→ Gem マネージャー →「新しい Gem」で、それぞれの欄に貼ってください。\n\n目の見本（[docs/eye-sample.png](docs/eye-sample.png)）を Gem の「知識」に追加しておくと、毎回送らなくても目の描き方がそろいます。\n\n${gem}\n`);
   // 標準の目の見本（ツールと同じ描き方）
   fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
-  const eyes = await p.evaluate(() => ['g4', 'classic'].map(s => { const cv = document.createElement('canvas'); cv.width = cv.height = 1024; drawEyeSample(cv, s); return cv.toDataURL('image/png').split(',')[1]; }));
+  const eyes = await p.evaluate(async () => { await new Promise(r => eyeLoadBase(r)); return ['g4', 'classic'].map(s => { const cv = document.createElement('canvas'); cv.width = cv.height = 768; drawEyeSample(cv, s); return cv.toDataURL('image/png').split(',')[1]; }); });
   fs.writeFileSync(path.join(ROOT, 'docs', 'eye-sample.png'), Buffer.from(eyes[0], 'base64'));
   fs.writeFileSync(path.join(ROOT, 'docs', 'eye-sample-classic.png'), Buffer.from(eyes[1], 'base64'));
   // サムネイル
