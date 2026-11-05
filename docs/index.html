@@ -225,6 +225,9 @@ details.fold[open]>summary{margin-bottom:14px}
 .eye-head{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;justify-content:space-between}
 .eye-head .switch input{accent-color:var(--blue)}
 .eye-kind{font-size:13.5px;font-weight:700}
+.eye-note{font-size:13px;font-weight:700;color:var(--ok)}
+.eye-ref.unused .eye-note{color:var(--red)}
+.eye-ref.unused .eye-drop img{opacity:.45}
 .btn.tiny{padding:2px 9px;font-size:12px;border-width:1px}
 .refs .mini{display:inline-flex;gap:6px;margin-left:10px}
 .eye-body{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start}
@@ -427,7 +430,8 @@ footer ul{margin:0;padding-left:1.2em}
           </div>
           <div class="eye-side">
             <p class="eye-kind" id="eye-kind">標準の目の見本を使っています</p>
-            <p class="hint">指示書と一緒に Gemini に添付する、目だけの見本です。公式ジェネレーターも目の見本画像を毎回渡して、キラキラの目を描かせています。標準の見本は、Gemini で作ったモッフィーの目を切り抜いたものです（公式ジェネレーターの見本画像ではありません）。自分の子の目のアップに差しかえることもできます（この欄へのドロップや貼り付けでも入ります）。画像はこのブラウザの中だけで扱い、送信しません。「文章だけ」のときは添付しません。</p>
+            <p class="eye-note" id="eye-note"></p>
+            <p class="hint">目の描き方だけを伝える見本です（キャラクターではありません）。添付するかどうかと順番は、下の「Gemini に添付するもの」に出ます。公式ジェネレーターも目の見本画像を毎回渡して、キラキラの目を描かせています。標準の見本は、Gemini で作ったモッフィーの目を切り抜いたものです（公式ジェネレーターの見本画像ではありません）。自分の子の目のアップに差しかえることもできます（この欄へのドロップや貼り付けでも入ります）。画像はこのブラウザの中だけで扱い、送信しません。「文章だけ」のときは添付しません。</p>
             <div class="btns">
               <button type="button" class="btn small" id="eye-copy">画像をコピー</button>
               <button type="button" class="btn ghost small" id="eye-save">画像を保存</button>
@@ -688,6 +692,7 @@ const WHY={
  intent:["画像の用途を伝えると、構図や雰囲気が目的に合いやすくなります。","公式ガイド「Provide Context and Intent」"],
  char:["キーワードを並べるより、文章で具体的に描写したほうが狙いどおりになります。本家の2025年版ジェネレーターも、色・体の形・ツノ・口・毛・アクセサリーを文章にしてつなげる形でした。","公式ガイド「Be Hyper-Specific」／2025年版ジェネレーターのプロンプト"],
  charAttach:["以前に生成した画像を一緒に渡すと、同じキャラクターを保ちやすくなります。文章は確認用で、食いちがったら画像を優先させます。","公式ガイド「Character consistency」"],
+ refs:["画像を何枚も添付するときは、何枚目が何の画像かを最初に書きます。目の見本をキャラクターとして描き直したり、目の見本を「取り込みたい子」として読んだりする取りちがえを防げます。","公式ガイド「Provide Context and Intent」"],
  charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、基準画像のあとに返ってくる JSON を取り込んで確定させるのがおすすめです。","このツールの仕組み"],
  rules:["公式ジェネレーターは、鼻・目・頭身などの絶対ルールを、毎回の文章とは別枠（システム指示）で最初に渡しています。ここでも最初に短くまとめ、場面の説明に埋もれないようにします。","公式ジェネレーターの作り方（Canvas のコード）"],
  rulesEye:["公式ジェネレーターがキラキラの目を安定して出せるのは、目の見本画像を毎回いっしょに渡し、目は見本どおりに、見本のキャラの色や形はまねしないように指示しているからです。同じやり方です。","公式ジェネレーターの作り方（Canvas のコード）"],
@@ -750,11 +755,13 @@ function profileSeg(d,rid){
 const NO_EXTRA=["import","check","fix","gem","friends"];
 function composeSegs(r,d,o,ratio,c){
  const segs=r.build(d,o,ratio,c);
- if(NO_EXTRA.includes(r.id))return segs;
- const i=segs.findIndex(s=>s.h==="この子の特徴");
- const decide=r.id==="base"||(r.id==="sheet"&&!c.n("base")),ref=r.id==="base"||r.id==="sheet";
- const extra=[motifSeg(d,decide?"decide":"use"),ref?null:profileSeg(d,r.id)].filter(Boolean);
- if(i>=0)segs.splice(i+1,0,...extra);
+ if(!NO_EXTRA.includes(r.id)){
+  const i=segs.findIndex(s=>s.h==="この子の特徴");
+  const decide=r.id==="base"||(r.id==="sheet"&&!c.n("base")),ref=r.id==="base"||r.id==="sheet";
+  const extra=[motifSeg(d,decide?"decide":"use"),ref?null:profileSeg(d,r.id)].filter(Boolean);
+  if(i>=0)segs.splice(i+1,0,...extra);
+ }
+ const rs=refsSeg(c);if(rs)segs.unshift(rs);
  return segs;
 }
 const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、絶対に守るルールと特徴のとおりかを見直し、合わない所があればその部分だけを直してから出力する。${extra.length?`とくに：${extra.join("、")}。`:""}画像は1枚だけ出力する。`,WHY.check);
@@ -817,17 +824,19 @@ function featSeg(d,c,mode){
 }
 function fixedProfile(d){const fx=PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}「${d[k]}」`).concat(d.p?[`性格「${d.p}」`]:[]);return fx.length?`決まっているもの（${fx.join("、")}）は、そのまま書きます。`:""}
 // Gemini に添付する画像の順番（目の見本はいつも先頭）
+const EYE_REF=["eye","目の見本","目の見本。目の描き方だけの参考で、キャラクターではない（この画像そのものを描き直したり、説明したりしない）"];
 function refsFor(r,o,c){
- if(r.id==="import")return [["src","取り込みたいモッフィーの画像"]];
+ if(r.id==="import")return [["src","取り込みたいモッフィーの画像","取り込みたいモッフィーの画像"]];
  if(r.id==="gem")return [];
- if(r.id==="check"||r.id==="fix"){const L=[["target",r.id==="check"?"判定したい画像":"直したい画像"]];if(c.eye&&(r.id==="check"||(o.parts||[]).includes("目（スパークルアイ）")))L.push(["eye","目の見本"]);return L}
+ if(r.id==="check"||r.id==="fix"){const L=[r.id==="check"?["target","判定したい画像","判定してほしい画像"]:["target","直したい画像","直してほしい画像"]];if(c.eye&&(r.id==="check"||(o.parts||[]).includes("目（スパークルアイ）")))L.push(EYE_REF);return L}
  const L=[];
- if(c.eye)L.push(["eye","目の見本"]);
- if(r.id==="base"){if(c.attach&&String(o.src||"").startsWith("あり"))L.push(["src","もとにする画像（公式の子や設定画）"]);return L}
- if(c.attach){L.push(["base","基準画像"]);if(r.id==="friends")c.friends.forEach((f,i)=>L.push([`friend${i}`,`友だち「${f.n||"名前未定"}」の基準画像`]))}
- if(r.id==="photo")L.push(["photo","自分で撮った写真"]);
+ if(c.eye)L.push(EYE_REF);
+ if(r.id==="base"){if(c.attach&&String(o.src||"").startsWith("あり"))L.push(["src","もとにする画像（公式の子や設定画）","もとにするモッフィーの画像"]);return L}
+ if(c.attach){L.push(["base","基準画像","基準画像。このモッフィーの見た目の正解"]);if(r.id==="friends")c.friends.forEach((f,i)=>L.push([`friend${i}`,`友だち「${f.n||"名前未定"}」の基準画像`,`友だち「${f.n||"名前未定"}」の基準画像`]))}
+ if(r.id==="photo")L.push(["photo","自分で撮った写真","私が撮った景色の写真（背景にする）"]);
  return L;
 }
+const refsSeg=c=>c&&c.refs&&c.refs.length?seg("添付した画像",c.refs.map((x,i)=>`${i+1}枚目：${x[2]||x[1]}`).join("\n"),WHY.refs):null;
 function buildCtx(r,o,opts){
  const attach=r.usesAttach?!!opts.attach:false;
  const eyeOK=r.usesAttach?attach:(r.id==="check"||r.id==="fix");
@@ -867,7 +876,7 @@ const RECIPES=[
   fields:[],
   build(d,o,r,c){return [
    seg("目的",`${c.n("src")}の画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。`,WHY.import),
-   seg("書き方","見えている特徴だけを書く。確かめられない項目は「不明」と書く。色は「淡いそらいろ」のように具体的に。ツノ・しっぽ・はね・キバは、数・形・位置まで書く。目の数は数字で書く。名前がわからなければ、見た目に合う名前を考える。",WHY.char),
+   seg("書き方","見えている特徴だけを書く。確かめられない項目は「不明」と書く。色は「淡いそらいろ」のように具体的に。ツノ・しっぽ・はね・キバは、数・形・位置まで書く。目の数は数字で書く。名前がわからなければ、見た目に合う名前を考える。画像にキャラクターの顔と体が写っていないとき（目だけのアップなど）は、JSON を書かずに「キャラクター全体が写った画像を送ってください」とだけ返す。",WHY.char),
    seg("出力",`次の JSON だけを出力してください。\n${JSON_TEMPLATE}`,WHY.json),
   ]}},
  {id:"outing",group:"あそぶ",label:"おでかけ",ratio:"4:5",usesAttach:true,
@@ -1222,6 +1231,9 @@ function renderOut(){
  else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28"><span class="mini"><button type="button" class="btn ghost tiny" data-eyeact="copy" aria-label="目の見本をコピー">コピー</button>${$("#eye-save").hidden?"":`<button type="button" class="btn ghost tiny" data-eyeact="save" aria-label="目の見本を保存">保存</button>`}</span>`:""}</li>`).join("")}</ul>`;
  const eyeUsable=r.usesAttach?st.attach:(r.id==="check"||r.id==="fix");
  const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に画像を入れると、目が公式の子に近づきます。":"";
+ const ei=refs.findIndex(x=>x[0]==="eye");
+ $("#eye-note").textContent=ei>=0?`このレシピでは、${ei+1}枚目に添付します`:gem?"「Gemにする」では添付しません（Gem の「知識」に入れられます）":st.useEye===false?"「指示書で使う」がオフなので、添付しません":r.usesAttach&&!st.attach?"「文章だけ」なので、添付しません":r.id==="fix"?"「部分修正」では、目を直すときだけ添付します":`「${r.label}」では、目の見本は添付しません`;
+ $(".eye-ref").classList.toggle("unused",ei<0);
  const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。基準画像のあとに返ってくる JSON を取り込むと安定します。":"";
  const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
  $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;

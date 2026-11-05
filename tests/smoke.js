@@ -197,6 +197,17 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await p.click('#eye-clear');
   ok(!(await p.$eval('#eye-thumb', i => i.hidden)) && (await p.textContent('#eye-kind')).includes('標準') && (await p.textContent('#out')).includes('1枚目の目の見本') && (await p.evaluate(() => localStorage.getItem('moffy-eye-sample'))) === null, '2回押すと標準の目の見本に戻る');
   ok(reqs.length === before6, '目の見本の画像をどこにも送信しない ' + reqs.slice(before6).join(' '));
+  // サイクル9: 添付した画像の取りちがえを防ぐ
+  await p.click('#r-outing');
+  const o9 = await p.textContent('#out');
+  ok(o9.startsWith('添付した画像') && o9.includes('1枚目：目の見本。目の描き方だけの参考で、キャラクターではない') && o9.includes('2枚目：基準画像'), '指示書の先頭に、何枚目が何の画像かを書く');
+  ok((await p.textContent('#eye-note')).includes('1枚目に添付') && !(await p.$eval('.eye-ref', e => e.classList.contains('unused'))), '目の見本の欄に「1枚目に添付」と出る');
+  await p.click('#r-import');
+  const i9 = await p.textContent('#out');
+  ok(!(await p.textContent('#attachline')).includes('目の見本') && (await p.textContent('#eye-note')).includes('添付しません') && (await p.$eval('.eye-ref', e => e.classList.contains('unused'))), '取り込みでは目の見本を添付しないと出る');
+  ok(i9.includes('1枚目：取り込みたいモッフィーの画像') && i9.includes('キャラクター全体が写った画像を送ってください'), '取り込みに目だけの画像が来たときの返し方');
+  await p.click('#r-gem');
+  ok(!(await p.textContent('#out')).includes('添付した画像') && (await p.textContent('#eye-note')).includes('知識'), 'Gem には添付の説明を入れない');
   await p.evaluate(() => localStorage.setItem('moffy-maker-draft', JSON.stringify({ d: { ...DEFAULT_DNA }, recipe: 'sheet', attach: true, explain: false, ro: {} })));
   await p.goto(file); await p.waitForTimeout(600);
   ok((await p.getAttribute('#r-base', 'aria-pressed')) === 'true', '前の版の下書き（設定画）は基準画像から始まる');

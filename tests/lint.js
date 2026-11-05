@@ -50,7 +50,12 @@ const file = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '.
           if (IMAGE(r) && !/画像は1枚だけ/.test(t)) note('出力枚数の指定がない', tag);
           if (IMAGE(r) && r.id !== 'fix' && !t.includes('1.5〜2.5頭身')) note('頭身のルールがない', tag);
           if ((IMAGE(r) && r.id !== 'fix' || fixEye) && !/四芒星/.test(t)) note('目の描き方（四芒星）がない', tag);
-          if (IMAGE(r) && r.id !== 'fix') { const k = segs.findIndex(s => s.h === '絶対に守るルール'); if (k < 0 || k > 2) note('絶対に守るルールが先頭にない', tag + ' ' + k); }
+          if (IMAGE(r) && r.id !== 'fix') { const k = segs.filter(s => s.h !== '添付した画像').findIndex(s => s.h === '絶対に守るルール'); if (k < 0 || k > 2) note('絶対に守るルールが先頭にない', tag + ' ' + k); }
+          // 添付した画像の説明：添付があるときは先頭に、何枚目が何かを書く（目の見本はキャラクターではないと明記）
+          if (c.refs.length && (segs[0].h !== '添付した画像' || c.refs.some((x, i) => !segs[0].t.includes(`${i + 1}枚目：`)))) note('添付した画像の説明が先頭にない', tag);
+          if (!c.refs.length && segs.some(s => s.h === '添付した画像')) note('添付がないのに添付した画像の説明がある', tag);
+          if (c.n('eye') && !segs[0].t.includes('キャラクターではない')) note('目の見本がキャラクターではないと書いていない', tag);
+          if (r.id === 'import' && !t.includes('キャラクター全体が写った画像を送ってください')) note('取り込みで、目だけの画像などへの返し方がない', tag);
           if (/黒目/.test(t)) note('「黒目」と書いている（黒い瞳孔を描かせる原因）', tag);
           if (r.id !== 'sheet' && /設定画/.test(t)) note('「設定画」の古い言い方が残る', tag);
           // 添付の順番：本文の「N枚目」は添付する枚数の範囲内、添付する画像はすべて本文で使う
