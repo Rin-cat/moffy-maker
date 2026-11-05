@@ -6,7 +6,7 @@ moffy-studio.html（GitHub 版と同じ中身）を、Canvas モードで書き�
   - 共有リンクと QR は、GitHub Pages の版（https://rin-cat.github.io/moffy-maker/）を指す
   - ページ上部の絵は GitHub Pages から読む（読めなければ隠す）
 
-書き出すもの: canvas/moffy-canvas.html
+書き出すもの: canvas/moffy-canvas.html（Canvas のコードにそのまま貼る）、docs/canvas.html（読み込み版 canvas/loader.html が読む本体）
 """
 import pathlib, re, sys
 
@@ -35,4 +35,7 @@ out = ("<!doctype html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\">\n"
 (ROOT / "canvas").mkdir(exist_ok=True)
 dst = ROOT / "canvas" / "moffy-canvas.html"
 dst.write_text(out, encoding="utf-8")
-print(f"canvas/moffy-canvas.html を書き出しました（{len(out.encode('utf-8')) // 1024}KB）")
+# 読み込み版（canvas/loader.html）が読む本体。GitHub Pages で https://rin-cat.github.io/moffy-maker/canvas.html になる
+(ROOT / "docs").mkdir(exist_ok=True)
+(ROOT / "docs" / "canvas.html").write_text(out, encoding="utf-8")
+print(f"canvas/moffy-canvas.html と docs/canvas.html を書き出しました（{len(out.encode('utf-8')) // 1024}KB）")

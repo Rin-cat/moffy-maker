@@ -56,15 +56,23 @@ Gemini とのやりとりは、指示書を貼るたびに1回で画像が出ま
 
 ### Canvas に入れる手順
 
-1. パソコンで [gemini.google.com](https://gemini.google.com/app) を開き、ツールから「Canvas」を選んで「空の HTML ページを作って」と頼む
-2. Canvas の右上の「コード」を開き、中身をすべて消してから、[moffy-canvas.html の中身（raw）](https://raw.githubusercontent.com/Rin-cat/moffy-maker/main/canvas/moffy-canvas.html)をすべてコピーして貼る
-3. プレビューに戻り、「基準画像をつくる」→「このページで生成」で画像が出るか確かめる
-4. 右上の「共有」からリンクを作って配る
+Gemini に「このファイルを Canvas に移して」と頼むと、Gemini が長いコードを全部書き直すことになり、「お役に立てません」と断られたり、途中で崩れたりします。次のどちらかの方法で入れてください。
 
-- Gemini に「このコードで作って」と頼むと、長いファイルは作り直しの途中で崩れることがあります。コードの表示に直接貼ってください
+**方法A：コードをそのまま貼る（いちばん確実）**
+
+1. パソコンで [gemini.google.com](https://gemini.google.com/app) を開き、入力欄の「ツール」から「Canvas」を選んで「『テスト』とだけ表示する HTML を作って」と送る
+2. 右に Canvas が開いたら、右上の「コード」を開き、コードの欄で全選択（Ctrl+A／⌘A）して消す
+3. [moffy-canvas.html の中身（raw）](https://raw.githubusercontent.com/Rin-cat/moffy-maker/main/canvas/moffy-canvas.html)を開いて全選択・コピーし、コードの欄に貼る
+4. プレビューに戻り、「基準画像をつくる」→「このページで生成」で画像が出るか確かめる
+5. 右上の「共有」からリンクを作って配る（貼ったあとは、Gemini に Canvas の修正を頼まないでください。作り直されて崩れます）
+
+**方法B：読み込み版（短いコードで、本体を GitHub Pages から読む）**
+
+[`canvas/loader.html`](canvas/loader.html) は20行ほどのコードで、本体（https://rin-cat.github.io/moffy-maker/canvas.html）を読み込んで表示します。短いので Gemini に「このコードをそのまま Canvas にして」と頼んでも通りやすく、方法A の 2〜3 でこのコードを貼ってもかまいません。本体を直すと、Canvas 側も自動で新しくなります。ただし、GitHub Pages が開けないときは動きません。
+
 - Canvas の中では、画像の保存やコピーができないことがあります。そのときは画像を長押し（右クリック）して保存してください
 - 共有リンクと QR コードは、GitHub Pages の版を開きます
-- ツールを直したら、`python3 tools/build_canvas.py` で作り直して、Canvas のコードを貼り替えます
+- ツールを直したら、`python3 tools/build_canvas.py` で作り直します（方法A は Canvas のコードを貼り替え、方法B はそのままで反映されます）
 
 ## その子らしさを出す3つのしかけ
 
@@ -154,6 +162,7 @@ HTML ファイル1つで動く静的サイトです。ビルドの道具やサ�
 moffy-studio.html      ツール本体（ここを編集する）
 docs/                  GitHub Pages で公開している版（tools/build.py で生成）
 canvas/moffy-canvas.html  Gemini の Canvas に貼る1ファイル版（tools/build_canvas.py で生成。画面の中で画像まで生成できる）
+canvas/loader.html     Canvas の読み込み版（本体 docs/canvas.html を GitHub Pages から読む）
   index.html             完全な HTML（lang、OG タグ、ファビコンつき）
   og.jpg                 リンクを貼ったときのプレビュー画像（1200×630）
   social-preview.jpg     GitHub の Social preview 用（1280×640）
@@ -194,6 +203,7 @@ node tests/lint.js       # 指示書の点検（ガチャ DNA × 全レシピ ×
 node tests/a11y.js       # axe-core によるアクセシビリティ検査（ライト／ダーク）
 node tests/link.js       # 共有リンクと QR（公開 URL を入れて build したとき）
 node tests/canvas.js     # Canvas 版（Gemini API の返事をまねて、添付の順番・縦横比・再試行・取り込み・直しの流れなど 30 項目）
+node tests/loader.js     # Canvas の読み込み版（本体を読み込んで生成まで動くか）
 ```
 
 ## 改善の記録

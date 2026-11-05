@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モッフィー指示書メーカー（Canvas 版）</title>
+</head>
+<body>
+<p id="msg" style="font:16px/1.7 sans-serif;padding:24px">読み込み中…</p>
+<script>
+// 本体（canvas.html）を GitHub Pages から読み込んで、このページに表示する。本体を直すと、ここにも自動で反映される
+fetch("https://rin-cat.github.io/moffy-maker/canvas.html", { cache: "no-store" })
+  .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+  .then(function (html) { document.open(); document.write(html); document.close(); })
+  .catch(function (e) {
+    document.getElementById("msg").textContent = "読み込めませんでした（" + e.message + "）。canvas/moffy-canvas.html の中身を、Canvas のコードにそのまま貼る方法を試してください。";
+  });
+</script>
+</body>
+</html>

@@ -129,3 +129,5 @@
 - 作り：moffy-studio.html に Canvas モードを足し、tools/build_canvas.py で canvas/moffy-canvas.html（1ファイル）を書き出す。GitHub 版とは中身が同じで、機能がずれない
 - 生成の呼び方は公式に合わせた（画像モデル、systemInstruction、seed）。縦横比は imageConfig を先に試し、通らなければ公式と同じ書き方に切りかえる。モデルが見つからないときは次の候補へ、混雑（429）や 5xx は待って再試行
 - 実際の Canvas での動作は、作者の Gemini で確かめる必要がある（このリポジトリのテストは API の返事をまねたもの）
+- Gemini に「このファイルを Canvas に移植して」と頼むと「大規模言語モデルとして私はまだ学習中であり、そちらについてはお役に立てません。」と返ってきた。Canvas に入れるには Gemini がコード全体を出力し直す必要があり、222KB（画像の data URL 約5万文字を含む）は1回の出力に収まらないためと考えられる
+  → 方法A：小さな Canvas を作らせてから「コード」表示に直接貼る。方法B：20行ほどの読み込み版（canvas/loader.html）が、GitHub Pages の docs/canvas.html を読み込んで表示する
