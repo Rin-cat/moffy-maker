@@ -19,6 +19,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Gemini で自分のモッフィーを同じ見た目のまま遊ばせるための指示書（プロンプト）を作る、非公式のファンメイドツール。">
 <meta name="moffy-site-url" content="https://rin-cat.github.io/moffy-maker/">
+<meta name="moffy-mode" content="">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -246,6 +247,25 @@ kbd{font-family:var(--f-code);font-size:11px;border:1px solid var(--rule-strong)
 .refs{list-style:none;margin:4px 0 2px;padding:0;display:grid;gap:4px}
 .refs li{display:flex;flex-wrap:wrap;align-items:center}
 .refs li b{font-family:var(--f-code);font-weight:500;margin-right:8px}
+.miss-tag{margin-left:8px;font-size:12.5px;color:var(--red)}
+.gen-miss:empty{display:none}
+.gen-out{display:grid;gap:10px}
+.gen-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.gen-card{border:1px solid var(--rule-strong);border-radius:6px;background:var(--paper);padding:10px;display:grid;gap:8px;align-content:start;min-width:0}
+.gen-head{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.gen-time{color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+.gen-body{display:grid;gap:8px;min-width:0}
+.gen-img{display:block;width:100%;height:auto;border-radius:4px;background:#FFFFFF;border:1px solid var(--rule)}
+.gen-wait{font-size:13.5px;color:var(--sub);padding:32px 0;text-align:center}
+.gen-err{color:var(--red);font-size:13.5px}
+.gen-pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-code);font-size:12px;background:var(--fill);border:1px solid var(--rule);border-radius:4px;padding:8px;max-height:260px;overflow:auto}
+.gen-text summary{cursor:pointer;font-size:13px}
+.gen-score{font-weight:700}
+.gen-checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px}
+.gen-checks li{display:grid;grid-template-columns:4em minmax(0,1fr);gap:2px 8px}
+.gen-checks li span{grid-column:2;color:var(--sub);font-size:12.5px}
+.gen-checks li.ok b{color:var(--ok)}
+.gen-checks li.ng b{color:var(--red)}
 .attach-thumb{width:28px;height:28px;margin-left:8px;border-radius:3px;border:1px solid var(--rule);background:#FFFFFF}
 .out{border:1px solid var(--rule-strong);border-radius:2px;background:var(--paper);max-height:72vh;overflow:auto;overscroll-behavior:contain}
 .blk{display:grid;grid-template-columns:7.5em minmax(0,1fr);border-bottom:1px solid var(--rule)}
@@ -449,6 +469,26 @@ footer ul{margin:0;padding-left:1.2em}
           </div>
         </div>
       </section>
+      <section class="eye-ref base-ref" id="base-ref" aria-labelledby="h-base" hidden>
+        <div class="eye-head"><h3 id="h-base">基準画像</h3></div>
+        <div class="eye-body">
+          <div class="eye-drop" id="base-drop">
+            <img id="base-thumb" width="120" height="120" alt="基準画像" hidden>
+            <p id="base-empty">まだありません</p>
+          </div>
+          <div class="eye-side">
+            <p class="eye-kind" id="base-kind">「基準画像をつくる」で生成すると、自動でここに入ります</p>
+            <p class="hint">この子の見た目の正解です。ほかのレシピで生成するとき、自動で添付します。前に作った基準画像を入れることもできます。画像はこのブラウザの中だけで扱います。</p>
+            <div class="btns">
+              <button type="button" class="btn ghost small" id="base-pick">手持ちの画像を入れる</button>
+              <button type="button" class="btn ghost small" id="base-save">保存</button>
+              <button type="button" class="btn ghost small danger" id="base-clear" hidden>外す</button>
+            </div>
+            <input type="file" id="gen-file" name="gen-file" accept="image/*" hidden>
+            <div class="toast" id="toast4" role="status"></div>
+          </div>
+        </div>
+      </section>
       <div class="rgroups" id="rgroups"></div>
       <p class="rdesc" id="rdesc"></p>
       <div class="rbar">
@@ -460,10 +500,16 @@ footer ul{margin:0;padding-left:1.2em}
       </div>
       <div class="rfields" id="rfields"></div>
       <div class="attach" id="attachline"></div>
+      <p class="warn-inline gen-miss" id="gen-miss"></p>
+      <section class="gen-out" id="gen-out" aria-labelledby="h-gen" hidden>
+        <h3 id="h-gen">生成した画像</h3>
+        <div class="gen-list" id="gen-list"></div>
+      </section>
       <div class="out" id="out" tabindex="0" role="region" aria-label="指示書の本文"></div>
       <div class="next" id="nextline"></div>
       <div class="actions">
         <div class="btns">
+          <button type="button" class="btn" id="gen-go" hidden>このページで生成</button>
           <button type="button" class="btn" id="copy">指示書をコピー</button>
           <a class="btn ghost" id="open-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini を開く</a>
           <span class="toast" id="toast2" role="status"></span>
@@ -1228,20 +1274,21 @@ function renderOut(){
  let list;
  if(gem)list=`<p><b>Gem に入れるもの</b>${esc(o.scope==="このモッフィー専用"?"（任意）目の見本と基準画像を、Gem の「知識」に追加":"（任意）目の見本を、Gem の「知識」に追加")}</p>`;
  else if(!refs.length)list=`<p><b>Gemini に添付するもの</b>なし${r.usesAttach&&!st.attach?"（文章だけ）":""}</p>`;
- else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28"><span class="mini"><button type="button" class="btn ghost tiny" data-eyeact="copy" aria-label="目の見本をコピー">コピー</button>${$("#eye-save").hidden?"":`<button type="button" class="btn ghost tiny" data-eyeact="save" aria-label="目の見本を保存">保存</button>`}</span>`:""}</li>`).join("")}</ul>`;
+ else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${genRowTools(k)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28"><span class="mini"><button type="button" class="btn ghost tiny" data-eyeact="copy" aria-label="目の見本をコピー">コピー</button>${$("#eye-save").hidden?"":`<button type="button" class="btn ghost tiny" data-eyeact="save" aria-label="目の見本を保存">保存</button>`}</span>`:""}</li>`).join("")}</ul>`;
  const eyeUsable=r.usesAttach?st.attach:(r.id==="check"||r.id==="fix");
  const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に画像を入れると、目が公式の子に近づきます。":"";
  const ei=refs.findIndex(x=>x[0]==="eye");
  $("#eye-note").textContent=ei>=0?`このレシピでは、${ei+1}枚目に添付します`:gem?"「Gemにする」では添付しません（Gem の「知識」に入れられます）":st.useEye===false?"「指示書で使う」がオフなので、添付しません":r.usesAttach&&!st.attach?"「文章だけ」なので、添付しません":r.id==="fix"?"「部分修正」では、目を直すときだけ添付します":`「${r.label}」では、目の見本は添付しません`;
  $(".eye-ref").classList.toggle("unused",ei<0);
  const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。「見た目を指定する」でパーツを選んでおくと安定します。":"";
- const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
+ const how=gem?"":CANVAS?(refs.length?"「このページで生成」を押すと、この順番で自動で添付して生成します。指示書をコピーして Gemini アプリで作るときは、この順番で画像を添付してください（モデルは Flash か Pro）。":"「このページで生成」を押すと、指示書だけで生成します。指示書をコピーして Gemini アプリで作ることもできます。"):`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
  $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
  const nx=NEXT[r.id]||NEXT.scene;
  $("#nextline").innerHTML=`<h3>このあと</h3><ol>${nx.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
  const out=$("#out");out.classList.toggle("explain",st.explain);
  out.innerHTML=segs.map((s,i)=>`<div class="blk"><div class="blk-h"><span>${esc(s.h)}</span>${r.copyEach?`<button type="button" class="btn ghost small" data-copyseg="${i}">この欄をコピー</button>`:""}</div><p class="blk-t">${esc(s.t)}</p>${st.explain?(s.why?`<div class="why" role="note" aria-label="解説"><p>なぜ：${esc(s.why)}</p><p class="src">根拠：${esc(s.src)}</p></div>`:`<div class="why empty" aria-hidden="true"></div>`):""}</div>`).join("");
  $("#count").textContent=`${new Intl.NumberFormat("ja-JP").format(plain(segs).length)}文字`;
+ genUpdate(c);
  persist();
 }
 function renderAll(){renderCard();renderOut()}
@@ -1435,6 +1482,197 @@ function initEye(){
  try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eyeSetSource(o.src,{restore:true,ready:true,zoom:o.zoom,x:o.x,y:o.y})}}catch(e){}
 }
 
+/* ================= Canvas 版：このページで生成する（Gemini の Canvas の中で動く。API キーは Canvas が用意するので空のまま） ================= */
+const CANVAS=(()=>{const m=document.querySelector('meta[name="moffy-mode"]');return !!(m&&m.content==="canvas")})();
+const GEN={busy:false,base:"",imgs:{},last:"",results:[],seq:0,cfg:"imageConfig",model:{image:0,text:0},pickKey:""};
+// 公式ジェネレーターと同じ呼び方。モデルが見つからないとき（404）は次の候補へ
+const GEN_MODELS={image:["gemini-2.5-flash-image-preview","gemini-2.5-flash-image"],text:["gemini-3-flash-preview","gemini-2.5-flash"]};
+const GEN_KEY="";
+const GEN_BASE_KEY="moffy-canvas-base";
+const GEN_SYS="あなたは、Gemini から生まれたふわふわの3DCGキャラクター「モッフィー」を描くイラストレーターです。指示書の「絶対に守るルール」を最優先で守ります。添付した画像の役割は、指示書の「添付した画像」のとおりです。目の見本はキャラクターではないので、描き直したり説明したりしません。";
+const genSleep=ms=>new Promise(r=>setTimeout(r,ms));
+const genSplit=url=>{const m=/^data:([^;,]+);base64,(.*)$/.exec(url||"");return m?{mimeType:m[1],data:m[2]}:null};
+function genRefUrl(k){return k==="eye"?(eye.out||""):k==="base"?GEN.base:(GEN.imgs[k]||"")}
+function genMissing(c){return c.refs.map((x,i)=>[x,i]).filter(([x])=>!genRefUrl(x[0])).map(([x,i])=>`${i+1}枚目（${x[1]}）`)}
+// 画像を JPEG にそろえる（長い辺 max px、透明な所は白）。File でも data URL でもよい
+function genNormalize(src,max=1280){
+ return new Promise((res,rej)=>{
+  const go=url=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight,1)),cv=document.createElement("canvas");cv.width=Math.max(1,Math.round(im.naturalWidth*k));cv.height=Math.max(1,Math.round(im.naturalHeight*k));const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,cv.width,cv.height);g.drawImage(im,0,0,cv.width,cv.height);res(cv.toDataURL("image/jpeg",.9))};im.onerror=()=>rej(new Error("画像を読み込めませんでした"));im.src=url};
+  if(typeof src==="string"){go(src);return}
+  if(!src||!/^image\//.test(src.type||"")){rej(new Error("画像ファイルを選んでください"));return}
+  const fr=new FileReader();fr.onload=()=>go(String(fr.result));fr.onerror=()=>rej(new Error("画像を読み込めませんでした"));fr.readAsDataURL(src);
+ });
+}
+// API を呼ぶ。混雑（429）や Gemini 側のエラー（5xx）は待って再試行、モデルや設定の名前ちがい（404・400）は切りかえて再試行
+async function genFetch(kind,makeBody){
+ let lastErr=null;
+ for(let attempt=0;attempt<5;attempt++){
+  const model=GEN_MODELS[kind][GEN.model[kind]]||GEN_MODELS[kind][0];
+  let r;
+  try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEN_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(makeBody())})}
+  catch(e){lastErr=new Error("通信できませんでした。少し待ってからもう一度試してください");await genSleep(1200*(attempt+1));continue}
+  if(r.ok)return r.json();
+  const detail=await r.text().catch(()=>"");
+  if(r.status===404&&GEN.model[kind]<GEN_MODELS[kind].length-1){GEN.model[kind]++;continue}
+  if(r.status===400&&kind==="image"&&GEN.cfg==="imageConfig"&&/imageConfig|aspect/i.test(detail)){GEN.cfg="flat";continue}
+  if(r.status===429||r.status>=500){lastErr=new Error(r.status===429?"混み合っているか、今日の生成の上限に近づいています。少し待ってからもう一度試してください":"Gemini 側でエラーが起きました。もう一度試してください");await genSleep(1500*(attempt+1));continue}
+  throw new Error(r.status===401||r.status===403?"ここでは生成できません。Gemini の Canvas の中で開いてください（指示書のコピーは使えます）":`生成できませんでした（エラー ${r.status}）`);
+ }
+ throw lastErr||new Error("生成できませんでした");
+}
+async function genImage(prompt,urls,ratio,wantText){
+ const parts=[...urls.map(u=>({inlineData:genSplit(u)})),{text:`${prompt}\n\n[seed:${Math.random().toString(36).slice(2,8)}]`}];
+ const j=await genFetch("image",()=>{const gc={responseModalities:wantText?["TEXT","IMAGE"]:["IMAGE"]};if(ratio){if(GEN.cfg==="imageConfig")gc.imageConfig={aspectRatio:ratio};else gc.aspectRatio=ratio}return {contents:[{role:"user",parts}],generationConfig:gc,systemInstruction:{parts:[{text:GEN_SYS}]}}});
+ const cand=(j&&j.candidates&&j.candidates[0])||{},ps=(cand.content&&cand.content.parts)||[];
+ const img=ps.find(p=>p.inlineData&&p.inlineData.data);
+ const text=ps.filter(p=>typeof p.text==="string").map(p=>p.text).join("\n").trim();
+ if(!img){const why=String(cand.finishReason||(j&&j.promptFeedback&&j.promptFeedback.blockReason)||"");throw new Error(/SAFETY|NO_IMAGE|PROHIBITED|BLOCK|RECITATION/i.test(why)?"安全のための制限で、画像が作られませんでした。言葉や場面を少し変えてみてください":"画像が返ってきませんでした。もう一度試すか、「指示書をコピー」して Gemini アプリで作ってください")}
+ return {url:`data:${img.inlineData.mimeType||"image/png"};base64,${img.inlineData.data}`,text};
+}
+async function genText(prompt,urls,json){
+ const parts=[...urls.map(u=>({inlineData:genSplit(u)})),{text:prompt}];
+ const j=await genFetch("text",()=>({contents:[{role:"user",parts}],...(json?{generationConfig:{responseMimeType:"application/json"}}:{})}));
+ const t=((((j&&j.candidates&&j.candidates[0])||{}).content||{}).parts||[]).map(p=>p.text||"").join("").trim();
+ if(!t)throw new Error("返事が空でした。もう一度試してください");
+ return t;
+}
+// 結果のカード
+function genCard(label){
+ const id=++GEN.seq,el=document.createElement("article");
+ el.className="gen-card";el.dataset.id=String(id);
+ el.innerHTML=`<div class="gen-head"><b>${esc(label)}</b><span class="gen-time">${new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}</span></div><div class="gen-body"><p class="gen-wait">生成しています…（10〜40秒ほど）</p></div>`;
+ $("#gen-out").hidden=false;$("#gen-list").prepend(el);
+ GEN.results.unshift({id,label,kind:"",url:"",text:"",rid:""});
+ while(GEN.results.length>12){const old=GEN.results.pop();const e=$(`.gen-card[data-id="${old.id}"]`);if(e)e.remove()}
+ return id;
+}
+const genItem=id=>GEN.results.find(x=>x.id===id);
+const genBody=id=>{const e=$(`.gen-card[data-id="${id}"] .gen-body`);return e};
+function genShowImage(id,rid,res){
+ const it=genItem(id);if(!it)return;Object.assign(it,{kind:"image",url:res.url,text:res.text||"",rid});
+ GEN.last=res.url;
+ let canImport=false;if(res.text){try{parseDNA(res.text);canImport=true}catch(e){}}
+ const body=genBody(id);if(!body)return;
+ body.innerHTML=`<img class="gen-img" src="${res.url}" alt="${esc(it.label)}で生成した画像">${res.text?`<details class="gen-text"><summary>一緒に返ってきた文字</summary><pre class="gen-pre">${esc(res.text)}</pre></details>`:""}<div class="btns"><button type="button" class="btn small" data-genact="save" data-id="${id}">保存</button><button type="button" class="btn ghost small" data-genact="base" data-id="${id}">基準画像にする</button><button type="button" class="btn ghost small" data-genact="fix" data-id="${id}">部分修正へ</button><button type="button" class="btn ghost small" data-genact="check" data-id="${id}">ルールチェックへ</button>${canImport?`<button type="button" class="btn ghost small" data-genact="import" data-id="${id}">文字の内容を DNA に取り込む</button>`:""}</div>`;
+ if(rid==="base"&&!GEN.base)genSetBase(res.url,"生成した画像を、基準画像にしました");
+}
+function genShowText(id,rid,text,target){
+ const it=genItem(id);if(!it)return;Object.assign(it,{kind:"text",text,rid,target:target||""});
+ const body=genBody(id);if(!body)return;
+ let html="";
+ if(rid==="check"){
+  let o=null;try{const m=text.match(/\{[\s\S]*\}/);o=m?looseJSON(m[0]):null}catch(e){}
+  if(o&&Array.isArray(o.results)){
+   it.fix=String(o.fix_prompt||"").trim();
+   html=`<p class="gen-score">合格 ${esc(o.score||`${o.results.filter(x=>x.pass).length}/${o.results.length}`)}</p><ul class="gen-checks">${o.results.map(x=>`<li class="${x.pass?"ok":"ng"}"><b>${x.pass?"合格":"不合格"}</b>${esc(x.item||"")}<span>${esc(x.reason||"")}</span></li>`).join("")}</ul>${it.fix&&it.target?`<div class="btns"><button type="button" class="btn small" data-genact="applyfix" data-id="${id}">この直し方で直す</button></div>`:""}`;
+  }
+ }
+ if(rid==="import"){
+  let ok=false;try{parseDNA(text);ok=true}catch(e){}
+  html=`<pre class="gen-pre">${esc(text)}</pre>${ok?`<div class="btns"><button type="button" class="btn small" data-genact="import" data-id="${id}">この内容を取り込む</button></div>`:`<p class="hint">取り込める形ではありませんでした。キャラクター全体が写った画像で試してください。</p>`}`;
+ }
+ body.innerHTML=html||`<pre class="gen-pre">${esc(text)}</pre>`;
+}
+function genShowError(id,e){const body=genBody(id);if(body)body.innerHTML=`<p class="gen-err" role="alert">${esc(e&&e.message||"生成できませんでした")}</p>`;const it=genItem(id);if(it)it.kind="error"}
+// 生成する（いまのレシピ）
+async function genRun(){
+ if(GEN.busy)return;
+ const {r,o,c,segs}=buildSegs();
+ if(r.id==="gem")return;
+ const miss=genMissing(c);
+ if(miss.length){flash("#toast2",`先に画像を入れてください：${miss.join("、")}`);return}
+ const urls=c.refs.map(([k])=>genRefUrl(k)),prompt=plain(segs),id=genCard(r.label);
+ const target=r.id==="check"?(GEN.imgs.target||""):"";
+ GEN.busy=true;genUpdate();
+ try{
+  if(r.id==="import"||r.id==="check")genShowText(id,r.id,await genText(prompt,urls,r.id==="check"),target);
+  else genShowImage(id,r.id,await genImage(prompt,urls,ratioOf(r,o),r.id==="base"&&String(o.json||"").startsWith("受け取る")));
+ }catch(e){genShowError(id,e)}
+ finally{GEN.busy=false;genUpdate()}
+}
+// ルールチェックの直し方（fix_prompt）で、判定した画像を直す
+async function genApplyFix(it){
+ if(GEN.busy||!it.fix||!it.target)return;
+ const useEye=eyeActive(),urls=[it.target,...(useEye?[eye.out]:[])];
+ const prompt=[`【添付した画像】\n1枚目：直してほしい画像${useEye?`\n2枚目：${EYE_REF[2]}`:""}`,`【直すこと】\n${it.fix}${useEye?"\n目を直すときは、目の描き方を2枚目の目の見本とそっくり同じにする（まねするのは目の描き方だけ）。":""}`,"【構図】\n直す所のほかは、ポーズ・表情・背景・光・構図をまったく同じに保つ。アスペクト比も元の画像と同じにする。画像は1枚だけ出力する。"].join("\n\n");
+ const id=genCard("ルールチェックで直す");
+ GEN.busy=true;genUpdate();
+ try{genShowImage(id,"fix",await genImage(prompt,urls,null,false))}catch(e){genShowError(id,e)}
+ finally{GEN.busy=false;genUpdate()}
+}
+function genDownload(url,name){
+ try{const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();flash("#toast2","保存しました。保存されないときは、画像を長押し（右クリック）して保存してください")}
+ catch(e){flash("#toast2","画像を長押し（右クリック）して保存してください")}
+}
+// 基準画像の欄
+async function genSetBase(url,msg){
+ try{GEN.base=await genNormalize(url,1024)}catch(e){flash("#toast4",e.message);return}
+ try{localStorage.setItem(GEN_BASE_KEY,GEN.base)}catch(e){}
+ genBaseUI();renderOut();if(msg)flash("#toast4",msg);
+}
+function genBaseUI(){
+ const has=!!GEN.base,th=$("#base-thumb");
+ if(has)th.src=GEN.base;else th.removeAttribute("src");
+ th.hidden=!has;$("#base-empty").hidden=has;$("#base-save").disabled=!has;$("#base-clear").hidden=!has;
+ $("#base-kind").textContent=has?"この子の基準画像を使っています":"「基準画像をつくる」で生成すると、自動でここに入ります";
+ $("#base-pick").textContent=has?"別の画像にする":"手持ちの画像を入れる";
+}
+function genBaseClear(b){
+ const L="外す";
+ if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと外す";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent=L},4000);return}
+ clearTimeout(b._t);b.dataset.armed="";b.textContent=L;
+ GEN.base="";try{localStorage.removeItem(GEN_BASE_KEY)}catch(e){}
+ genBaseUI();renderOut();flash("#toast4","基準画像を外しました");
+}
+// いまのレシピに合わせて、生成ボタンと添付の欄をそろえる（renderOut から呼ぶ）
+function genUpdate(c0){
+ if(!CANVAS)return;
+ const r=recipe(),c=c0||buildSegs().c,go=$("#gen-go");
+ go.hidden=r.id==="gem";
+ const miss=genMissing(c);
+ go.disabled=GEN.busy||!!miss.length;
+ go.textContent=GEN.busy?"生成中…":(r.id==="import"||r.id==="check")?"Gemini に聞く":"このページで生成";
+ go.title=miss.length?`先に画像を入れてください：${miss.join("、")}`:"";
+ $("#gen-miss").textContent=!GEN.busy&&miss.length&&r.id!=="gem"?`生成するには、先に画像を入れてください：${miss.join("、")}`:"";
+}
+// 添付の一覧の各行に置くボタン（目の見本は上の欄、ほかはここで入れる）
+function genRowTools(k){
+ if(!CANVAS||k==="eye")return "";
+ const url=genRefUrl(k),thumb=url?`<img class="attach-thumb" src="${url}" alt="" width="28" height="28">`:"";
+ if(k==="base")return thumb+(url?"":`<span class="miss-tag">未設定（上の「基準画像」へ）</span>`);
+ return `${thumb}<span class="mini"><button type="button" class="btn ghost tiny" data-genpick="${k}">${url?"入れかえる":"画像を選ぶ"}</button>${(k==="target"||k==="src")&&GEN.last&&GEN.last!==url?`<button type="button" class="btn ghost tiny" data-genlast="${k}">直前に生成した画像</button>`:""}</span>`;
+}
+function initGen(){
+ if(!CANVAS)return;
+ document.documentElement.classList.add("canvas-mode");
+ $("#base-ref").hidden=false;$("#gen-go").hidden=false;$("#copy").classList.add("ghost");
+ const lede=$(".lede");if(lede)lede.innerHTML='Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描きます。この Canvas 版は、ボタンを押すとこのページで画像まで作れます（あなたの <span translate="no">Gemini</span> の利用枠を使います）。指示書をコピーして <span translate="no">Gemini</span> アプリで作ることもできます。';
+ const step=$(".flow li:last-child");if(step)step.innerHTML="<b>このページで生成</b><span>目の見本と基準画像は自動で添付</span>";
+ const sn=$("#recipes .sheet-no");if(sn)sn.textContent="レシピを選んで「このページで生成」を押します。指示書のコピーもできます";
+ const file=$("#gen-file");
+ file.addEventListener("change",async()=>{const f=file.files&&file.files[0],k=GEN.pickKey;file.value="";if(!f||!k)return;try{const url=await genNormalize(f);if(k==="base")genSetBase(url,"基準画像を入れました");else{GEN.imgs[k]=url;renderOut()}}catch(e){flash("#toast2",e.message)}});
+ $("#base-pick").addEventListener("click",()=>{GEN.pickKey="base";file.click()});
+ $("#base-save").addEventListener("click",()=>{if(GEN.base)genDownload(GEN.base,"moffy-base.jpg")});
+ $("#base-clear").addEventListener("click",e=>genBaseClear(e.currentTarget));
+ $("#gen-go").addEventListener("click",genRun);
+ document.addEventListener("click",async e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.genpick){GEN.pickKey=b.dataset.genpick;file.click();return}
+  if(b.dataset.genlast){GEN.imgs[b.dataset.genlast]=await genNormalize(GEN.last).catch(()=>GEN.last);renderOut();return}
+  if(!b.dataset.genact)return;
+  const it=genItem(+b.dataset.id);if(!it)return;
+  switch(b.dataset.genact){
+   case "save":genDownload(it.url,`moffy-${it.rid||"image"}-${it.id}.png`);break;
+   case "base":genSetBase(it.url,"基準画像にしました");break;
+   case "fix":case "check":{GEN.imgs.target=await genNormalize(it.url).catch(()=>it.url);st.recipe=b.dataset.genact;renderRecipeUI();setHash();$("#recipes").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});flash("#toast2",b.dataset.genact==="fix"?"この画像を「直したい画像」にしました。直したい所を選んで生成してください":"この画像を「判定したい画像」にしました");break}
+   case "import":try{const d=parseDNA(it.text);loadDNA(d,`「${d.n||"名前未定"}」を取り込みました。レシピを選んで続けられます。`);flash("#toast2","DNA に取り込みました")}catch(err){flash("#toast2",err.message)}break;
+   case "applyfix":genApplyFix(it);break;
+  }
+ });
+ try{const b=localStorage.getItem(GEN_BASE_KEY);if(b&&b.startsWith("data:image/"))GEN.base=b}catch(e){}
+ genBaseUI();
+}
+
 /* ================= イベント ================= */
 document.addEventListener("click",e=>{
  const b=e.target.closest("button");if(!b)return;
@@ -1480,6 +1718,7 @@ document.addEventListener("change",e=>{
 restore();
 buildStatic();
 initEye();
+initGen();
 let fromLink="";
 try{const q=new URLSearchParams(location.search).get("dna");if(q){st.d={...BLANK_DNA,...parseDNA(q)};fromLink=st.d.n||"名前未定"}}catch(e){}
 syncInputs();$("#explain").checked=st.explain;

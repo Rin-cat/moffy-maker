@@ -83,7 +83,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok((await p.textContent('#c-code')) !== before && /モッフィー$/.test(await p.textContent('#c-name')), 'ガチャで DNA が変わる');
   await p.click('#r-check');
   ok((await p.textContent('#nextline')).includes('fix_prompt'), '「このあと」がレシピに合わせて変わる');
-  ok((await p.textContent('#attachline')).includes('貼り方'), '画像が必要なレシピで貼り方を表示');
+  const al = await p.textContent('#attachline');
+  ok(al.includes('貼り方') || al.includes('自動で添付'), '画像が必要なレシピで添付のしかたを表示（Canvas 版は自動で添付）');
   ok((await p.evaluate(() => document.documentElement.lang)) === 'ja', 'html の言語が ja');
   // サイクル4: その子らしさ・プロフィール帳・自分の写真
   await p.click('#mode-new');

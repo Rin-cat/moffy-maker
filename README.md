@@ -44,6 +44,28 @@ Gemini とのやりとりは、指示書を貼るたびに1回で画像が出ま
 
 標準の目の見本は、作者が Gemini で作ったモッフィーの画像から右目を切り抜き、毛がかかっていた所を白目の陰影でうめたものです（`tools/make_eye.py`）。公式ジェネレーターの見本画像は使っていません。画像ファイルは [docs/eye-sample.png](docs/eye-sample.png)（クラシック版は [docs/eye-sample-classic.png](docs/eye-sample-classic.png)）からも保存でき、Gem の「知識」に入れておくこともできます。自分の画像に差しかえたときも、画像はブラウザの中だけで扱います（どこにも送信しません）。
 
+## Gemini の Canvas で使う（Canvas 版）
+
+[`canvas/moffy-canvas.html`](canvas/moffy-canvas.html) は、Gemini の Canvas に貼って使う1ファイル版です。機能は GitHub 版とすべて同じで、さらに Canvas の中では次のことができます。
+
+- 「このページで生成」を押すと、画像まで作れる（目の見本・基準画像・写真などを、指示書の順番で自動で添付）
+- 生成した画像を、そのまま基準画像にしたり、部分修正・ルールチェックに回したりできる
+- 「公式の子を取り込む」の返事はボタンで DNA に取り込め、「ルールチェック」の結果からは、そのまま直せる
+
+生成には、使う人それぞれの Gemini の利用枠を使います（API キーは不要。公式ジェネレーターと同じ呼び方です）。うまく生成できないときは、今までどおり「指示書をコピー」して Gemini アプリで作れます。
+
+### Canvas に入れる手順
+
+1. パソコンで [gemini.google.com](https://gemini.google.com/app) を開き、ツールから「Canvas」を選んで「空の HTML ページを作って」と頼む
+2. Canvas の右上の「コード」を開き、中身をすべて消してから、[moffy-canvas.html の中身（raw）](https://raw.githubusercontent.com/Rin-cat/moffy-maker/main/canvas/moffy-canvas.html)をすべてコピーして貼る
+3. プレビューに戻り、「基準画像をつくる」→「このページで生成」で画像が出るか確かめる
+4. 右上の「共有」からリンクを作って配る
+
+- Gemini に「このコードで作って」と頼むと、長いファイルは作り直しの途中で崩れることがあります。コードの表示に直接貼ってください
+- Canvas の中では、画像の保存やコピーができないことがあります。そのときは画像を長押し（右クリック）して保存してください
+- 共有リンクと QR コードは、GitHub Pages の版を開きます
+- ツールを直したら、`python3 tools/build_canvas.py` で作り直して、Canvas のコードを貼り替えます
+
 ## その子らしさを出す3つのしかけ
 
 同じルールから生まれるモッフィーは、そのままだと「かわいい・ふわふわ」に寄って似てきます。このツールでは、次の3つで個性を残します。
@@ -131,6 +153,7 @@ HTML ファイル1つで動く静的サイトです。ビルドの道具やサ�
 ```
 moffy-studio.html      ツール本体（ここを編集する）
 docs/                  GitHub Pages で公開している版（tools/build.py で生成）
+canvas/moffy-canvas.html  Gemini の Canvas に貼る1ファイル版（tools/build_canvas.py で生成。画面の中で画像まで生成できる）
   index.html             完全な HTML（lang、OG タグ、ファビコンつき）
   og.jpg                 リンクを貼ったときのプレビュー画像（1200×630）
   social-preview.jpg     GitHub の Social preview 用（1280×640）
@@ -141,6 +164,7 @@ assets/eye-sample.png  標準の目の見本のもと（tools/make_eye.py で作
 gem-instructions.md    Gem「モッフィー工房」に貼る文章
 research-notes.md      調査メモ（出典つき）
 tools/build.py         docs/index.html を作る
+tools/build_canvas.py  Gemini の Canvas に貼る1ファイル版（canvas/moffy-canvas.html）を作る
 tools/assets.js        サムネイル2種（絵に文字を重ねる）、標準の目の見本（docs/ 用）、gem-instructions.md を作る
 tools/make_eye.py      Gemini で作ったモッフィーの画像から、標準の目の見本を切り抜いてツールに埋めこむ（もとの画像は同梱しない）
 tests/                 自動テスト
@@ -155,6 +179,10 @@ python3 tools/build.py https://rin-cat.github.io/moffy-maker/
 ```
 
 ```bash
+python3 tools/build_canvas.py
+```
+
+```bash
 node tools/assets.js
 ```
 
@@ -165,6 +193,7 @@ node tests/smoke.js      # 機能テスト（全レシピ、DNA の往復、取�
 node tests/lint.js       # 指示書の点検（ガチャ DNA × 全レシピ × 添付あり/なし × 目の見本あり/なし、約4,400通り）
 node tests/a11y.js       # axe-core によるアクセシビリティ検査（ライト／ダーク）
 node tests/link.js       # 共有リンクと QR（公開 URL を入れて build したとき）
+node tests/canvas.js     # Canvas 版（Gemini API の返事をまねて、添付の順番・縦横比・再試行・取り込み・直しの流れなど 30 項目）
 ```
 
 ## 改善の記録
@@ -181,6 +210,7 @@ node tests/link.js       # 共有リンクと QR（公開 URL を入れて build
 | 8 | 作者が Gemini で作ったレインボーのモッフィーで、本物の目の作りを確認（つやのある白い目玉・虹色の輪・内側ほど深い色・大きな白い四芒星・左上の四角いツヤ・右下の小さな丸いツヤ） | 標準の目の見本を、その画像から切り抜いた本物の目に変更（毛がかかった所は白目の陰影でうめ、クラシックは虹彩の色だけ置きかえ）。目の説明とルールチェックを本物の目に合わせ、「瞳孔は見えない・黒い瞳孔を描かない」を「黒いだけの目や点の目にしない」に直した。ラフの目にも四角いツヤと丸いツヤを入れた |
 | 9 | 試したところ、「公式の子を取り込む」に目の見本を添付してしまい、目そのものを1匹のキャラクターとして読んだ JSON（毛なし・丸い球体・目は1つ）が返ってきた | 指示書の先頭に「添付した画像」（何枚目が何か。目の見本はキャラクターではない）を入れた。取り込みは、目だけの画像なら JSON を書かずに知らせる。目の見本の欄に、いまのレシピで添付するか（何枚目か）を出し、添付しないレシピでは薄く表示 |
 | 10 | 「要素を選ぶ → JSON → 取り込み直す → 画像」の二度手間に見える（基準画像の返事に JSON があり、取り込みが必須の手順のように案内していた） | 基準画像は画像だけを返すのを既定にし、JSON は「決まった見た目を文字でも受け取る」を選んだときだけに。案内と README から、JSON の取り込みを必須に見せる書き方を外した。取り込みのレシピは、すでに画像がある子専用と明記 |
+| 11 | Gemini の Canvas アプリ（公式ジェネレーターと同じ）は、API キーなしで画像モデルを呼べる | 全機能をそのまま Canvas 用の1ファイルに書き出し、画面の中で画像まで生成できるようにした（目の見本・基準画像などは指示書の順番で自動添付、結果から基準画像・部分修正・ルールチェックへ、取り込み・直しもボタンで）。指示書のコピーも残した |
 
 ## 免責
 

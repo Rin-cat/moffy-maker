@@ -1,0 +1,1718 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>モッフィー指示書メーカー（Canvas 版）</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Gemini で自分のモッフィーを同じ見た目のまま遊ばせるための指示書（プロンプト）を作る、非公式のファンメイドツール。">
+<meta name="moffy-site-url" content="https://rin-cat.github.io/moffy-maker/">
+<meta name="moffy-mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Yomogi&family=M+PLUS+1+Code:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=%E3%83%A2%E3%83%83%E3%83%95%E3%82%A3%E3%83%BC%E6%8C%87%E7%A4%BA%E6%9B%B8%E3%83%A1%E3%83%BC%E3%82%AB%E3%83%BC123">
+<style>
+/* Layout: アニメ制作の設定資料デスク。左＝モッフィーを決める（机の上のメモ）、右＝キャラ表（紙・スクロールに追従）、下＝指示書（紙・全幅）。
+   青鉛筆＝描く・選ぶ。赤鉛筆＝直す・注意・赤ペンの解説。見せ場はキャラ表のラフ線画と、指示書の余白に入る手書きの解説だけ */
+:root{
+  --desk:#ECEFF4; --paper:#FFFFFF; --fill:#F5F7FA; --ink:#1E2230; --sub:#556075; --rule:#CDD5E1; --rule-strong:#8C98AD;
+  --blue:#2A64C2; --blue-soft:#E4ECF9; --on-blue:#FFFFFF;
+  --red:#C2372C; --red-soft:#FBEAE8; --on-red:#FFFFFF;
+  --ok:#1D6B47; --ok-soft:#E3F2EA;
+  --pencil:#4F86D6;
+  --sheet-shadow:0 1px 0 var(--rule),0 22px 34px -28px rgba(30,34,48,.55);
+  --f-title:"Dela Gothic One","Zen Kaku Gothic New",sans-serif;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --f-hand:"Yomogi","Zen Kaku Gothic New",sans-serif;
+  --f-code:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",monospace;
+  color-scheme:light;
+  scroll-padding-top:16px; scroll-padding-bottom:104px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --desk:#0F141D; --paper:#182030; --fill:#131A27; --ink:#E8ECF4; --sub:#A2ADC1; --rule:#2B374C; --rule-strong:#55647F;
+  --blue:#80AFFF; --blue-soft:#1C2A44; --on-blue:#0D1524; --red:#FF8A7B; --red-soft:#3A2023; --on-red:#2A0F0C;
+  --ok:#82D6A9; --ok-soft:#163224; --pencil:#8DB7FF;
+  --sheet-shadow:0 0 0 1px var(--rule),0 24px 40px -30px rgba(0,0,0,.9); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --desk:#0F141D; --paper:#182030; --fill:#131A27; --ink:#E8ECF4; --sub:#A2ADC1; --rule:#2B374C; --rule-strong:#55647F;
+  --blue:#80AFFF; --blue-soft:#1C2A44; --on-blue:#0D1524; --red:#FF8A7B; --red-soft:#3A2023; --on-red:#2A0F0C;
+  --ok:#82D6A9; --ok-soft:#163224; --pencil:#8DB7FF;
+  --sheet-shadow:0 0 0 1px var(--rule),0 24px 40px -30px rgba(0,0,0,.9); color-scheme:dark}
+@media (pointer:fine){:root{overscroll-behavior:none}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.75;-webkit-text-size-adjust:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+a{color:var(--blue);text-underline-offset:.2em}
+a:hover{text-decoration-thickness:2px}
+button,a,input,select,textarea,summary,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance;scroll-margin-top:16px}
+section{scroll-margin-top:16px}
+h2{font-size:23px;font-weight:900;letter-spacing:.02em}
+h3{font-size:15px;font-weight:700}
+p{margin:0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{max-width:1200px;margin:0 auto;display:grid;gap:30px}
+.stack{display:grid;gap:30px;min-width:0}
+.skip{position:absolute;left:12px;top:-64px;z-index:20;background:var(--paper);color:var(--ink);font-weight:700;padding:8px 14px;border-radius:6px;box-shadow:var(--sheet-shadow)}
+.skip:focus{top:12px}
+
+/* 見出しまわり */
+.top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:28px;align-items:center}
+.top-text{display:grid;gap:16px;min-width:0}
+h1{font-family:var(--f-title);font-weight:400;font-size:clamp(34px,5.4vw,60px);line-height:1.12;letter-spacing:.01em}
+h1 .nb{display:inline-block}
+.stamp{display:inline-grid;place-items:center;vertical-align:middle;width:clamp(48px,4.6vw,64px);height:clamp(48px,4.6vw,64px);margin:0 .3em 0 .2em;border:2.5px solid var(--red);border-radius:50%;color:var(--red);font-family:var(--f-ui);font-weight:900;font-size:clamp(12px,1.1vw,15px);line-height:1;letter-spacing:.02em;white-space:nowrap;transform:rotate(-12deg)}
+.lede{color:var(--sub);font-size:15.5px;max-width:40em}
+.flow{list-style:none;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;counter-reset:f}
+.flow li{counter-increment:f;position:relative;display:grid;gap:2px;padding:10px 4px 0 40px;border-top:2px solid var(--ink)}
+.flow li::before{content:counter(f);position:absolute;left:2px;top:8px;font-family:var(--f-title);font-size:26px;line-height:1;color:var(--blue)}
+.flow b{font-size:15px}
+.flow li>span{font-size:13px;color:var(--sub)}
+.hero{margin:0;min-width:0}
+.hero img{display:block;width:100%;height:auto;border-radius:4px;background:#E9E7F1;box-shadow:var(--sheet-shadow)}
+.hero figcaption{margin-top:8px;font-size:12.5px;color:var(--sub)}
+@media (max-width:860px){.top{grid-template-columns:minmax(0,1fr)}.hero img{aspect-ratio:16/10;object-fit:cover;object-position:50% 38%}}
+@media (max-width:620px){.flow{grid-template-columns:minmax(0,1fr);gap:6px}.flow li{padding-top:6px}.hero img{aspect-ratio:16/9}}
+
+/* 入力 */
+.desk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:30px;align-items:start}
+@media (max-width:980px){.desk{grid-template-columns:minmax(0,1fr)}}
+.memo{display:grid;gap:20px;min-width:0}
+.sec-head{display:grid;gap:4px}
+.sec-head p{font-size:14px;color:var(--sub)}
+.field{display:grid;gap:7px;min-width:0}
+.field>label,.lbl{font-weight:700;font-size:14px}
+.hint{font-size:13px;color:var(--sub)}
+input[type=text],textarea,select{width:100%;font:inherit;font-size:15px;line-height:1.6;color:var(--ink);background-color:var(--paper);border:1px solid var(--rule);border-bottom:2px solid var(--rule-strong);border-radius:6px 6px 2px 2px;padding:9px 12px;transition:border-color .15s,background-color .15s}
+input[type=text]:hover,textarea:hover,select:hover{border-color:var(--rule-strong)}
+input[type=text]:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:1px;border-bottom-color:var(--blue)}
+textarea{min-height:78px;resize:vertical}
+::placeholder{color:var(--sub);opacity:.9}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:13.5px;line-height:1.5;border:1px solid var(--rule-strong);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 13px;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--blue);background:var(--blue-soft)}
+.chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.chip.gacha{border-style:dashed}
+.starter{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.tabs{display:inline-flex;gap:2px;max-width:100%;background:var(--fill);border:1px solid var(--rule);border-radius:8px;padding:3px}
+.tabs button{font:inherit;font-size:14px;font-weight:700;border:0;background:transparent;color:var(--sub);padding:7px 14px;border-radius:6px;cursor:pointer;transition:background-color .15s,color .15s}
+.tabs button:hover:not(:disabled){color:var(--ink)}
+.tabs button[aria-selected="true"],.tabs button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(30,34,48,.2)}
+.tabs button:disabled{opacity:.5;cursor:not-allowed}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:34px;height:34px;border-radius:6px;border:1px solid var(--rule-strong);padding:0;cursor:pointer;transition:transform .15s}
+.sw:hover{transform:translateY(-2px)}
+.sw[aria-pressed="true"]{outline:2.5px solid var(--blue);outline-offset:2px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+@media (max-width:480px){.row2{grid-template-columns:minmax(0,1fr)}}
+details.fold{border-top:1px solid var(--rule);padding-top:14px}
+details.fold>summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none;display:flex;align-items:center;gap:10px;width:max-content;max-width:100%}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"";width:7px;height:7px;flex:none;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg);transition:transform .15s}
+details.fold[open]>summary::before{transform:rotate(45deg)}
+details.fold[open]>summary{margin-bottom:14px}
+.fold-body{display:grid;gap:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer}
+.switch input{width:18px;height:18px;margin:0;accent-color:var(--red)}
+.warn{background:var(--red-soft);color:var(--red);border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:9px 12px;font-size:13.5px}
+.okmsg{background:var(--ok-soft);color:var(--ok);border-left:3px solid var(--ok);border-radius:0 6px 6px 0;padding:9px 12px;font-size:13.5px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-size:14px;font-weight:700;line-height:1.4;border-radius:8px;padding:9px 16px;cursor:pointer;border:1.5px solid var(--blue);background:var(--blue);color:var(--on-blue);text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:background-color .15s,color .15s,border-color .15s}
+.btn:hover{background:color-mix(in srgb,var(--blue) 84%,var(--ink));border-color:color-mix(in srgb,var(--blue) 84%,var(--ink))}
+.btn.ghost{background:transparent;color:var(--blue)}
+.btn.ghost:hover{background:var(--blue-soft);color:var(--ink)}
+.btn.small{padding:6px 11px;font-size:13px}
+.toast{font-size:13px;color:var(--ok);min-height:1.3em}
+
+/* 紙（キャラ表・指示書） */
+.sheet{--pad:24px;background:var(--paper);border-radius:3px;box-shadow:var(--sheet-shadow);padding:var(--pad);display:grid;gap:18px;min-width:0}
+@media (max-width:560px){.sheet{--pad:16px}}
+.sheet-title{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 14px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+.sheet-no{font-size:13px;color:var(--sub)}
+.sheet-no b{font-family:var(--f-code);font-weight:500;font-size:14px;color:var(--ink)}
+.sheet-head{display:grid;grid-template-columns:auto minmax(0,1fr);margin:0;border:1px solid var(--rule-strong);font-size:14px}
+.sheet-head>div{display:contents}
+.sheet-head dt{background:var(--fill);color:var(--sub);padding:6px 12px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);white-space:nowrap}
+.sheet-head dd{margin:0;padding:6px 12px;border-bottom:1px solid var(--rule);font-weight:700;overflow-wrap:anywhere}
+.sheet-head>div:last-child>dt,.sheet-head>div:last-child>dd{border-bottom:0}
+.chara{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain}
+@media (max-width:980px){.chara{position:static;max-height:none;overflow:visible}}
+.chara-body{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:18px;align-items:start}
+@media (max-width:560px){.chara-body{grid-template-columns:minmax(0,1fr)}.chara-body .sketch-wrap{width:min(100%,260px);margin-inline:auto}}
+.sketch-wrap{margin:0;display:grid;gap:6px;min-width:0}
+.sketch{aspect-ratio:1;max-width:100%;border:1px solid var(--rule);border-radius:2px;background-color:var(--paper);
+  background-image:linear-gradient(color-mix(in srgb,var(--rule) 60%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--rule) 60%,transparent) 1px,transparent 1px);background-size:20px 20px;background-position:-1px -1px}
+.sketch svg{display:block;width:100%;height:100%}
+.sketch .ln{fill:none;stroke:var(--pencil);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sketch .thin{stroke-width:1.4}
+.sketch .fur{fill:var(--fur);fill-opacity:.4}
+.sketch .part{fill:var(--paper);fill-opacity:.9}
+.sketch .horn{fill:#F3E6C8;fill-opacity:.9}
+.sketch .red{fill:#E1453C;fill-opacity:.5}
+.sketch .gold{fill:#F2C94C;fill-opacity:.65}
+.sketch .leaf{fill:#5DB36A;fill-opacity:.6}
+.sketch .orange{fill:#E59A3A;fill-opacity:.6}
+.sketch .bat{fill:#5B4E7A;fill-opacity:.5}
+.sketch .fairy{fill:#BFE6FF;fill-opacity:.65}
+.sketch .ink{stroke:var(--ink)}
+.sketch .ink-fill{fill:var(--ink);fill-opacity:.75;stroke:var(--ink)}
+.sketch .tooth{fill:#FFFFFF}
+.sketch .eye-rim{fill:#FFFFFF;stroke:#1E1B2C;stroke-width:1.5}
+.sketch .crystal{fill:#CFEAFF;fill-opacity:.85}
+.sketch .pink{fill:#F6A9C6;fill-opacity:.75}
+.sketch .gold-ln{stroke:#D49A12;stroke-width:2.8}
+.sketch .ground{fill:var(--rule);fill-opacity:.8}
+@media (prefers-reduced-motion:no-preference){.sketch svg.drawing .ln{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s ease-out forwards}}
+@keyframes draw{to{stroke-dashoffset:0}}
+.cap{font-size:12.5px;color:var(--sub)}
+.spec-wrap{display:grid;gap:12px;min-width:0}
+.chip-spec{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px 10px;align-items:center;font-size:14px;padding:10px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.chip-spec b{margin-right:8px;color:var(--sub);font-weight:700}
+.swatch{width:26px;height:26px;border-radius:4px;border:1px solid var(--rule-strong)}
+.swatch[data-auto]{background:repeating-linear-gradient(45deg,var(--fill) 0 5px,var(--paper) 5px 10px)}
+.swatch.eye{border-radius:50%;border:1.5px solid #1E1B2C;box-shadow:inset 0 0 0 2px #FFFFFF;background:conic-gradient(#4285F4,#9B72CB,#EA4335,#F5A35C,#FBBC04,#34A853,#4285F4);display:grid;place-items:center}
+.swatch.eye.classic{background:linear-gradient(#4285F4,#9B72CB)}
+.swatch.eye::after{content:"✦";color:#FFFFFF;font-size:12px;line-height:1}
+.spec{margin:0;display:grid;font-size:14px}
+.spec .row{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:10px;padding:5px 0;border-bottom:1px dashed var(--rule)}
+.spec dt{color:var(--sub)}
+.spec dd{margin:0;overflow-wrap:anywhere}
+.sheet-sec{display:grid;gap:10px;min-width:0;border-top:1px solid var(--rule);padding-top:14px}
+.checks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:4px 18px;font-size:13.5px}
+.checks li{display:grid;grid-template-columns:15px minmax(0,1fr);gap:8px;align-items:start;overflow-wrap:anywhere}
+.checks li::before{content:"";width:12px;height:12px;margin-top:6px;border:1.5px solid var(--rule-strong);border-radius:2px}
+.code{display:block;font-family:var(--f-code);font-size:12.5px;line-height:1.6;color:var(--ink);background:var(--fill);border:1px solid var(--rule);border-radius:6px;padding:9px 11px;word-break:break-all;max-height:6.8em;overflow:auto;overscroll-behavior:contain}
+.qr{display:grid;justify-items:start;gap:6px}
+.qr canvas,.qr img{background:#FFFFFF;padding:10px;border:1px solid var(--rule);border-radius:6px}
+.saved{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.saved button{font:inherit;font-size:13px;border:1px solid var(--rule-strong);background:var(--paper);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;transition:background-color .15s}
+.saved button:hover{background:var(--blue-soft)}
+
+/* 指示書 */
+.rgroups{display:grid;gap:10px}
+.rg{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:10px;align-items:start}
+.rg-name{font-weight:700;font-size:13.5px;color:var(--sub);padding-top:6px}
+.rg .chip{border-radius:4px}
+.rg.fix .rg-name{color:var(--red)}
+.rg.fix .chip{border-color:var(--red)}
+.rg.fix .chip:hover{background:var(--red-soft)}
+.rg.fix .chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--on-red)}
+@media (max-width:520px){.rg{grid-template-columns:minmax(0,1fr);gap:6px}.rg-name{padding-top:0}}
+.rdesc{font-size:14.5px;max-width:72ch}
+.rbar{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;border-top:1px solid var(--rule);padding-top:14px}
+.rfields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px 16px}
+.attach{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;background:var(--fill);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;font-size:14px}
+.attach .clip{width:22px;height:22px;margin-top:2px;fill:none;stroke:var(--blue);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.attach b{margin-right:10px}
+.attach .warn-inline{color:var(--red);margin-top:4px;font-size:13.5px}
+/* 目の見本 */
+.eye-ref{display:grid;gap:10px;border:1px dashed var(--rule-strong);border-radius:6px;padding:12px 14px;background:var(--fill)}
+.eye-head{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;justify-content:space-between}
+.eye-head .switch input{accent-color:var(--blue)}
+.eye-kind{font-size:13.5px;font-weight:700}
+.eye-note{font-size:13px;font-weight:700;color:var(--ok)}
+.eye-ref.unused .eye-note{color:var(--red)}
+.eye-ref.unused .eye-drop img{opacity:.45}
+.btn.tiny{padding:2px 9px;font-size:12px;border-width:1px}
+.refs .mini{display:inline-flex;gap:6px;margin-left:10px}
+.eye-body{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:520px){.eye-body{grid-template-columns:minmax(0,1fr)}}
+.eye-drop{width:132px;height:132px;box-sizing:border-box;border:1.5px dashed var(--rule-strong);border-radius:6px;background:var(--paper);display:grid;place-items:center;text-align:center;padding:6px;transition:border-color .15s,background-color .15s}
+.eye-drop.over{border-color:var(--blue);background:var(--blue-soft)}
+.eye-drop img{width:118px;height:118px;object-fit:contain;border-radius:3px;background:#FFFFFF}
+.eye-drop p{font-size:12px;color:var(--sub);line-height:1.6}
+.eye-side{display:grid;gap:8px;min-width:0}
+.eye-ctrl{display:grid;gap:6px}
+.eye-ctrl>label{display:grid;grid-template-columns:3.5em minmax(0,1fr);gap:8px;align-items:center;font-size:13px;font-weight:700;max-width:360px}
+.eye-ctrl input[type=range]{width:100%;margin:0;accent-color:var(--blue)}
+kbd{font-family:var(--f-code);font-size:11px;border:1px solid var(--rule-strong);border-bottom-width:2px;border-radius:3px;padding:0 3px;background:var(--fill);color:var(--ink)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.danger:hover{background:var(--red-soft);color:var(--red)}
+.refs{list-style:none;margin:4px 0 2px;padding:0;display:grid;gap:4px}
+.refs li{display:flex;flex-wrap:wrap;align-items:center}
+.refs li b{font-family:var(--f-code);font-weight:500;margin-right:8px}
+.miss-tag{margin-left:8px;font-size:12.5px;color:var(--red)}
+.gen-miss:empty{display:none}
+.gen-out{display:grid;gap:10px}
+.gen-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.gen-card{border:1px solid var(--rule-strong);border-radius:6px;background:var(--paper);padding:10px;display:grid;gap:8px;align-content:start;min-width:0}
+.gen-head{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.gen-time{color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+.gen-body{display:grid;gap:8px;min-width:0}
+.gen-img{display:block;width:100%;height:auto;border-radius:4px;background:#FFFFFF;border:1px solid var(--rule)}
+.gen-wait{font-size:13.5px;color:var(--sub);padding:32px 0;text-align:center}
+.gen-err{color:var(--red);font-size:13.5px}
+.gen-pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-code);font-size:12px;background:var(--fill);border:1px solid var(--rule);border-radius:4px;padding:8px;max-height:260px;overflow:auto}
+.gen-text summary{cursor:pointer;font-size:13px}
+.gen-score{font-weight:700}
+.gen-checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px}
+.gen-checks li{display:grid;grid-template-columns:4em minmax(0,1fr);gap:2px 8px}
+.gen-checks li span{grid-column:2;color:var(--sub);font-size:12.5px}
+.gen-checks li.ok b{color:var(--ok)}
+.gen-checks li.ng b{color:var(--red)}
+.attach-thumb{width:28px;height:28px;margin-left:8px;border-radius:3px;border:1px solid var(--rule);background:#FFFFFF}
+.out{border:1px solid var(--rule-strong);border-radius:2px;background:var(--paper);max-height:72vh;overflow:auto;overscroll-behavior:contain}
+.blk{display:grid;grid-template-columns:7.5em minmax(0,1fr);border-bottom:1px solid var(--rule)}
+.blk:last-child{border-bottom:0}
+.out.explain .blk{grid-template-columns:7.5em minmax(0,1fr) minmax(0,15em)}
+.blk-h{display:grid;align-content:start;gap:8px;padding:10px 12px;background:var(--fill);border-right:1px solid var(--rule);font-size:13px;font-weight:700;color:var(--sub);overflow-wrap:anywhere}
+.blk-t{padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;line-height:1.85}
+.why{padding:10px 12px;border-left:1px dashed var(--rule);font-family:var(--f-hand);font-size:14.5px;line-height:1.65;color:var(--red)}
+.why .src{margin-top:6px;font-family:var(--f-ui);font-size:12px;color:var(--sub)}
+@media (max-width:760px){.blk,.out.explain .blk{grid-template-columns:minmax(0,1fr)}.blk-h{border-right:0;border-bottom:1px solid var(--rule);padding:6px 12px}.why{border-left:0;border-top:1px dashed var(--rule)}.why.empty{display:none}}
+.next{display:grid;gap:4px;font-size:14px}
+.next ol{margin:0;padding-left:1.4em}
+.actions{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--paper);border-top:1px solid var(--rule);margin:0 calc(-1 * var(--pad)) calc(-1 * var(--pad));padding:12px var(--pad) calc(12px + env(safe-area-inset-bottom,0px));border-radius:0 0 3px 3px}
+.count{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.actions .btn{padding:8px 12px}.count{display:none}}
+
+/* 机の上の補足 */
+.notes{display:grid;gap:14px}
+.notes ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px 26px}
+.notes li{display:grid;gap:4px;align-content:start;padding-top:10px;border-top:2px solid var(--rule-strong)}
+.notes li:first-child{border-top-color:var(--red)}
+.notes li b{font-size:15px}
+.notes li>span{font-size:13.5px;color:var(--sub)}
+.roles{display:grid;gap:12px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--rule)}
+th{font-size:13px;font-weight:700;color:var(--sub)}
+footer{display:grid;gap:6px;font-size:13px;color:var(--sub);border-top:1px solid var(--rule);padding-top:16px}
+footer ul{margin:0;padding-left:1.2em}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<div class="app">
+  <a class="skip" href="#main">本文へ移動</a>
+  <header class="top">
+    <div class="top-text">
+      <h1><span class="nb">モッフィー</span><span class="stamp" aria-hidden="true">非公式</span><span class="nb">指示書メーカー</span></h1>
+      <p class="lede">Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描いてもらうための指示書（プロンプト）をつくります。画像は自分の <span translate="no">Gemini</span> アプリで作るので、APIキーも費用もいりません。</p>
+      <ol class="flow">
+        <li><b>モッフィーを決める</b><span>言葉とパーツから。公式の子も取り込めます</span></li>
+        <li><b>指示書を選ぶ</b><span>基準画像・おでかけ・スタンプなど16種類</span></li>
+        <li><b><span translate="no">Gemini</span> に貼る</b><span>基準画像と目の見本を添付して送るだけ</span></li>
+      </ol>
+    </div>
+    <figure class="hero">
+      <img src="https://rin-cat.github.io/moffy-maker/assets/hero.jpg" onerror="this.closest('figure').hidden=true" width="840" height="704" alt="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる" fetchpriority="high" decoding="async">
+      <figcaption>見本の3匹を Gemini で描いた例。「見本から始める」と同じ子です</figcaption>
+    </figure>
+  </header>
+
+  <main id="main" class="stack" tabindex="-1">
+    <div class="desk">
+      <section class="memo" aria-labelledby="h-make">
+        <div class="sec-head">
+          <h2 id="h-make">モッフィーを決める</h2>
+          <p>入力すると、キャラ表のラフがすぐ描き変わります。</p>
+        </div>
+        <div class="tabs" role="tablist" aria-label="決め方">
+          <button type="button" role="tab" id="mode-new" data-mode="new" aria-selected="true" aria-controls="pane-new">言葉から作る</button>
+          <button type="button" role="tab" id="mode-import" data-mode="import" aria-selected="false" aria-controls="pane-import">取り込む</button>
+        </div>
+
+        <div id="pane-new" class="field" role="tabpanel" aria-labelledby="mode-new" style="gap:20px">
+          <div class="starter" role="group" aria-labelledby="lbl-starter">
+            <span class="lbl" id="lbl-starter">見本から始める</span>
+            <span class="chips" id="samples"></span>
+            <button type="button" class="chip gacha" id="gacha">ガチャで決める</button>
+          </div>
+          <div class="field">
+            <label for="kw">好きな言葉</label>
+            <textarea id="kw" name="keywords" autocomplete="off" placeholder="例：青色、登山が好き、食いしん坊…"></textarea>
+            <div class="chips" id="tags" role="group" aria-label="キーワードタグ"></div>
+            <div class="warn" id="ipwarn" role="status" hidden></div>
+          </div>
+          <div class="field">
+            <label for="mo">その子らしさ（言葉を絵にするモチーフ）</label>
+            <input type="text" id="mo" name="motifs" autocomplete="off" placeholder="例：小さなリュック、コンパス、ほっぺの日焼け…">
+            <div class="btns">
+              <button type="button" class="btn ghost small" id="mo-suggest">言葉から提案</button>
+              <label class="switch" for="xi">らしさの強さ
+                <select id="xi" name="intensity" style="width:auto"><option value="low">ひかえめ</option><option value="mid">ふつう</option><option value="high">つよめ</option></select>
+              </label>
+            </div>
+            <p class="hint" id="mo-hint" role="status">好きな言葉を、持ち物・模様・体の一部のような「目に見えるもの」に置きかえると、かわいさに埋もれずに残ります。</p>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="nm">名前</label><input type="text" id="nm" name="name" autocomplete="off" placeholder="例：ヤマモッフィー…"></div>
+            <div class="field"><label for="ps">性格（任意）</label><input type="text" id="ps" name="personality" autocomplete="off" placeholder="例：元気で食いしん坊な山好き…"></div>
+          </div>
+          <details class="fold" id="prof">
+            <summary>プロフィール帳（任意）</summary>
+            <div class="fold-body">
+              <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄のままでもかまいません。</p>
+              <div class="row2">
+                <div class="field"><label for="pq">口ぐせ</label><input type="text" id="pq" name="catchphrase" autocomplete="off" placeholder="例：てっぺんまで、もうひと息！…"></div>
+                <div class="field"><label for="pr">クセ</label><input type="text" id="pr" name="quirk" autocomplete="off" placeholder="例：うれしいとしっぽが揺れる…"></div>
+                <div class="field"><label for="pg">好きなもの</label><input type="text" id="pg" name="likes" autocomplete="off" placeholder="例：山頂で食べるおにぎり…"></div>
+                <div class="field"><label for="pb">苦手なもの</label><input type="text" id="pb" name="dislikes" autocomplete="off" placeholder="例：くだり坂…"></div>
+              </div>
+              <div class="field"><label for="pz">夢</label><input type="text" id="pz" name="dream" autocomplete="off" placeholder="例：世界中の山のてっぺんでおやつを食べること…"></div>
+            </div>
+          </details>
+          <details class="fold" id="adv" open>
+            <summary>見た目を指定する（任意）</summary>
+            <div class="fold-body">
+              <p class="hint">選んだ項目は、毎回の指示書に「固定パーツ」として入ります。「おまかせ」は基準画像で Gemini が決めます。</p>
+              <div class="field"><span class="lbl" id="lbl-c">毛の色</span><div class="swatches" id="colors" role="group" aria-labelledby="lbl-c"></div></div>
+              <div class="row2" id="partsel"></div>
+              <div class="row2">
+                <div class="field"><label for="eyestyle">目のスタイル</label>
+                  <select id="eyestyle" name="eye-style"><option value="g4">2026年版（虹色）</option><option value="classic">クラシック（青→紫）</option></select></div>
+                <div class="field"><label for="ot">そのほかの特徴</label><input type="text" id="ot" name="other" autocomplete="off" placeholder="例：おなかに星の模様…"></div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <div id="pane-import" class="field" role="tabpanel" aria-labelledby="mode-import" hidden style="gap:12px">
+          <label for="imp">DNAコード・共有リンク・JSON</label>
+          <textarea id="imp" name="dna-import" autocomplete="off" spellcheck="false" placeholder="例：MF1.eyJ2Ijox… で始まるコード、または Gemini が返した JSON…"></textarea>
+          <div class="btns">
+            <button type="button" class="btn" id="imp-go">読み込む</button>
+            <button type="button" class="btn ghost" id="imp-recipe">公式の子を取り込むレシピを開く</button>
+          </div>
+          <div id="imp-msg" role="status"></div>
+          <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。「基準画像をつくる」で「決まった見た目を文字でも受け取る」を選んだときに返ってくる JSON も、ここに貼れます。</p>
+        </div>
+      </section>
+
+      <section class="sheet chara" aria-labelledby="h-card">
+        <div class="sheet-title"><h2 id="h-card">キャラ表</h2><p class="sheet-no">No. <b id="c-id" translate="no"></b></p></div>
+        <dl class="sheet-head">
+          <div><dt>作品</dt><dd>モッフィー（非公式のファン設定）</dd></div>
+          <div><dt>キャラ名</dt><dd id="c-name"></dd></div>
+          <div><dt>性格</dt><dd id="c-p"></dd></div>
+        </dl>
+        <div class="chara-body">
+          <figure class="sketch-wrap">
+            <div class="sketch" id="preview" role="img" aria-label="パーツ構成のラフ"></div>
+            <figcaption class="cap">ラフはパーツの確認用です。仕上がりの絵は Gemini が描きます。<br><span id="autocap"></span></figcaption>
+          </figure>
+          <div class="spec-wrap">
+            <div class="chip-spec" id="chip"></div>
+            <dl class="spec" id="c-dl"></dl>
+          </div>
+        </div>
+        <section class="sheet-sec" aria-labelledby="h-rules">
+          <h3 id="h-rules">描けたら見直すこと</h3>
+          <ul class="checks" id="rules"></ul>
+        </section>
+        <section class="sheet-sec" aria-labelledby="h-code">
+          <h3 id="h-code">DNAコード</h3>
+          <p class="hint">友だちに渡すと、そのまま取り込めます。</p>
+          <code class="code" id="c-code" tabindex="0" translate="no"></code>
+          <div class="btns">
+            <button type="button" class="btn ghost small" id="copy-code">DNAコードをコピー</button>
+            <button type="button" class="btn ghost small" id="copy-link" hidden>共有リンクをコピー</button>
+            <button type="button" class="btn ghost small" id="share-dna" hidden>共有メニューで送る</button>
+            <button type="button" class="btn ghost small" id="qr-btn" aria-expanded="false" aria-controls="qr">QRコード</button>
+            <button type="button" class="btn ghost small" id="save">このブラウザに保存</button>
+          </div>
+          <div class="qr" id="qr" hidden></div>
+          <div class="saved" id="saved" role="group" aria-label="保存したモッフィー"></div>
+          <div class="toast" id="toast1" role="status"></div>
+        </section>
+      </section>
+    </div>
+
+    <section class="sheet order" id="recipes" aria-labelledby="h-recipe">
+      <div class="sheet-title"><h2 id="h-recipe">指示書</h2><p class="sheet-no">レシピを選ぶと、<span translate="no">Gemini</span> に貼る文章ができます</p></div>
+      <section class="eye-ref" aria-labelledby="h-eye">
+        <div class="eye-head">
+          <h3 id="h-eye">目の見本</h3>
+          <label class="switch"><input type="checkbox" id="eye-use" name="eye-use" checked> 指示書で使う</label>
+        </div>
+        <div class="eye-body">
+          <div class="eye-drop" id="eye-drop">
+            <img id="eye-thumb" width="120" height="120" alt="目の見本" hidden>
+            <p id="eye-empty">ここに画像をドロップするか、貼り付け（<kbd>Ctrl</kbd>+<kbd>V</kbd>／<kbd>⌘</kbd>+<kbd>V</kbd>）</p>
+          </div>
+          <div class="eye-side">
+            <p class="eye-kind" id="eye-kind">標準の目の見本を使っています</p>
+            <p class="eye-note" id="eye-note"></p>
+            <p class="hint">目の描き方だけを伝える見本です（キャラクターではありません）。添付するかどうかと順番は、下の「Gemini に添付するもの」に出ます。公式ジェネレーターも目の見本画像を毎回渡して、キラキラの目を描かせています。標準の見本は、Gemini で作ったモッフィーの目を切り抜いたものです（公式ジェネレーターの見本画像ではありません）。自分の子の目のアップに差しかえることもできます（この欄へのドロップや貼り付けでも入ります）。画像はこのブラウザの中だけで扱い、送信しません。「文章だけ」のときは添付しません。</p>
+            <div class="btns">
+              <button type="button" class="btn small" id="eye-copy">画像をコピー</button>
+              <button type="button" class="btn ghost small" id="eye-save">画像を保存</button>
+              <button type="button" class="btn ghost small" id="eye-share" hidden>共有</button>
+              <button type="button" class="btn ghost small" id="eye-pick">自分の画像にする</button>
+              <button type="button" class="btn ghost small danger" id="eye-clear" hidden>標準に戻す</button>
+            </div>
+            <div class="eye-ctrl" id="eye-ctrl" hidden>
+              <label>拡大<input type="range" id="eye-zoom" name="eye-zoom" min="100" max="400" step="5" value="100"></label>
+              <label>左右<input type="range" id="eye-x" name="eye-x" min="-100" max="100" step="2" value="0"></label>
+              <label>上下<input type="range" id="eye-y" name="eye-y" min="-100" max="100" step="2" value="0"></label>
+            </div>
+            <input type="file" id="eye-file" name="eye-file" accept="image/*" hidden>
+            <div class="toast" id="toast3" role="status"></div>
+          </div>
+        </div>
+      </section>
+      <section class="eye-ref base-ref" id="base-ref" aria-labelledby="h-base" hidden>
+        <div class="eye-head"><h3 id="h-base">基準画像</h3></div>
+        <div class="eye-body">
+          <div class="eye-drop" id="base-drop">
+            <img id="base-thumb" width="120" height="120" alt="基準画像" hidden>
+            <p id="base-empty">まだありません</p>
+          </div>
+          <div class="eye-side">
+            <p class="eye-kind" id="base-kind">「基準画像をつくる」で生成すると、自動でここに入ります</p>
+            <p class="hint">この子の見た目の正解です。ほかのレシピで生成するとき、自動で添付します。前に作った基準画像を入れることもできます。画像はこのブラウザの中だけで扱います。</p>
+            <div class="btns">
+              <button type="button" class="btn ghost small" id="base-pick">手持ちの画像を入れる</button>
+              <button type="button" class="btn ghost small" id="base-save">保存</button>
+              <button type="button" class="btn ghost small danger" id="base-clear" hidden>外す</button>
+            </div>
+            <input type="file" id="gen-file" name="gen-file" accept="image/*" hidden>
+            <div class="toast" id="toast4" role="status"></div>
+          </div>
+        </div>
+      </section>
+      <div class="rgroups" id="rgroups"></div>
+      <p class="rdesc" id="rdesc"></p>
+      <div class="rbar">
+        <div class="tabs" role="group" aria-label="画像の添付" id="attach-tabs">
+          <button type="button" data-attach="1" aria-pressed="true">画像を添付する</button>
+          <button type="button" data-attach="0" aria-pressed="false">文章だけ</button>
+        </div>
+        <label class="switch"><input type="checkbox" id="explain" name="explain"> 赤ペンの解説を表示</label>
+      </div>
+      <div class="rfields" id="rfields"></div>
+      <div class="attach" id="attachline"></div>
+      <p class="warn-inline gen-miss" id="gen-miss"></p>
+      <section class="gen-out" id="gen-out" aria-labelledby="h-gen" hidden>
+        <h3 id="h-gen">生成した画像</h3>
+        <div class="gen-list" id="gen-list"></div>
+      </section>
+      <div class="out" id="out" tabindex="0" role="region" aria-label="指示書の本文"></div>
+      <div class="next" id="nextline"></div>
+      <div class="actions">
+        <div class="btns">
+          <button type="button" class="btn" id="gen-go" hidden>このページで生成</button>
+          <button type="button" class="btn" id="copy">指示書をコピー</button>
+          <a class="btn ghost" id="open-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini を開く</a>
+          <span class="toast" id="toast2" role="status"></span>
+        </div>
+        <span class="count" id="count"></span>
+      </div>
+    </section>
+
+    <section class="notes" aria-labelledby="h-notes">
+      <h2 id="h-notes">知っておきたいこと</h2>
+      <ul>
+        <li><b>画像の添付は18歳以上</b><span>基準画像や目の見本を添付して描かせるのは、Gemini アプリでは「画像の編集」にあたり、18歳以上が対象です。18歳未満の人は「文章だけ」を選んでください。</span></li>
+        <li><b>モデルは <span translate="no">Flash</span> か <span translate="no">Pro</span></b><span><span translate="no">Flash-Lite</span> を選ぶと画像生成が <span translate="no">Nano Banana 2 Lite</span> になり、参照画像を使った一貫性が弱くなります。</span></li>
+        <li><b>生成回数を節約する</b><span>無料版の1日の生成数には上限があります。気になる所は作り直さず、レシピ「部分修正」でその部分だけ直すと、元の子も崩れません。</span></li>
+        <li><b>非公式のファンツールです</b><span>Google とは関係ありません。既存のキャラクターや実在の人物に似せる使い方はせず、公式 note の「マナーを守って楽しく遊ぼう」にならって楽しんでください。</span></li>
+      </ul>
+    </section>
+
+    <section class="roles" aria-labelledby="h-cmp">
+      <h2 id="h-cmp">公式ジェネレーターとの役割分担</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th scope="col">場面</th><th scope="col">公式モッフィージェネレーター</th><th scope="col">このツール</th></tr></thead>
+          <tbody>
+            <tr><td>生む</td><td>言葉とタグから、画像と性格を生成。ルールの自動チェックつき</td><td>公式の子を「取り込む」か、パーツを指定して言葉から作る</td></tr>
+            <tr><td>固定する</td><td>画像を保存（ダウンロード）</td><td>基準画像・設定画、目の見本、DNAコード、QRコード</td></tr>
+            <tr><td>遊ぶ</td><td>着せ替え・おでかけ・ぷくぷくシール</td><td>左の3つに加え、フィギュア・アイコン・スタンプ・季節・4コマ・共演・自分の写真</td></tr>
+            <tr><td>直す</td><td>要望を書き足して再生成</td><td>理由つきのルールチェックと、その部分だけを直す部分修正</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>このツールの書き方は、次の資料にもとづいています。</p>
+    <ul>
+      <li><a href="https://note.com/google_gemini/n/n4bc7c828daff" target="_blank" rel="noopener">Gemini 公式 note「Gemini でつくれるキャラクター『モッフィー』のすべて」（2026年6月17日）</a></li>
+      <li><a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">Google AI for Developers「Nano Banana image generation」（プロンプトのコツと制限）</a></li>
+      <li><a href="https://support.google.com/gemini/answer/14286560?hl=ja" target="_blank" rel="noopener">Gemini アプリ ヘルプ「Gemini アプリで画像を生成、編集する」</a></li>
+      <li><a href="https://note.com/ripe_spirea6186/n/n755657c7c500" target="_blank" rel="noopener">2025年版ジェネレーターのプロンプト例（ぶらんさんの note）</a></li>
+    </ul>
+    <p>非公式のファンメイドツールです。モッフィーは Google のキャラクターです。</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+"use strict";
+document.documentElement.lang="ja";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const isCustom=v=>typeof v==="string"&&v.charAt(0)==="*";
+
+/* ================= データ ================= */
+const COLORS=[
+ {id:"sky",name:"そらいろ",hex:"#8EC9F2",desc:"淡いそらいろ"},
+ {id:"blue",name:"あお",hex:"#4C7FE0",desc:"あざやかな青"},
+ {id:"navy",name:"よぞら",hex:"#3B4A8F",desc:"夜空のような深い紺色"},
+ {id:"pink",name:"ももいろ",hex:"#F4AFC4",desc:"やさしいももいろ"},
+ {id:"lav",name:"ラベンダー",hex:"#BDA8EE",desc:"ラベンダー色"},
+ {id:"mint",name:"ミント",hex:"#9FDCC0",desc:"ミントグリーン"},
+ {id:"lemon",name:"レモン",hex:"#F6DD72",desc:"レモンイエロー"},
+ {id:"orange",name:"みかん",hex:"#F5A35C",desc:"みかん色"},
+ {id:"white",name:"ミルク",hex:"#F4F1EA",desc:"ミルクのような白"},
+ {id:"cocoa",name:"ココア",hex:"#A87A5E",desc:"ココアブラウン"},
+ {id:"gray",name:"くもり",hex:"#B9B6C2",desc:"くもり空のような明るいグレー"},
+ {id:"auto",name:"おまかせ",hex:null,desc:null},
+];
+const COLOR_WORDS=[[/水色|空色|そらいろ|スカイ/,"#8EC9F2"],[/紺|ネイビー|夜空|よぞら/,"#3B4A8F"],[/青|ブルー|あお/,"#4C7FE0"],[/ピンク|桃|もも/,"#F4AFC4"],[/紫|ラベンダー|パープル/,"#BDA8EE"],[/ミント|エメラルド|水緑/,"#9FDCC0"],[/緑|グリーン|みどり|わかば/,"#8CCB7E"],[/黄|レモン|イエロー|きいろ|金/,"#F6DD72"],[/オレンジ|みかん|橙/,"#F5A35C"],[/赤|レッド|あか/,"#E5675E"],[/白|ホワイト|しろ|ミルク/,"#F4F1EA"],[/黒|ブラック|くろ/,"#4A4652"],[/灰|グレー|くもり/,"#B9B6C2"],[/茶|ブラウン|ココア|チョコ/,"#A87A5E"]];
+function guessHex(t){for(const [re,h] of COLOR_WORDS) if(re.test(t)) return h; return "#C9C6D8"}
+
+// [id, 画面の表示, 指示書に入れる文]
+const PARTS={
+ s:{name:"体のかたち",opts:[["auto","おまかせ"],["round","まんまる","体はボールのようなまんまるのかたち"],["egg","たまご型","体はたてに少し長いたまご型"],["pear","ずんぐり洋なし","体は下のほうがふっくらした、ずんぐりした洋なし型"],["mochi","おもち型","体は横に少しつぶれた、おもちのような横長のかたち"],["onigiri","おにぎり型","体は角の丸い三角形の、おにぎりのようなかたち"],["block","ブロック型","体は角の丸い四角の、ころんとしたブロックのようなかたち"],["drop","しずく型","体は頭のてっぺんが少しとがった、しずくのようなかたち"],["manju","おまんじゅう型","体は底が平らで上がふっくら丸い、おまんじゅうのようなかたち"],["snow","雪だるま型","体は丸い胴の上に、ひとまわり小さい丸い頭がのった、雪だるまのような2段のかたち"]]},
+ u:{name:"毛並み",opts:[["auto","おまかせ"],["soft","長くやわらか","全身が長くやわらかい毛におおわれている"],["spiky","頭の毛が逆立つ","全身が長くやわらかい毛におおわれ、頭のてっぺんの毛だけがツンと逆立っている"],["curly","くるくる","全身がくるくるとカールした、ヒツジのようなやわらかい毛におおわれている"],["extra","もこもこ多め","全身が、とくに毛足の長いもこもこの毛におおわれている"]]},
+ h:{name:"ツノ",opts:[["auto","おまかせ"],["none","なし","頭のてっぺんはツノのない、なめらかなまるい毛のライン"],["one","1本","おでこの中央に、小さな円すい形のツノが1本"],["two","2本","頭の左右に、先の丸い小さなツノが2本"],["stripe","しま模様2本","頭の左右に、しま模様の小さなツノが2本"],["curl","巻きヅノ2本","頭の左右に、くるんと巻いたヒツジのようなツノが2本"],["crystal","クリスタル2本","頭の左右に、宝石のようにすきとおったクリスタルのツノが2本"],["flower","花が咲くツノ","おでこの中央に小さなツノが1本あり、その先に小さな花が1輪咲いている"],["bolt","雷の形2本","頭の左右に、ギザギザした雷の形のツノが2本"],["antenna","星の触角","頭のてっぺんから、先に小さな星がついた細い触角が2本のびている"],["mush","きのこの触角","頭のてっぺんから、先に小さなきのこがついた短い触角が2本のびている"]]},
+ e:{name:"耳",opts:[["auto","おまかせ"],["none","なし","耳は毛にうもれて見えない"],["droop","たれ耳","体の左右に、毛足の長いたれ耳"],["up","立ち耳","頭の上に、ぴんと立った細長い耳が2つ"],["round","まる耳","頭の上に、小さな丸い耳が2つ"]]},
+ t:{name:"しっぽ",opts:[["auto","おまかせ"],["none","なし","しっぽは見えず、おしりまでまるい毛のかたまり"],["puff","ポンポン","おしりに、ポンポンのような丸いしっぽ"],["long","ふさふさ長め","先がふさふさした、長いしっぽ"],["dragon","ドラゴン風","先がとがった、ドラゴンのような短いしっぽ"]]},
+ w:{name:"はね",opts:[["auto","おまかせ"],["none","なし","背中はまるい毛だけで、はねはない"],["angel","天使のはね","背中に、小さな白い天使のはね"],["bat","こうもりのはね","背中に、小さなこうもりのはね"],["fairy","妖精のはね","背中に、すきとおった小さな妖精のはね"]]},
+ y:{name:"目の数",opts:[["2","2つ"],["1","1つ"],["3","3つ"]]},
+ f:{name:"キバ",opts:[["auto","おまかせ"],["none","なし","口もとにキバは見えない"],["one","片方に1本","口の片はしから、小さなキバが1本のぞいている"],["two","2本","口から、小さなキバが2本のぞいている"]]},
+ a:{name:"身につけている物",opts:[["auto","おまかせ"],["none","なし","アクセサリーは身につけていない"],["scarf","赤いマフラー","首に赤いマフラーを巻いている"],["ribbon","大きなリボン","頭に大きなリボンをつけている"],["crown","小さな王冠","頭に小さな王冠をのせている"],["leaf","葉っぱ1枚","頭に葉っぱを1枚のせている"],["headphones","ヘッドホン","首にヘッドホンをかけている"],["glasses","まるメガネ","まるいメガネをかけている"],["bag","小さなリュック","背中に小さなリュックを背負っている"]]},
+};
+const PART_ORDER=["s","u","h","e","t","w","y","f","a"];
+const LOOK_KEYS=["s","u","h","e","t","w","a"];
+// n名前 k言葉 p性格 o特徴 m モチーフ / プロフィール帳：q口ぐせ rクセ g好き b苦手 z夢
+const TEXT_KEYS=["n","k","p","o","m","q","r","g","b","z"];
+const PROFILE=[["q","口ぐせ"],["r","クセ"],["g","好きなもの"],["b","苦手なもの"],["z","夢"]];
+const KEYS=[...TEXT_KEYS,"i","x","c",...PART_ORDER];
+const DEFAULT_DNA={n:"ヤマモッフィー",k:"青色、登山が好き、食いしん坊",p:"元気で食いしん坊な山好き",o:"",m:"小さなリュック、コンパス、ほっぺの日焼け",q:"てっぺんまで、もうひと息！",r:"うれしいとしっぽのポンポンがぶんぶん揺れる",g:"山頂で食べるおにぎり",b:"くだり坂",z:"世界中の山のてっぺんでおやつを食べること",i:"g4",x:"mid",c:"sky",s:"round",u:"soft",h:"two",e:"none",t:"puff",w:"none",y:"2",f:"one",a:"scarf"};
+const BLANK_DNA={n:"",k:"",p:"",o:"",m:"",q:"",r:"",g:"",b:"",z:"",i:"g4",x:"mid",c:"auto",s:"auto",u:"auto",h:"auto",e:"auto",t:"auto",w:"auto",y:"2",f:"auto",a:"auto"};
+const INTENSITY={low:["ひかえめ","モチーフは小さめに、アクセントとして控えめに入れる。"],mid:["ふつう","モチーフは、ひと目でわかる大きさで入れる。"],high:["つよめ","モチーフは大きめにはっきり描き、色やシルエットにもその言葉らしさを強く出す。ただし、かわいさとモッフィーのルールは保つ。"]};
+// 言葉 → 目に見えるモチーフ（その子らしさ）。辞書にない言葉は基準画像のときに Gemini が考える
+const MOTIF_DICT={
+ "登山":["小さなリュック","コンパス","ほっぺの日焼け"],"山":["小さなリュック","登山帽"],"食いしん坊":["ぽっこりしたおなか","口もとのクッキーのかけら"],
+ "ふわふわ":["綿あめのようにとくにふわふわした毛","雲のような毛のかたまり"],"ケーキ":["頭にのせた小さないちごのショートケーキ","クリーム色のおなか"],
+ "雷":["しっぽの先の稲妻の形","ほっぺの小さな稲妻の模様"],"レトロ":["丸いレトロなサングラス","水玉のスカーフ"],"いたずら":["いたずらっぽいウインク","ポケットからのぞくおもちゃのカエル"],
+ "宇宙":["毛の中にきらめく星くずの模様","小さな土星のヘアピン"],"夏祭り":["首にかけた小さなうちわ","頭の横にずらしたキツネのお面"],"ねぼすけ":["ナイトキャップ","少し眠そうな半目"],
+ "お花":["頭に咲いた小さな花","花びらの形の模様"],"花":["頭に咲いた小さな花","花びらの形の模様"],"ゲーム":["手に持った小さなゲームコントローラー","ドット絵のような模様"],
+ "図書館":["小脇にかかえた分厚い本","しっぽに結んだしおりのリボン"],"本":["小脇にかかえた分厚い本","しおりのリボン"],"ラーメン":["頭にのせたなると","首に巻いたタオル"],
+ "星空":["毛先が夜空のグラデーション","毛の中の星の粒"],"夜空":["毛先が夜空のグラデーション","毛の中の星の粒"],"海":["波の形のしっぽの毛","小さな貝がらの髪飾り"],
+ "チョコミント":["ミント色とチョコ色の2色の毛","チョコチップのような模様"],"カメラ":["首にかけた小さなカメラ","ストラップの星のチャーム"],"雪":["毛先についた雪の結晶","ふわふわの耳あて"],
+ "ダンス":["足首のリボン","はずむようなポーズ"],"お昼寝":["小さな枕","うとうとした顔"],"昼寝":["小さな枕","うとうとした顔"],"パン":["小さなコック帽","ほっぺの小麦粉"],
+ "サッカー":["足もとのサッカーボール","はちまき"],"ピアノ":["鍵盤もようのしっぽ","音符のヘアピン"],"音楽":["首にかけたヘッドホン","音符のヘアピン"],"温泉":["頭にのせた手ぬぐい","ほかほかの湯気"],
+ "アイドル":["手に持ったペンライト","星のバッジ"],"ロボット":["頭の小さなアンテナ","ボルトのような小さな模様"],"猫":["ねこのような三角の毛の束","ひげのような白い毛"],
+ "コーヒー":["湯気の立つ小さなマグカップ","コーヒー豆の模様"],"研究":["白衣","ほっぺについたインクのしみ"],"プログラミング":["小さなノートパソコン","しっぽの先の光るカーソル"],
+ "旅":["小さなトランク","ステッカーだらけのリュック"],"雨":["小さな傘","毛先のしずく"],"森":["頭の葉っぱ","毛の中のどんぐり"],"桜":["毛にからんだ桜の花びら","ピンクの毛先"],
+ "ドラゴン":["背中の小さなトゲ","うろこ模様のしっぽ","口もとの小さな炎"],"天使":["頭の上の光る輪","小さな白い羽"],"忍者":["首に巻いた忍者のスカーフ","小さな手裏剣の模様"],
+};
+function suggestMotifs(k){
+ const words=String(k||"").split(/[、,，\s]+/).map(w=>w.trim()).filter(Boolean),per=[];
+ for(const w of words){const keys=Object.keys(MOTIF_DICT).filter(key=>w.includes(key)).sort((a,b)=>b.length-a.length);if(keys.length)per.push(MOTIF_DICT[keys[0]])}
+ const out=[];for(let round=0;round<3&&out.length<3;round++)for(const list of per){if(list[round]&&!out.includes(list[round])&&out.length<3)out.push(list[round])}
+ return out;
+}
+const motifsOf=d=>String(d.m||"").split(/[、,，\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,4);
+const TAGS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン"];
+const SAMPLES=[
+ {...DEFAULT_DNA},
+ {n:"ヨミモッフィー",k:"図書館、ねぼすけ、夜空",p:"本を読みながら寝落ちするのが特技の、のんびり屋",o:"",m:"小脇にかかえた分厚い本、しっぽに結んだしおりのリボン、毛先が夜空のグラデーション",q:"あと1ページだけ……",r:"眠くなるとメガネがずり落ちる",g:"図書館の窓ぎわの席",b:"目覚まし時計",z:"世界中の絵本を読むこと",i:"g4",x:"mid",c:"navy",s:"egg",u:"extra",h:"none",e:"droop",t:"long",w:"none",y:"1",f:"none",a:"glasses"},
+ {n:"ハナビモッフィー",k:"夏祭り、いたずら、みかん色",p:"元気ないたずらっ子",o:"",m:"首にかけた小さなうちわ、頭の横にずらしたキツネのお面、いたずらっぽいウインク",q:"ドーンといこう！",r:"花火の音を聞くとしっぽが震える",g:"りんごあめ",b:"静かな図書館",z:"夜空いっぱいの花火を自分で打ち上げること",i:"g4",x:"high",c:"orange",s:"mochi",u:"spiky",h:"one",e:"round",t:"dragon",w:"bat",y:"3",f:"two",a:"ribbon"},
+];
+const PROFILE_POOL={
+ q:["まかせて！","ふわっといこう","おなかすいた〜","なんとかなるって！","ちょっとだけね","いっしょに行こ！"],
+ r:["驚くと毛がぶわっとふくらむ","考えごとをすると体がまるくなる","眠くなると目がとろんと半分になる","照れるとほっぺが少し濃い色になる","うれしいとその場で小さく跳ねる"],
+ g:["焼きたてのパン","雨上がりのにおい","星をながめること","お昼寝","ボードゲーム","知らない道の散歩"],
+ b:["雷の音","ピーマン","早起き","高いところ","おばけ","静かすぎる部屋"],
+ z:["世界一大きなケーキを作ること","みんなが集まる秘密基地を作ること","空を飛ぶこと","自分の絵本を出すこと","友だちを100匹つくること"],
+};
+const GACHA_WORDS=["ふわふわ","ケーキ","雷","レトロ","いたずら","宇宙っぽい","夏祭り","ねぼすけ","お花","ゲーム好き","図書館","ラーメン","星空","海","チョコミント","カメラ好き","雪","ダンス","お昼寝","パン屋さん","サッカー","ピアノ","温泉","アイドル好き","ロボット"];
+const NAME_PARTS=["ポム","モコ","ルル","チャチャ","ソラ","ミル","ココ","フワ","ピノ","ムギ","ララ","ニコ","トト","マロ","キキ"];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function gacha(){
+ const words=[];while(words.length<3){const w=pick(GACHA_WORDS);if(!words.includes(w))words.push(w)}
+ const d={...BLANK_DNA,n:pick(NAME_PARTS)+pick(NAME_PARTS)+"モッフィー",k:words.join("、"),i:Math.random()<.85?"g4":"classic",c:pick(COLORS.filter(c=>c.id!=="auto")).id};
+ for(const k of ["s","u","h","e","t","w","f","a"])d[k]=pick(PARTS[k].opts.filter(o=>o[0]!=="auto"))[0];
+ d.y=Math.random()<.7?"2":pick(["1","3"]);
+ d.m=suggestMotifs(d.k).join("、");d.x=pick(["low","mid","mid","high"]);
+ for(const [k] of PROFILE)d[k]=pick(PROFILE_POOL[k]);
+ return d;
+}
+// レシピごとの「このあと」
+const NEXT={
+ base:["出てきた画像を保存する（以後のレシピで「基準画像」として添付します）","目が見本どおりでなければ「部分修正」で目だけ直す","あとは遊ぶレシピを選び、目の見本と基準画像を添付して指示書を貼るだけ","「文章だけ」で使う人や、DNA コードを友だちに渡す人は、「決まった見た目を文字でも受け取る」を選ぶと、おまかせの所を DNA に取り込めます"],
+ sheet:["設定画は、横向きや後ろ姿を描くときの資料として保存する","ふだんのレシピでは、基準画像のほうを添付します"],
+ import:["Gemini の返事（JSON）をコピーし、「モッフィーを決める」の「取り込む」に貼る","レシピ「基準画像をつくる」で、もとにする画像を「あり」にして、その子の基準画像を作る"],
+ scene:["気になる所があれば「ルールチェック」か「部分修正」へ","同じチャットなら、続けて「次は〇〇して」と頼むだけでも見た目を保ちやすくなります。チャットが長くなったら、新しいチャットで基準画像と目の見本を添付し直します"],
+ stamps:["文字がまちがっていたら「部分修正」の「そのほか」に正しい文字を書いて直す","コマ数がずれたら、4コマから試すと安定します"],
+ friends:["友だちにも自分の DNA コードを渡すと、相手の画面でも共演の指示書を作れます"],
+ check:["返ってきた fix_prompt の文を、判定した画像と同じチャットにそのまま送ると、その部分だけ直せます"],
+ fix:["直らないときは、直したい所を1つずつに分けて頼むと成功しやすくなります"],
+ gem:["Gem を保存したら、共有 →「リンクを知っている全員」でリンクを配れます","Gem の中で画像が作れないときは、Gem が出した指示書を通常のチャットに貼ってください"],
+ photo:["なじまないときは「モッフィーの影だけ濃くして」「光の向きを写真に合わせて」と、その部分だけを頼む","同じ写真でポーズを変えると、旅の記録のようなシリーズになります"],
+};
+// 既存キャラクター名（オリジナル性と権利面の注意用。網羅ではない）
+const IP_SRC="ミッフィー|miffy|ピカチュウ|pikachu|ポケモン|pok[eé]mon|ハローキティ|キティちゃん|hello ?kitty|ドラえもん|doraemon|スヌーピー|snoopy|ミッキー|mickey|ディズニー|disney|マリオ|mario|カービィ|kirby|ちいかわ|chiikawa|リラックマ|すみっコ|トトロ|totoro|ジバニャン|ぐでたま|シナモロール|cinnamoroll|アンパンマン|ムーミン|moomin";
+const ipHits=t=>[...new Set((String(t||"").match(new RegExp(IP_SRC,"gi"))||[]))];
+const ipClean=t=>String(t||"").replace(new RegExp(IP_SRC,"gi"),"").replace(/[、,]\s*(?=[、,])/g,"").replace(/^[、,\s]+|[、,\s]+$/g,"").trim();
+
+/* ================= 状態 ================= */
+const st={d:{...DEFAULT_DNA},mode:"new",recipe:"base",attach:true,explain:false,ro:{},useEye:true};
+
+/* ================= DNA の読み書き ================= */
+const optOf=(k,v)=>PARTS[k].opts.find(o=>o[0]===v);
+function partLabel(d,k){const v=d[k];if(isCustom(v))return v.slice(1);const o=optOf(k,v);return o?o[1]:"おまかせ"}
+function partPhrase(d,k){const v=d[k];if(isCustom(v))return v.slice(1);const o=optOf(k,v);return o&&o[2]?o[2]:null}
+const colorRow=d=>COLORS.find(x=>x.id===d.c);
+function colorLabel(d){if(isCustom(d.c))return d.c.slice(1);const c=colorRow(d);return c?c.name:"おまかせ"}
+function colorDesc(d){if(isCustom(d.c))return d.c.slice(1);const c=colorRow(d);return c?c.desc:null}
+function colorHex(d){if(isCustom(d.c))return guessHex(d.c.slice(1));const c=colorRow(d);return c?c.hex:null}
+const eyeCount=d=>Math.min(3,Math.max(1,parseInt(d.y,10)||2));
+function autoNames(d){const a=[];if(!colorDesc(d))a.push("毛の色");for(const k of [...LOOK_KEYS,"f"])if(!partPhrase(d,k))a.push(PARTS[k].name);return a}
+function fixedPairs(d){const r=[];const cd=colorDesc(d);if(cd)r.push(["毛の色",cd]);for(const k of [...LOOK_KEYS,"f"])if(partPhrase(d,k))r.push([PARTS[k].name,partLabel(d,k)]);return r}
+// 指示書に入れる用。既存キャラクター名を外したコピー
+function promptDNA(d){const p={...d};for(const k of TEXT_KEYS)p[k]=ipClean(d[k]);return p}
+
+function b64u(str){const bytes=new TextEncoder().encode(str);let bin="";bytes.forEach(b=>{bin+=String.fromCharCode(b)});return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const bin=atob(s);return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)))}
+function dnaCompact(d){const o={v:1};for(const k of KEYS){const v=d[k];if(v!==undefined&&v!==""&&v!==BLANK_DNA[k])o[k]=v}return o}
+const dnaCode=d=>"MF1."+b64u(JSON.stringify(dnaCompact(d)));
+function hashStr(str){let h=2166136261;for(const ch of str){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(36).toUpperCase().padStart(7,"0").slice(-6)}
+const dnaId=d=>"MF-"+hashStr(JSON.stringify(dnaCompact(d)));
+
+const LONG={name:"n",keywords:"k",personality:"p",other:"o",eye_style:"i",color:"c",shape:"s",fur:"u",horn:"h",horns:"h",ear:"e",ears:"e",tail:"t",wing:"w",wings:"w",eyes:"y",fang:"f",fangs:"f",accessory:"a",
+ motifs:"m",motif:"m",intensity:"x",catchphrase:"q",quirk:"r",quirks:"r",likes:"g",like:"g",dislikes:"b",dislike:"b",dream:"z",
+ "名前":"n","性格":"p","モチーフ":"m","口ぐせ":"q","クセ":"r","好きなもの":"g","苦手なもの":"b","夢":"z"};
+const UNKNOWN=/^(不明|わからない|わかりません|unknown|n\/a|-|なし（不明）)$/i;
+function matchColor(v){if(COLORS.some(c=>c.id===v))return v;if(isCustom(v))return v;const c=COLORS.find(c=>c.id!=="auto"&&(v===c.name||v===c.desc));return c?c.id:"*"+v}
+function matchPart(k,v){const opts=PARTS[k].opts;if(opts.some(o=>o[0]===v))return v;if(isCustom(v))return v;const o=opts.find(o=>v===o[1]||v===o[2]);if(o)return o[0];if(/^(なし|ない|無し|none|ありません)$/i.test(v))return "none";return "*"+v.slice(0,80)}
+function eyesFrom(v){const m=String(v).replace(/[１一]/g,"1").replace(/[２二]/g,"2").replace(/[３三]/g,"3").match(/[0-9]+/);const n=m?parseInt(m[0],10):2;return String(Math.min(3,Math.max(1,n)))}
+function normalize(src){
+ if(!src||typeof src!=="object")throw new Error("中身が読めませんでした");
+ const out={...BLANK_DNA};let hit=0;
+ for(const [key,val] of Object.entries(src)){
+  const k=LONG[key]||key;if(!KEYS.includes(k))continue;
+  const v=val==null?"":String(val).trim();if(!v||UNKNOWN.test(v))continue;hit++;
+  if(k==="m"&&Array.isArray(val))out.m=val.map(String).join("、").slice(0,160);
+  else if(TEXT_KEYS.includes(k))out[k]=v.slice(0,k==="m"?160:120);
+  else if(k==="x")out.x=/low|ひかえ/.test(v)?"low":/high|つよ|強/.test(v)?"high":"mid";
+  else if(k==="i")out.i=/classic|紫|クラシック/.test(v)?"classic":"g4";
+  else if(k==="c")out.c=matchColor(v);
+  else if(k==="y")out.y=eyesFrom(v);
+  else out[k]=matchPart(k,v);
+ }
+ if(!hit)throw new Error("モッフィーの項目が見つかりませんでした");
+ return out;
+}
+// Gemini の返事によくある崩れ（全角の引用符・コメント行・末尾のカンマ）を許容して読む
+function looseJSON(s){
+ try{return JSON.parse(s)}catch(e){}
+ const t=s.replace(/[“”＂]/g,'"').replace(/[‘’]/g,"'").replace(/^\s*\/\/.*$/mg,"").replace(/\/\*[\s\S]*?\*\//g,"").replace(/,\s*([}\]])/g,"$1");
+ return JSON.parse(t);
+}
+function parseDNA(text){
+ text=String(text||"").trim();if(!text)throw new Error("貼り付け欄が空です");
+ let m=text.match(/MF1\.([A-Za-z0-9_-]+)/);
+ if(m){let o;try{o=JSON.parse(unb64u(m[1]))}catch(e){throw new Error("DNAコードが途中で切れているようです")}return normalize(o)}
+ const j=text.replace(/[｛]/g,"{").replace(/[｝]/g,"}").match(/\{[\s\S]*\}/);
+ if(j){let o;try{o=looseJSON(j[0])}catch(e){throw new Error("JSONの形がくずれています。{ から } までをまとめて貼ってください")}return normalize(o)}
+ throw new Error("MF1. で始まるDNAコードか、{ } で囲まれた JSON を貼ってください");
+}
+
+/* ================= 指示書の部品 ================= */
+const WHY={
+ intent:["画像の用途を伝えると、構図や雰囲気が目的に合いやすくなります。","公式ガイド「Provide Context and Intent」"],
+ char:["キーワードを並べるより、文章で具体的に描写したほうが狙いどおりになります。本家の2025年版ジェネレーターも、色・体の形・ツノ・口・毛・アクセサリーを文章にしてつなげる形でした。","公式ガイド「Be Hyper-Specific」／2025年版ジェネレーターのプロンプト"],
+ charAttach:["以前に生成した画像を一緒に渡すと、同じキャラクターを保ちやすくなります。文章は確認用で、食いちがったら画像を優先させます。","公式ガイド「Character consistency」"],
+ refs:["画像を何枚も添付するときは、何枚目が何の画像かを最初に書きます。目の見本をキャラクターとして描き直したり、目の見本を「取り込みたい子」として読んだりする取りちがえを防げます。","公式ガイド「Provide Context and Intent」"],
+ charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、文章だけで使うときは、パーツを選んで決めておくのがおすすめです。","このツールの仕組み"],
+ rules:["公式ジェネレーターは、鼻・目・頭身などの絶対ルールを、毎回の文章とは別枠（システム指示）で最初に渡しています。ここでも最初に短くまとめ、場面の説明に埋もれないようにします。","公式ジェネレーターの作り方（Canvas のコード）"],
+ rulesEye:["公式ジェネレーターがキラキラの目を安定して出せるのは、目の見本画像を毎回いっしょに渡し、目は見本どおりに、見本のキャラの色や形はまねしないように指示しているからです。同じやり方です。","公式ジェネレーターの作り方（Canvas のコード）"],
+ base:["公式ジェネレーターの最初の1枚は、1体・真正面・左右対称・白い背景・正方形です。目が大きく写り、あとで基準画像として使いやすくなります。","公式ジェネレーターの作り方（Canvas のコード）"],
+ ratio:["参照画像を添付すると、出力はその画像の縦横比に引きずられます。毎回はっきり指定します。","公式ドキュメント「Aspect ratios and image size」"],
+ steps:["要素が多い場面は、手順に分けると整理されて描き崩れが減ります。","公式ガイド「Use Step-by-Step Instructions」"],
+ check:["公式ジェネレーターも、描いたあとに別の手順でルールを確かめています。ここでは短く見直しを頼み、きびしい判定はレシピ「ルールチェック」で行います。","公式ジェネレーターの作り方（Canvas のコード）"],
+ sheet:["三面図と表情をそろえた設定画は、横向きや後ろ姿を描くときの資料になります。表情の名前をかぎかっこつきで書くと文字として描かれやすいので、かっこを使わず、文字は描かないと明記します。","公式ガイド「Character consistency: 360 view」"],
+ json:["おまかせで決まった見た目を文字で受け取り、このページに取り込むと DNA が確定します。","このツールの仕組み"],
+ text:["文字入りの画像は、先に文字を確定させてから描かせるとうまくいきます。コマ数は指定とずれることがあるので、まずは4コマがおすすめです。","公式ドキュメント「Limitations」"],
+ fix:["全体を作り直すより「ここだけ直して、ほかは同じに」と頼むほうが、元の子が崩れず、1日の生成回数も節約できます。","公式ガイド「Inpainting (Semantic masking)」"],
+ friends:["Nano Banana 2.1 が見た目を保てるキャラクターは4体までです。画像の順番と名前を対応させて、描き分けを頼みます。","公式ドキュメント「Use up to 14 reference images」"],
+ import:["公式ジェネレーターで生まれた子を、このツールの DNA に変換します。画像を読むだけなので、画像の生成回数は使いません。","このツールの仕組み"],
+ judge:["合否だけでなく理由を書かせると、判定が甘くなりにくく、直す場所もはっきりします。公式ジェネレーターも、黒いだけの目などは不合格にしています。","公式ジェネレーターのチェックを、理由つきに拡張"],
+ figure:["Google Japan が紹介した「フィギュア化」の遊び方を、DNA 固定つきにしたものです。","Google Japan の投稿（2025年9月）"],
+ comic:["公式ガイドの「コマ割りまんが」の使い方です。セリフは少ないほど崩れにくくなります。","公式ガイド「Sequential art」"],
+ gem:["Gem のカスタム指示は、公式ジェネレーターのシステム指示と同じく、毎回のやりとりの前提になります。ルールを入れておくと、毎回指示書を貼らなくても同じ決まりで作れます。リンクで友だちにも共有できます。","Gemini アプリ ヘルプ「Gem を共有する」"],
+ scene:["背景・モッフィー・なじませ方の順に頼むと、写真のような背景でもモッフィーの質感が保たれます。","公式ガイド「Use Step-by-Step Instructions」"],
+ motif:["モデルはモッフィーらしい「かわいい・ふわふわ」に寄せて描くので、言葉のままだと個性が薄まります（体験記：「ドラゴン」と入れたのに「想像よりかなりかわいめ」）。言葉を目に見えるモチーフに置きかえると残りやすくなります。","公式ガイド「Be Hyper-Specific」／モッフィーの体験記"],
+ motifDecide:["言葉を、持ち物・模様・体の一部のような目に見えるものに変えてから描かせます。決まったモチーフは JSON で返してもらい、DNA に固定します。","公式ガイド「Be Hyper-Specific」"],
+ profile:["公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。クセや口ぐせを絵やセリフに出すと、見た目が似ていてもその子らしさが伝わります。","公式 note「モッフィーのひみつ」"],
+ photo:["自分で撮った写真は、自分にしかない素材です。みんなが同じレシピを使っても、背景が違えば仕上がりは被りません。写真の光に合わせて影をつけると自然になじみます。","公式ガイド「Advanced composition: Combining multiple images」"],
+};
+const seg=(h,t,why)=>({h,t,why:why?why[0]:"",src:why?why[1]:""});
+const RATIO_LABEL={"1:1":"1:1（正方形）","4:5":"4:5（縦長）","3:4":"3:4（縦長）","9:16":"9:16（縦長）","16:9":"16:9（横長）","3:2":"3:2（横長）"};
+function bodyText(d,how){
+ const out=[];const cd=colorDesc(d);
+ out.push(`体の色は${cd||"もとになった言葉に合う色"}。`);
+ for(const k of LOOK_KEYS){const p=partPhrase(d,k);if(p)out.push(p+"。")}
+ if(d.o)out.push(`そのほかの特徴：${d.o}。`);
+ const au=autoNames(d).filter(x=>x!=="キバ"&&x!=="毛の色");
+ if(au.length){
+  if(how==="decide")out.push(`${au.join("・")}は、もとになった言葉に合わせて自由に決める。`);
+  else if(how==="attach")out.push(`${au.join("・")}は添付画像のとおりにする。`);
+  else out.push(`${au.join("・")}は、もとになった言葉に合わせて、なるべくシンプルに描く。`);
+ }
+ return out.join("");
+}
+const frameSeg=(ratio,camera,bg,allowText)=>seg("構図",`アスペクト比は ${RATIO_LABEL[ratio]||ratio} で出力する。${camera?camera+"。":""}${bg?bg+"。":""}${allowText?"":"画像の中は絵だけにして、文字やロゴは入れない。"}`,WHY.ratio);
+function checkList(d){return ["鼻が描かれていない","口がある",`目が${eyeCount(d)}つ（3つまで）`,d.i==="classic"?"すべての目が同じ青→紫のグラデーションで、白目がある":"すべての目が同じ虹色の輪で、白目がある","虹彩の真ん中に大きな白い四芒星がある（黒いだけの目や点の目ではない）","1.5〜2.5頭身で、手足が短く丸い","全身がふわふわの毛並み",...fixedPairs(d).map(([k,v])=>`${k}が「${v}」`),...motifsOf(d).map(m=>`モチーフ「${m}」が見える`)]}
+// その子らしさ（言葉→モチーフ）。how: "decide"=基準画像で決める / それ以外=決まったモチーフを使う
+function motifSeg(d,how){
+ const ms=motifsOf(d),inten=(INTENSITY[d.x]||INTENSITY.mid)[1];
+ if(ms.length)return seg("その子らしさ",`もとになった言葉を、次のモチーフで見た目に表す。\n${ms.map(m=>"・"+m).join("\n")}\n${inten}`,WHY.motif);
+ if(how==="decide"&&d.k)return seg("その子らしさ",`もとになった言葉「${d.k}」を、持ち物・模様・体の一部のような目に見えるモチーフ2〜3個に置きかえてから描く。かわいさに寄せすぎて、言葉の個性が消えないようにする。${inten}`,WHY.motifDecide);
+ return null;
+}
+// プロフィール帳 → しぐさ・お話・セリフ
+function profileSeg(d,rid){
+ const L=[];
+ if(d.r)L.push(`クセ「${d.r}」を、しぐさや表情にさりげなく出す。`);
+ if(rid==="comic"){
+  if(d.g||d.b)L.push(`お話には、${[d.g?`好きなもの「${d.g}」`:"",d.b?`苦手なもの「${d.b}」`:""].filter(Boolean).join("か")}をからめる。`);
+  if(d.q)L.push(`セリフを入れるときは、口ぐせ「${d.q}」をどこかで1回使う。`);
+ }
+ if(rid==="stamps"&&d.q)L.push(`言葉に口ぐせ「${d.q}」があれば、そのコマはとくにこの子らしいポーズにする。`);
+ return L.length?seg("しぐさとお話",L.join("\n"),WHY.profile):null;
+}
+// レシピの部品に「その子らしさ」と「しぐさ」を差しこむ（画面とテストの両方で使う）
+const NO_EXTRA=["import","check","fix","gem","friends"];
+function composeSegs(r,d,o,ratio,c){
+ const segs=r.build(d,o,ratio,c).filter(Boolean);
+ if(!NO_EXTRA.includes(r.id)){
+  const i=segs.findIndex(s=>s.h==="この子の特徴");
+  const decide=r.id==="base"||(r.id==="sheet"&&!c.n("base")),ref=r.id==="base"||r.id==="sheet";
+  const extra=[motifSeg(d,decide?"decide":"use"),ref?null:profileSeg(d,r.id)].filter(Boolean);
+  if(i>=0)segs.splice(i+1,0,...extra);
+ }
+ const rs=refsSeg(c);if(rs)segs.unshift(rs);
+ return segs;
+}
+const checkSeg=(d,extra=[])=>seg("見直し",`描き終えたら、絶対に守るルールと特徴のとおりかを見直し、合わない所があればその部分だけを直してから出力する。${extra.length?`とくに：${extra.join("、")}。`:""}画像は1枚だけ出力する。`,WHY.check);
+const JSON_TEMPLATE=`{
+  "name": "名前",
+  "keywords": "もとになった言葉",
+  "personality": "性格（1〜2文）",
+  "color": "毛の色（例：淡いそらいろ）",
+  "shape": "体のかたち",
+  "fur": "毛並み",
+  "horn": "ツノ（なければ「なし」）",
+  "ear": "耳（なければ「なし」）",
+  "tail": "しっぽ（なければ「なし」）",
+  "wing": "はね（なければ「なし」）",
+  "eyes": 2,
+  "fang": "キバ（なければ「なし」）",
+  "accessory": "いつも身につけている物（なければ「なし」）",
+  "other": "そのほかの特徴（模様など）",
+  "motifs": "言葉から作ったモチーフ（読点で区切って2〜3個）",
+  "catchphrase": "口ぐせ",
+  "quirk": "クセ（しぐさに出るもの）",
+  "likes": "好きなもの",
+  "dislikes": "苦手なもの",
+  "dream": "夢"
+}`;
+function shortDesc(d){const parts=[`毛の色は${colorDesc(d)||"基準画像のとおり"}`];for(const k of ["h","e","t","w","a"]){const p=partPhrase(d,k);if(p&&d[k]!=="none")parts.push(p)}parts.push(`目は${eyeCount(d)}つ`);if(d.o)parts.push(d.o);const ms=motifsOf(d);if(ms.length)parts.push(`モチーフは${ms.join("・")}`);return parts.join("、")}
+
+/* ================= 公式方式の部品（絶対ルールを先頭に・目の見本・基準画像） ================= */
+const RULE_PROP="1.5〜2.5頭身。頭が体の半分以上の大きさで、手足は短く丸い。全体が丸〜楕円に収まるコロンとした形。";
+const RULE_FUR="全身がふわふわの長い毛でおおわれた、ぬいぐるみのような3DCG。こわさのない、思わず抱きしめたくなる雰囲気。";
+function eyeDesc(d){
+ const iris=d.i==="classic"?"虹彩は大きく、上の青から下の紫へなめらかに変わり、内側ほど深く暗い色になる":"虹彩は大きく、ふちに沿って赤・オレンジ・黄・緑・水色・青・紫の虹色がぐるりと一周し、内側ほど深く暗い色になる";
+ return `白目は、つやのある白い球。${iris}。虹彩の真ん中に、虹彩の幅の半分以上ある大きな白い四芒星（✦）が重なる。星はぼかさず、ふちのはっきりした白。左上に白い四角いツヤ、右下に小さな丸いツヤ。体の色に関係なく、すべての目を同じ色にする。黒いだけの目や、点のような小さな目にはしない。`;
+}
+// 絶対ルール（公式はシステム指示として毎回渡している部分）。multi=複数匹、fur=質感の差し替え（フィギュアなど）
+function rulesSeg(d,c,expr,multi,fur){
+ const eyeRef=c&&c.n?c.n("eye"):"";
+ const fk=partPhrase(d,"f");
+ const L=[
+  `${multi?"目の数はそれぞれの子のとおり（3つまで）。":`目は${eyeCount(d)}つ。`}${eyeRef?`目の描き方は${eyeRef}の目の見本とそっくり同じにする（まねするのは目の描き方だけ。見本に写っているほかの物の色や形はまねしない）。`:""}${eyeDesc(d)}`,
+  "鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。",
+  `口は描く。${!multi&&fk?fk+"。":""}表情：${expr}。`,
+  RULE_PROP,
+  fur||RULE_FUR,
+ ];
+ return seg("絶対に守るルール",L.map((x,i)=>`${i+1}. ${x}`).join("\n"),eyeRef?WHY.rulesEye:WHY.rules);
+}
+// この子の特徴（公式も特徴を箇条書きで渡している）。mode: "decide"=おまかせを決める / それ以外
+function featSeg(d,c,mode){
+ const refK=c&&c.n?(c.n("base")||c.n("src")):"";
+ const head=[`名前は「${d.n||"名前未定"}」。`,d.k?`もとになった言葉は「${d.k}」。`:"",d.p?`性格は「${d.p}」。`:""].join("");
+ const L=[`毛の色：${colorDesc(d)||(refK?`${refK}の画像のとおり`:"もとになった言葉に合う色")}`];
+ for(const k of LOOK_KEYS){const p=partPhrase(d,k);if(p)L.push(p)}
+ if(d.o)L.push(`そのほか：${d.o}`);
+ const au=autoNames(d).filter(x=>x!=="キバ"&&x!=="毛の色");
+ let tail="";
+ if(au.length)tail=refK?`${au.join("・")}は${refK}の画像のとおりにする。`:mode==="decide"?`${au.join("・")}は、もとになった言葉に合わせて自由に決める。`:`${au.join("・")}は、もとになった言葉に合わせて、なるべくシンプルに描く。`;
+ const pre=refK?`見た目は${refK}の画像のモッフィーを正とし、下の特徴と食いちがう所があれば画像に合わせる。\n`:"";
+ return seg("この子の特徴",`${pre}${head}\n${L.map(x=>"・"+x).join("\n")}${tail?"\n"+tail:""}`,refK?WHY.charAttach:mode==="decide"?WHY.char:WHY.charText);
+}
+function fixedProfile(d){const fx=PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}「${d[k]}」`).concat(d.p?[`性格「${d.p}」`]:[]);return fx.length?`決まっているもの（${fx.join("、")}）は、そのまま書きます。`:""}
+// Gemini に添付する画像の順番（目の見本はいつも先頭）
+const EYE_REF=["eye","目の見本","目の見本。目の描き方だけの参考で、キャラクターではない（この画像そのものを描き直したり、説明したりしない）"];
+function refsFor(r,o,c){
+ if(r.id==="import")return [["src","取り込みたいモッフィーの画像","取り込みたいモッフィーの画像"]];
+ if(r.id==="gem")return [];
+ if(r.id==="check"||r.id==="fix"){const L=[r.id==="check"?["target","判定したい画像","判定してほしい画像"]:["target","直したい画像","直してほしい画像"]];if(c.eye&&(r.id==="check"||(o.parts||[]).includes("目（スパークルアイ）")))L.push(EYE_REF);return L}
+ const L=[];
+ if(c.eye)L.push(EYE_REF);
+ if(r.id==="base"){if(c.attach&&String(o.src||"").startsWith("あり"))L.push(["src","もとにする画像（公式の子や設定画）","もとにするモッフィーの画像"]);return L}
+ if(c.attach){L.push(["base","基準画像","基準画像。このモッフィーの見た目の正解"]);if(r.id==="friends")c.friends.forEach((f,i)=>L.push([`friend${i}`,`友だち「${f.n||"名前未定"}」の基準画像`,`友だち「${f.n||"名前未定"}」の基準画像`]))}
+ if(r.id==="photo")L.push(["photo","自分で撮った写真","私が撮った景色の写真（背景にする）"]);
+ return L;
+}
+const refsSeg=c=>c&&c.refs&&c.refs.length?seg("添付した画像",c.refs.map((x,i)=>`${i+1}枚目：${x[2]||x[1]}`).join("\n"),WHY.refs):null;
+function buildCtx(r,o,opts){
+ const attach=r.usesAttach?!!opts.attach:false;
+ const eyeOK=r.usesAttach?attach:(r.id==="check"||r.id==="fix");
+ const c={attach,eye:!!(opts.eye&&eyeOK),friends:opts.friends||[]};
+ c.refs=refsFor(r,o,c);
+ c.n=k=>{const i=c.refs.findIndex(x=>x[0]===k);return i<0?"":`${i+1}枚目`};
+ return c;
+}
+const sceneMode=c=>c.n("base")?"keep":"text";
+
+/* ================= レシピ ================= */
+const RECIPES=[
+ {id:"base",group:"はじめる",label:"基準画像をつくる",ratio:"1:1",usesAttach:true,
+  desc:"最初に作る1枚です。公式ジェネレーターと同じく、1体・真正面・白い背景・正方形で描きます。出てきた画像を保存し、以後のレシピでは「基準画像」として添付します（文章を取り込み直す必要はありません）。",
+  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式の子や設定画）"]},{k:"json",label:"決まった見た目を文字でも受け取る",type:"select",opts:["受け取らない（画像だけ）","受け取る（DNA に取り込む）"]}],
+  build(d,o,r,c){const src=c.n("src"),json=String(o.json||"").startsWith("受け取る");return [
+   seg("目的",src?`${src}の画像のモッフィーを、基準画像として描き直してください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。`:"新しいモッフィーの基準画像を1枚つくってください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。",WHY.base),
+   rulesSeg(d,c,"にっこり笑った、愛らしい表情"),
+   featSeg(d,c,"decide"),
+   frameSeg(r,"1体だけを、全身が入るように真正面から描く。顔も体もカメラに正対し、左右対称に立つ","背景は真っ白。床・影・背景の小物は描かない"),
+   checkSeg(d),
+   json?seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、描いた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${fixedProfile(d)}\n${JSON_TEMPLATE}`,WHY.json):null,
+  ]}},
+ {id:"sheet",group:"はじめる",label:"設定画をつくる（任意）",ratio:"16:9",usesAttach:true,
+  desc:"横向きや後ろ姿も描きたいときの資料です。基準画像を添付して、三面図と表情4つを1枚にまとめます。",
+  fields:[],
+  build(d,o,r,c){const b=c.n("base");return [
+   seg("目的",`${b?`${b}の基準画像のモッフィー`:"このモッフィー"}の設定画を1枚つくってください。横向きや後ろ姿を描くときの資料にします。`,WHY.intent),
+   rulesSeg(d,c,"コマごとに指定した表情"),
+   featSeg(d,c,"decide"),
+   seg("レイアウト","上の段に全身を3つ（正面・横向き・後ろ向き）、同じ大きさ・同じ高さで並べる。下の段に顔のアップを4つ（笑顔、驚いた顔、涙ぐんだ顔、眠そうな顔）並べる。コマはこの7つだけにして、目のアップなど、ほかのコマは足さない。7つとも同じ子に見えるよう、毛の色・ツノ・耳・しっぽ・はね・持ち物の形と位置をそろえる。見出しや表情の名前などの文字は描かない。",WHY.sheet),
+   frameSeg(r,"正面から見た、ゆがみのない平らな構図","背景は無地の明るいグレー。ラベルや矢印もつけない"),
+   checkSeg(d,["コマが7つだけで、文字がない"]),
+  ]}},
+ {id:"import",group:"はじめる",label:"公式の子を取り込む",ratio:null,usesAttach:false,
+  desc:"すでに画像がある子（公式ジェネレーターで作った子など）を、このツールで続けて遊ばせたいときだけ使います。その子の全身の画像を添付すると、特徴を JSON で返してもらえるので、上の「取り込む」に貼ります。新しく作るときは使いません（「基準画像をつくる」へ）。",
+  fields:[],
+  build(d,o,r,c){return [
+   seg("目的",`${c.n("src")}の画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。`,WHY.import),
+   seg("書き方","見えている特徴だけを書く。確かめられない項目は「不明」と書く。色は「淡いそらいろ」のように具体的に。ツノ・しっぽ・はね・キバは、数・形・位置まで書く。目の数は数字で書く。名前がわからなければ、見た目に合う名前を考える。画像にキャラクターの顔と体が写っていないとき（目だけのアップなど）は、JSON を書かずに「キャラクター全体が写った画像を送ってください」とだけ返す。",WHY.char),
+   seg("出力",`次の JSON だけを出力してください。\n${JSON_TEMPLATE}`,WHY.json),
+  ]}},
+ {id:"outing",group:"あそぶ",label:"おでかけ",ratio:"4:5",usesAttach:true,
+  desc:"好きな場所におでかけした写真を作ります。背景は写真のように、モッフィーはふわふわの3DCGのまま。",
+  fields:[{k:"place",label:"場所",type:"text",def:"京都の竹林の小道"},{k:"time",label:"時間帯",type:"select",opts:["昼","朝","夕焼け","夜"]},{k:"act",label:"していること",type:"text",def:"抹茶ソフトクリームを食べている"}],
+  build(d,o,r,c){return [
+   seg("目的",`SNSに投稿する「おでかけ写真」をつくってください。モッフィーの「${d.n||"名前未定"}」が、${o.time}の${o.place}で${o.act}ところです。`,WHY.intent),
+   rulesSeg(d,c,"その場を楽しんでいる、うれしそうな表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("手順",`1. まず、${o.time}の${o.place}の風景を、写真のようにリアルに描く。\n2. 次に、その風景の中にモッフィーを全身で置く。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 最後に、光の向き・影・色味を風景に合わせて、本当にその場にいるように自然になじませる。`,WHY.scene),
+   frameSeg(r,"目線の高さから、モッフィーの全身と風景が入る構図",""),checkSeg(d),
+  ]}},
+ {id:"outfit",group:"あそぶ",label:"着せ替え",ratio:"4:5",usesAttach:true,
+  desc:"服やアイテムを着せます。体の色やツノの形は変えずに、上から着せるだけにします。",
+  fields:[{k:"wear",label:"着るもの",type:"text",def:"黄色いレインコートと長ぐつ"}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」の着せ替え画像をつくってください。着るものは「${o.wear}」です。`,WHY.intent),
+   rulesSeg(d,c,"おしゃれを楽しむ、ちょっと得意げな表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("着せ方",`${o.wear}を、モッフィーの体型に合わせて上から着せる。毛は服のふちからふわっとはみ出す。ツノ・耳・しっぽ・はねは服の外に出し、形を変えない。体の色と毛並み、短い手足はそのまま。`,WHY.steps),
+   frameSeg(r,"全身が入る、ファッション写真のような正面寄りの構図","背景は、服の色が映えるやわらかい無地のグラデーション"),checkSeg(d),
+  ]}},
+ {id:"sticker",group:"あそぶ",label:"ぷくぷくシール",ratio:"1:1",usesAttach:true,
+  desc:"ツヤツヤでぷっくりした立体シールの画像を作ります。公式ジェネレーターの3機能の1つを、DNA 固定つきにしたものです。",
+  fields:[{k:"pose",label:"ポーズ",type:"select",opts:["正面でにっこり","手をふっている","ジャンプしている","ねそべっている"]}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」の「ぷくぷくシール」をつくってください。子どものころに集めた、ツヤツヤでぷっくりふくらんだ立体シールのような画像です。`,WHY.intent),
+   rulesSeg(d,c,"にっこり笑った表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("仕上げ",`ポーズは「${o.pose}」。シール全体がぷっくりと盛り上がり、表面にツヤのある光の反射が入る。キャラクターの輪郭に沿って、太めの白いフチで切り抜いた形（ダイカット）にする。`,WHY.steps),
+   frameSeg(r,"シール1枚を真上から見た構図","背景は無地の白"),checkSeg(d),
+  ]}},
+ {id:"figure",group:"あそぶ",label:"フィギュアにする",ratio:"4:5",usesAttach:true,
+  desc:"1/7スケールの市販フィギュアにした写真を作ります。Google Japan が紹介した遊び方です。",
+  fields:[{k:"box",label:"パッケージ箱",type:"select",opts:["あり","なし"]}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」を、1/7スケールの市販フィギュアにした写真をつくってください。`,WHY.figure),
+   rulesSeg(d,c,"愛らしい表情",false,"見た目はふわふわのモッフィーのまま、素材はPVCのフィギュアにする（毛並みは彫刻で表現し、やわらかいツヤを出す）。"),
+   featSeg(d,c,sceneMode(c)),
+   seg("シーン",`実写のような写真。フィギュアは文字のない円形の透明アクリル台座に立ち、木の机の上に置かれている。${o.box==="あり"?"フィギュアの横に、このモッフィーのイラストが印刷されたおもちゃのパッケージ箱を置く。":""}背景は明るくおしゃれな部屋で、少しぼかす。`,WHY.scene),
+   frameSeg(r,"机の高さから少し見下ろす、斜め45度の構図",""),checkSeg(d,["フィギュアの質感になっている（生き物ではなく置物）"]),
+  ]}},
+ {id:"icon",group:"あそぶ",label:"SNSアイコン",ratio:"1:1",usesAttach:true,
+  desc:"プロフィール用の正方形アイコンです。目がいちばん目立つ構図で、丸く切り抜いても顔が欠けない余白をとります。",
+  fields:[{k:"expr",label:"表情",type:"select",opts:["にっこり","ウインク","びっくり","すまし顔"]},{k:"bg",label:"背景",type:"text",def:"毛の色が映えるやさしい単色"}],
+  build(d,o,r,c){return [
+   seg("目的",`「${d.n||"名前未定"}」をSNSのプロフィールアイコンにします。小さく表示されても顔がはっきりわかる画像をつくってください。`,WHY.intent),
+   rulesSeg(d,c,o.expr),
+   featSeg(d,c,sceneMode(c)),
+   frameSeg(r,"顔と胸から上を中央に大きく入れる、少しだけ見上げる構図。目が画面でいちばん目立つようにする。丸く切り抜いても顔が欠けないよう、まわりに余白をとる",`背景は${o.bg}`),checkSeg(d),
+  ]}},
+ {id:"stamps",group:"あそぶ",label:"スタンプ",ratio:null,ratioBy:o=>({"4":"1:1","6":"3:2","8":"16:9"})[o.panels]||"1:1",usesAttach:true,
+  desc:"メッセージで使う一言スタンプを、1枚の画像にまとめて作ります。文字を先に決めてから描かせます。",
+  fields:[{k:"panels",label:"コマ数",type:"select",opts:["4","6","8"]},{k:"words",label:"言葉（読点で区切る）",type:"text",def:"おはよう、ありがとう、おつかれ、おやすみ、了解、すき、ごめんね、わーい"}],
+  build(d,o,r,c){const n=+o.panels;const pool=String(o.words).split(/[、,，]/).map(x=>x.trim()).filter(Boolean);const fill=["おはよう","ありがとう","おつかれ","おやすみ","了解","すき","ごめんね","わーい"];while(pool.length<n)pool.push(fill[pool.length%fill.length]);const w=pool.slice(0,n);const lay={4:"2列×2段",6:"3列×2段",8:"4列×2段"}[n];return [
+   seg("目的",`メッセージで送る一言スタンプを、1枚の画像に${n}コマでつくってください。主役は「${d.n||"名前未定"}」です。`,WHY.intent),
+   seg("文字（先に確定）",`コマに入れる文字は、次の${n}つだけです。表記をこのとおり正確に書きます。\n${w.map((x,i)=>`${i+1}. 「${x}」`).join("\n")}`,WHY.text),
+   rulesSeg(d,c,"コマごとに、言葉に合う表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("レイアウト",`画像を${lay}の${n}コマに分ける。各コマに、言葉に合う表情とポーズのモッフィーを1匹ずつ描き、言葉はコマの下に、太めの丸い文字で大きく入れる。各コマは白い背景で、コマどうしは白い余白で区切る。キャラクターには白いフチどりをつける。`,WHY.steps),
+   frameSeg(r,"","",true),checkSeg(d,[`コマが${n}つあり、文字が指定どおり`]),
+  ]}},
+ {id:"season",group:"あそぶ",label:"季節イベント",ratio:"4:5",usesAttach:true,
+  desc:"お花見やハロウィンなど、時期に合わせた投稿用の画像です。",
+  fields:[{k:"event",label:"イベント",type:"select",opts:["お花見","夏祭り","ハロウィン","クリスマス","お正月","学園祭","卒業式","誕生日"]},{k:"extra",label:"追加したいこと（任意）",type:"text",def:""}],
+  build(d,o,r,c){return [
+   seg("目的",`${o.event}の時期にSNSへ投稿する、「${d.n||"名前未定"}」の季節の画像をつくってください。`,WHY.intent),
+   rulesSeg(d,c,`${o.event}を楽しんでいる表情`),
+   featSeg(d,c,sceneMode(c)),
+   seg("シーン",`${o.event}らしい背景の中に、モッフィーを全身で描く。${o.event}らしい小物を1〜2個だけ持たせるか身につけさせる。体の色・ツノ・耳・しっぽ・はねは変えない。${o.extra?`追加：${o.extra}。`:""}`,WHY.scene),
+   frameSeg(r,"全身が入る、季節感のある構図",""),checkSeg(d),
+  ]}},
+ {id:"comic",group:"あそぶ",label:"4コマまんが",ratio:"9:16",usesAttach:true,
+  desc:"モッフィーが主役の4コマまんがを1枚で作ります。セリフは少ないほど崩れにくくなります。",
+  fields:[{k:"story",label:"お話のテーマ",type:"text",def:"テスト前日、勉強しようとして寝てしまう"},{k:"talk",label:"セリフ",type:"select",opts:["なし（絵だけ）","短いセリフあり"]}],
+  build(d,o,r,c){const talk=String(o.talk).startsWith("短い");return [
+   seg("目的",`「${d.n||"名前未定"}」が主役の4コマまんがを、1枚の画像でつくってください。テーマは「${o.story}」です。`,WHY.comic),
+   rulesSeg(d,c,"コマごとに、場面に合う表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("コマ割り",`画像をたてに4つのコマに分け、上から順に、始まり・展開・意外なできごと・オチの流れで描く。どのコマのモッフィーも同じ見た目にそろえる。コマに見出しや番号の文字は入れない。${talk?"セリフは各コマ1つまで、10文字以内の短い吹き出しにする。":"セリフや文字は入れず、絵だけで伝える。"}`,WHY.comic),
+   frameSeg(r,"","各コマの背景は、場面がわかる程度のシンプルな描き込み",talk),checkSeg(d,["4つのコマのモッフィーが同じ見た目"]),
+  ]}},
+ {id:"friends",group:"あそぶ",label:"友だちと共演",ratio:"16:9",usesAttach:true,
+  desc:"友だちのDNAコードを貼ると、2〜4匹が同じ場面に並ぶ画像を作れます（Nano Banana が見た目を保てるのは4体まで）。",
+  fields:[{k:"codes",label:"友だちのDNAコード（1行に1匹、3匹まで）",type:"textarea",def:""},{k:"place",label:"場所",type:"text",def:"大学の芝生の広場"},{k:"act",label:"していること",type:"text",def:"ピクニックをしている"}],
+  build(d,o,r,c){const all=[d,...c.friends];const n=all.length;
+   const list=all.map((x,i)=>{const ord=c.n(i===0?"base":`friend${i-1}`);return `${i+1}匹目「${x.n||"名前未定"}」：${ord?`${ord}の基準画像の子。${shortDesc(x)}`:`${bodyText(x,"text")}目は${eyeCount(x)}つ。`}`}).join("\n");
+   return [
+   seg("目的",`${n}匹のモッフィーを、1枚の画像に一緒に描いてください。${o.place}で${o.act}ところです。${n===1?"（友だちのDNAコードを貼ると、ここに友だちが入ります）":""}`,WHY.friends),
+   rulesSeg(d,c,"みんなで楽しんでいる表情",true),
+   seg("登場するモッフィー",list,c.attach?WHY.charAttach:WHY.charText),
+   seg("描き分け",`${n}匹の毛の色やパーツを混ぜない。どの子が誰か、ひと目でわかるように描き分ける。全員の全身が見えるように並べる。`,WHY.friends),
+   frameSeg(r,"全員の全身が入る、少し引いた構図",""),
+   seg("見直し",`描き終えたら、${n}匹それぞれについて、絶対に守るルールと、${c.attach?"基準画像":"説明"}のとおりのパーツかを見直し、合わない所はその部分だけを直してから出力する。画像は1枚だけ出力する。`,WHY.check),
+  ]}},
+ {id:"photo",group:"あそぶ",label:"自分の写真に連れていく",ratio:null,usesAttach:true,
+  desc:"自分で撮った景色の写真に、モッフィーを連れていきます。背景が自分だけのものになるので、仕上がりが人と被りません。写真をアップロードするので18歳以上が対象です。人や個人情報（表札・住所・車のナンバーなど）が写っていない写真を使ってください。",
+  fields:[{k:"pos",label:"どこにいる？",type:"select",opts:["写真の手前の地面に立っている","テーブルや台の上にちょこんと座っている","写真の真ん中で手をふっている","写真のすみからそっとのぞいている"]},{k:"size",label:"大きさ",type:"select",opts:["手のひらくらい","子犬くらい","子どもくらい"]},{k:"act",label:"していること",type:"text",def:"景色を見てうれしそうにしている"}],
+  build(d,o,r,c){const ph=`${c.n("photo")}の写真`;return [
+   seg("目的",`${ph}は、私が撮った景色の写真です。この写真の中に、モッフィー「${d.n||"名前未定"}」を連れてきたような画像をつくってください。`,WHY.photo),
+   rulesSeg(d,c,"景色を楽しんでいる、うれしそうな表情"),
+   featSeg(d,c,sceneMode(c)),
+   seg("手順",`1. ${ph}の景色・光・色・写っている物は、そのまま残す。新しい人や物は足さない。\n2. モッフィーを「${o.pos}」ようすで、${o.size}の大きさで置く。${o.act}。モッフィーは3DCGのぬいぐるみの質感のまま。\n3. 写真の光の向きと色に合わせてモッフィーに光と影をつけ、地面や台に触れている所には自然な影を落とす。`,WHY.scene),
+   seg("構図",`アスペクト比は、${ph}と同じにする。写真の構図は変えない。画像の中は絵だけにして、文字やロゴは入れない。`,WHY.ratio),
+   checkSeg(d,["写真の景色がそのまま残っている","モッフィーの足もとに自然な影がある"]),
+  ]}},
+ {id:"check",group:"なおす",label:"ルールチェック",ratio:null,usesAttach:false,
+  desc:"生成した画像を添付して、ルールどおりかを判定してもらいます。目の見本があれば、目の描き方が見本と同じかも判定します。不合格の所を直すための指示文も返ってきます。",
+  fields:[],
+  build(d,o,r,c){const t=c.n("target"),e=c.n("eye");const items=[...checkList(d),...(e?[`目の描き方が${e}の目の見本と同じ（白目・虹色の輪・真ん中の大きな白い星・ツヤ）`]:[])];return [
+   seg("目的",`${t}の画像のキャラクターが、モッフィー「${d.n||"名前未定"}」として正しく描けているか判定してください。甘めにせず、画像から確かめられないものは不合格にします。白い四芒星がない目（黒いだけの目や点の目）は不合格です。画像は生成しないでください。`,WHY.judge),
+   seg("判定する項目",items.map((x,i)=>`${i+1}. ${x}`).join("\n"),WHY.check),
+   seg("出力",`次の JSON だけを出力してください。\n{\n  "results": [\n    {"item": "項目", "pass": true, "reason": "画像のどこを見てそう判断したか"}\n  ],\n  "score": "合格数/${items.length}",\n  "fix_prompt": "不合格の項目だけを直すための、そのまま画像編集に使える指示文（全部合格なら空文字）"\n}`,WHY.judge),
+  ]}},
+ {id:"fix",group:"なおす",label:"部分修正",ratio:null,usesAttach:false,
+  desc:"気になる所だけを直します。作り直しより元の子が崩れにくく、生成回数も節約できます。目の見本があれば、目は見本どおりに直します。",
+  fields:[{k:"parts",label:"直したい所",type:"multi",opts:["目（スパークルアイ）","鼻が出ている","目の数","毛の色","ツノ","しっぽ","はね","身につけている物","毛並み","頭身・手足"],def:["目（スパークルアイ）"]},{k:"note",label:"そのほか（任意）",type:"text",def:""}],
+  build(d,o,r,c){const t=c.n("target"),e=c.n("eye");const fixes=[];const P=o.parts||[];
+   if(P.includes("目（スパークルアイ）"))fixes.push(`目は${eyeCount(d)}つ。${e?`目の描き方は${e}の目の見本とそっくり同じにする（まねするのは目だけ）。`:""}${eyeDesc(d)}`);
+   if(P.includes("鼻が出ている"))fixes.push("鼻を消し、目と口のあいだを、まわりと同じなめらかな毛並みでつなぐ。");
+   if(P.includes("目の数"))fixes.push(`目は${eyeCount(d)}つにする。`);
+   if(P.includes("毛の色"))fixes.push(`毛の色を${colorDesc(d)||"基準画像と同じ色"}にする。`);
+   const pmap={"ツノ":"h","しっぽ":"t","はね":"w","身につけている物":"a","毛並み":"u"};
+   for(const [lab,k] of Object.entries(pmap))if(P.includes(lab))fixes.push((partPhrase(d,k)||`${PARTS[k].name}は基準画像と同じにする`)+"。");
+   if(P.includes("頭身・手足"))fixes.push(RULE_PROP);
+   if(o.note)fixes.push(`そのほか：${o.note}。`);
+   const targets=[...P.map(x=>x==="目（スパークルアイ）"?"目":x),...(o.note?["そのほか"]:[])].join("・")||"（直したい所を選んでください）";
+   return [
+   seg("目的",`${t}の画像の「${targets}」だけを直してください。それ以外（ポーズ・表情・背景・光・構図・ほかのパーツ）は、まったく同じに保ちます。`,WHY.fix),
+   seg("正しい状態",fixes.length?fixes.map(x=>"・"+x).join("\n"):"・（直したい所を選んでください）",WHY.fix),
+   seg("構図","アスペクト比と構図は、元の画像と同じにする。画像は1枚だけ出力する。",WHY.ratio),
+  ]}},
+ {id:"gem",group:"ひろげる",label:"Gemにする",ratio:null,usesAttach:false,copyEach:true,
+  desc:"Gemini の Gem（カスタム版の Gemini）に入れる文章です。Gem のカスタム指示は、公式ジェネレーターの「システム指示」と同じく、毎回のやりとりの前提になります。パソコンで gemini.google.com を開き、Gem マネージャー →「新しい Gem」で、名前・説明・カスタム指示にそれぞれ貼ります。共有から「リンクを知っている全員」にすると、リンクで配れます。",
+  fields:[{k:"scope",label:"Gem の種類",type:"select",opts:["このモッフィー専用","だれでも使える工房"]}],
+  build(d,o){const own=o.scope==="このモッフィー専用";const nm=d.n||"マイモッフィー";
+   const rules=["# 絶対に守るルール（毎回）",`1. ${own?`目は${eyeCount(d)}つ。${eyeDesc(d)}`:`目は1〜3つ。${eyeDesc({i:"g4"})}`}`,"2. 知識に目の見本の画像があるとき、またはユーザーが目の見本の画像を送ってきたときは、目の描き方をその見本とそっくり同じにする（まねするのは目の描き方だけ。見本に写っているほかの物の色や形はまねしない）。","3. 鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。","4. 口は描く。",`5. ${RULE_PROP}`,`6. ${RULE_FUR}`,"7. 画像には、頼まれたとき以外は文字を入れない。"];
+   const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。基準画像や目の見本が送られてきたら、それを見本にする。","3. 毎回、用途に合うアスペクト比を指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、ルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。目の見本画像があれば、一緒に送ってもらう。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. まず基準画像を1枚作る：1体だけ・全身・真正面・左右対称・真っ白な背景・正方形（1:1）。","4. 以後のリクエストでは、基準画像の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、ルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
+   const ms=motifsOf(d),fk=partPhrase(d,"f");
+   const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,ms.length?`その子らしさのモチーフ：${ms.join("、")}（毎回入れる）`:"",fk?`口：${fk}`:"",...PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}：${d[k]}`),d.r?"クセは、しぐさや表情にさりげなく出す。口ぐせは、セリフを入れるときに使う。":"",`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
+   const ins=["# 役割",own?`あなたは、モッフィー「${nm}」専属のイラストレーターです。ユーザーの頼みに合わせて、「${nm}」を同じ見た目のまま、いろいろな場面の画像にします。`:"あなたは「モッフィー工房」の案内役です。ユーザーと一緒にオリジナルのモッフィーを作り、同じ見た目のまま、いろいろな場面の画像を作ります。","",...rules,"",...flow,...fixed,"","# 話し方","やさしく短く。画像を出したあとに、次に試せる遊び方を1つだけ提案する。"].join("\n");
+   return [
+    seg("名前",own?`${nm}のアトリエ（非公式）`:"モッフィー工房（非公式）",null),
+    seg("説明",own?`モッフィー「${nm}」を、同じ見た目のまま描き続ける Gem`:"オリジナルのモッフィーを作って、同じ見た目のまま遊べる Gem",null),
+    seg("カスタム指示",ins,WHY.gem),
+  ]}},
+];
+const GROUPS=["はじめる","あそぶ","なおす","ひろげる"];
+
+/* ================= プレビュー（SVG を組み立て） ================= */
+const HEUR={
+ s:[[/雪だるま|2段|二段/,"snow"],[/おにぎり|三角/,"onigiri"],[/ブロック|四角|キューブ/,"block"],[/しずく|雫|水滴/,"drop"],[/まんじゅう|饅頭|底が平/,"manju"],[/たまご|卵|縦/,"egg"],[/洋なし|ずんぐり|下ぶくれ/,"pear"],[/もち|横長/,"mochi"],[/./,"round"]],
+ u:[[/逆立|ツン|とげ/,"spiky"],[/カール|くる|巻/,"curly"],[/もこ/,"extra"],[/./,"soft"]],
+ h:[[/^なし|ない$/,"none"],[/クリスタル|水晶|宝石|結晶/,"crystal"],[/花/,"flower"],[/雷|稲妻|ギザギザ/,"bolt"],[/星/,"antenna"],[/きのこ|キノコ/,"mush"],[/触角|アンテナ/,"antenna"],[/巻/,"curl"],[/しま|縞/,"stripe"],[/1本|一本|ひとつ|一つ|中央/,"one"],[/./,"two"]],
+ e:[[/^なし|うも|埋|見えない/,"none"],[/たれ|垂/,"droop"],[/丸|まる/,"round"],[/./,"up"]],
+ t:[[/^なし|見えない/,"none"],[/ドラゴン|とが|竜/,"dragon"],[/長|なが|ふさ/,"long"],[/./,"puff"]],
+ w:[[/^なし|ない$/,"none"],[/こうもり|コウモリ|悪魔/,"bat"],[/妖精|透/,"fairy"],[/./,"angel"]],
+ f:[[/^なし|見えない/,"none"],[/2|２|二|両/,"two"],[/./,"one"]],
+ a:[[/^なし/,"none"],[/マフラー|スカーフ/,"scarf"],[/リボン/,"ribbon"],[/王冠|冠/,"crown"],[/葉/,"leaf"],[/ヘッドホン/,"headphones"],[/メガネ|眼鏡/,"glasses"],[/リュック|かばん|バッグ/,"bag"],[/./,"none"]],
+};
+function kind(d,k){const v=d[k];if(!isCustom(v))return v;const t=v.slice(1);for(const [re,id] of HEUR[k]||[])if(re.test(t))return id;return "auto"}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);const ch=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p))));return "#"+ch.map(v=>v.toString(16).padStart(2,"0")).join("")}
+// キャラ表のラフ（青鉛筆の線画）。色はうすく置き、目だけは本番の色で描く
+let lastSketch="";
+// 体の輪郭：角度 a（画面座標。下が +π/2）→ 点。かたちごとに式を変える
+function shapePt(form,cx,cy,rx,ry,a){
+ const c=Math.cos(a),s=Math.sin(a),sp=(v,p)=>Math.sign(v)*Math.pow(Math.abs(v),p);
+ switch(form){
+  case "pear":{const ex=s>.2?1.1:1;return [cx+c*rx*ex,cy+s*ry]}
+  case "block":return [cx+sp(c,.45)*rx,cy+sp(s,.45)*ry];
+  case "onigiri":{ // 角の丸い三角形（上が頂点）
+   const th=-a,ns=[-Math.PI/2,Math.PI/6,5*Math.PI/6];let dl=Math.PI;
+   for(const n of ns){let x=Math.abs(((th-n)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI);if(x<dl)dl=x}
+   const k=.42,r=1+k*(1/Math.cos(Math.min(dl,Math.PI/3))-1),sx=rx/((1+k)*.866),sy=ry*2/(2+k);
+   return [cx+c*r*sx,cy+k/2*sy+s*r*sy];
+  }
+  case "drop":{ // しずく（上がとがる）
+   const t=a+Math.PI/2,w=Math.sin(t)*Math.pow(Math.abs(Math.sin(t/2)),1.15);
+   return [cx+w*rx/.74,cy-Math.cos(t)*ry];
+  }
+  case "manju":return [cx+c*rx*(s>0?1.03:1),cy+(s>0?.5*Math.pow(s,.35):s)*ry];
+  default:return [cx+c*rx,cy+s*ry];
+ }
+}
+function fluffPath(cx,cy,rx,ry,n,amp,form){
+ const pt=a=>shapePt(form||"round",cx,cy,rx,ry,a);
+ const [x0,y0]=pt(0);let d=`M${x0.toFixed(1)} ${y0.toFixed(1)}`;
+ for(let i=1;i<=n;i++){const [x,y]=pt(i/n*2*Math.PI),[mx,my]=pt((i-.5)/n*2*Math.PI);
+  d+=` Q${(cx+(mx-cx)*(1+amp)).toFixed(1)} ${(cy+(my-cy)*(1+amp)).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`}
+ return d+"Z";
+}
+// かたちの寸法（輪郭の点から、上端・下端・幅を測る）
+const BODY={round:["round",66,66,112],egg:["round",58,74,114],pear:["pear",62,68,116],mochi:["round",78,54,122],onigiri:["onigiri",72,68,112],block:["block",62,60,114],drop:["drop",60,72,112],manju:["manju",76,66,136]};
+function bodyGeom(sk){
+ const mk=(form,rx,ry,cy)=>{const pts=[];for(let i=0;i<120;i++)pts.push(shapePt(form,100,cy,rx,ry,i/120*2*Math.PI));const ys=pts.map(p=>p[1]),top=Math.min(...ys),bottom=Math.max(...ys);return {form,rx,ry,cy,pts,top,bottom,mid:(top+bottom)/2,hh:(bottom-top)/2,bw:Math.max(...pts.map(p=>Math.abs(p[0]-100)))}};
+ if(sk==="snow"){const body=mk("round",56,50,150),head=mk("round",46,43,82);return {body,head,snow:true}}
+ const [f,rx,ry,cy]=BODY[sk]||BODY.round,b=mk(f,rx,ry,cy);return {body:b,head:b,snow:false};
+}
+// 高さ y での体の半幅（輪郭の点のあいだを直線でつないで求める）
+function halfW(g,y){let w=0;const Q=g.pts;for(let i=0;i<Q.length;i++){const [x1,y1]=Q[i],[x2,y2]=Q[(i+1)%Q.length];if(y1===y2){if(y1===y)w=Math.max(w,Math.abs(x1-100),Math.abs(x2-100));continue}if((y1-y)*(y2-y)<=0)w=Math.max(w,Math.abs(x1+(x2-x1)*(y-y1)/(y2-y1)-100))}return w||g.bw*.5}
+const star4=(x,y,s,k=.16)=>`M${x} ${(y-s).toFixed(2)} Q${(x+s*k).toFixed(2)} ${(y-s*k).toFixed(2)} ${(x+s).toFixed(2)} ${y} Q${(x+s*k).toFixed(2)} ${(y+s*k).toFixed(2)} ${x} ${(y+s).toFixed(2)} Q${(x-s*k).toFixed(2)} ${(y+s*k).toFixed(2)} ${(x-s).toFixed(2)} ${y} Q${(x-s*k).toFixed(2)} ${(y-s*k).toFixed(2)} ${x} ${(y-s).toFixed(2)}Z`;
+const IRIS=["#4285F4","#9B72CB","#EA4335","#F5A35C","#FBBC04","#34A853"];
+// 公式の目に近い形：白いふち → 虹色の虹彩（ふちに沿って一周）→ 真ん中に大きな白い四芒星 → 左上に小さなツヤ
+function eyeSVG(x,y,er,i,classic){
+ let s=`<circle class="eye-rim" cx="${x}" cy="${y}" r="${(er+2.4).toFixed(2)}"/>`,defs=`<clipPath id="ec${i}"><circle cx="${x}" cy="${y}" r="${er.toFixed(2)}"/></clipPath>`;
+ if(classic)s+=`<circle cx="${x}" cy="${y}" r="${er.toFixed(2)}" fill="url(#egc)"/>`;
+ else{const R=er*1.4;s+=`<g clip-path="url(#ec${i})"><g filter="url(#esoft)">`+IRIS.map((col,k)=>{const a0=k/6*2*Math.PI-Math.PI/2,a1=(k+1)/6*2*Math.PI-Math.PI/2;return `<path d="M${x} ${y} L${(x+Math.cos(a0)*R).toFixed(2)} ${(y+Math.sin(a0)*R).toFixed(2)} A${R.toFixed(2)} ${R.toFixed(2)} 0 0 1 ${(x+Math.cos(a1)*R).toFixed(2)} ${(y+Math.sin(a1)*R).toFixed(2)}Z" fill="${col}"/>`}).join("")+`</g></g>`}
+ s+=`<circle cx="${x}" cy="${y}" r="${er.toFixed(2)}" fill="url(#ecore)"/><path d="${star4(x,y,er*.76)}" fill="#FFFFFF"/><rect x="${(x-er*.86).toFixed(2)}" y="${(y-er*.62).toFixed(2)}" width="${(er*.3).toFixed(2)}" height="${(er*.4).toFixed(2)}" rx="${(er*.08).toFixed(2)}" fill="#FFFFFF" transform="rotate(-14 ${x} ${y})"/><circle cx="${(x+er*.5).toFixed(2)}" cy="${(y+er*.5).toFixed(2)}" r="${(er*.11).toFixed(2)}" fill="#FFFFFF"/>`;
+ return {s,defs};
+}
+function drawPreview(d){
+ const fur=colorHex(d)||"#C9CED8";
+ const sk=kind(d,"s"),G=bodyGeom(sk),B=G.body,H=G.head;
+ const top=H.top-6,P=(dd,cls="ln")=>`<path class="${cls}" d="${dd}" pathLength="1"/>`;
+ const dx=Math.max(12,Math.min(32,halfW(H,top+18)*.79)),L=100-dx,R=100+dx;
+ let back="",body="",front="",defs="";
+ // しっぽ・はね・耳（体のうしろ）
+ const tk=kind(d,"t"),ty=B.top+(B.bottom-B.top)*.75,tx=100+halfW(B,ty)*.98;
+ if(tk==="puff")back+=P(fluffPath(tx,ty,13,13,9,.18),"ln fur");
+ if(tk==="long")back+=P(`M${(tx-8).toFixed(1)} ${ty.toFixed(1)} C ${(100+B.bw+30).toFixed(1)} ${(ty-2).toFixed(1)}, ${(100+B.bw+34).toFixed(1)} ${(B.mid-10).toFixed(1)}, ${(100+B.bw+18).toFixed(1)} ${(B.mid-26).toFixed(1)}`)+P(fluffPath(100+B.bw+16,B.mid-32,10,10,8,.2),"ln fur");
+ if(tk==="dragon")back+=P(`M${(tx-14).toFixed(1)} ${(ty-4).toFixed(1)} Q ${(100+B.bw+26).toFixed(1)} ${(ty+6).toFixed(1)} ${(100+B.bw+36).toFixed(1)} ${(ty-22).toFixed(1)} L ${(100+B.bw+22).toFixed(1)} ${(ty-10).toFixed(1)} Z`,"ln fur");
+ const wk=kind(d,"w"),wy=B.mid-B.hh*.18,wl=100-halfW(B,wy)+4,wr=200-wl;
+ if(wk==="angel")back+=P(`M${wl} ${wy} q-30 -26 -36 4 q14 -2 10 10 q12 -6 26 -14Z`,"ln part")+P(`M${wr} ${wy} q30 -26 36 4 q-14 -2 -10 10 q-12 -6 -26 -14Z`,"ln part");
+ if(wk==="bat")back+=P(`M${wl+4} ${wy} l-34 -20 l7 15 l-13 1 l11 12 l-8 7 z`,"ln part bat")+P(`M${wr-4} ${wy} l34 -20 l-7 15 l13 1 l-11 12 l8 7 z`,"ln part bat");
+ if(wk==="fairy")back+=`<ellipse class="ln part fairy" cx="${wl-10}" cy="${wy-8}" rx="20" ry="11" transform="rotate(-35 ${wl-10} ${wy-8})" pathLength="1"/><ellipse class="ln part fairy" cx="${wr+10}" cy="${wy-8}" rx="20" ry="11" transform="rotate(35 ${wr+10} ${wy-8})" pathLength="1"/>`;
+ const ek=kind(d,"e");
+ if(ek==="up")back+=`<ellipse class="ln fur" cx="${L+6}" cy="${top+10}" rx="10" ry="24" pathLength="1"/><ellipse class="ln fur" cx="${R-6}" cy="${top+10}" rx="10" ry="24" pathLength="1"/>`;
+ if(ek==="round")back+=`<circle class="ln fur" cx="${L+2}" cy="${top+20}" r="14" pathLength="1"/><circle class="ln fur" cx="${R-2}" cy="${top+20}" r="14" pathLength="1"/>`;
+ // 体（毛のふちを波線で）。雪だるま型は胴と頭の2段
+ const uk=kind(d,"u"),n=uk==="curly"?30:uk==="extra"?20:24,amp=uk==="extra"?.17:uk==="curly"?.09:.12;
+ body+=`<ellipse class="ground" cx="100" cy="${(B.bottom+10).toFixed(1)}" rx="${(B.bw*.72).toFixed(1)}" ry="6"/>`+P(fluffPath(100,B.cy,B.rx,B.ry,n,amp,B.form),"ln fur");
+ if(G.snow)body+=P(fluffPath(100,H.cy,H.rx,H.ry,Math.round(n*.8),amp,H.form),"ln fur");
+ if(uk==="spiky")body+=P(`M86 ${top+12} L89 ${top-10} L95 ${top+8} L100 ${top-15} L105 ${top+8} L111 ${top-10} L114 ${top+12}`,"ln fur");
+ if(uk==="curly")for(const [x,y] of [[74,12],[124,18],[98,34],[66,-14],[134,-10]])body+=P(`M${(100+(x-100)*B.bw/66).toFixed(1)} ${(B.mid+y*B.hh/66).toFixed(1)} a4 4 0 1 1 5 3`,"ln thin");
+ if(ek==="droop"){const yy=H.top+(H.bottom-H.top)*.35,xo=halfW(H,yy)-6,e0=yy.toFixed(1);front+=`<ellipse class="ln fur" cx="${(100-xo).toFixed(1)}" cy="${e0}" rx="11" ry="24" transform="rotate(22 ${(100-xo).toFixed(1)} ${e0})" pathLength="1"/><ellipse class="ln fur" cx="${(100+xo).toFixed(1)}" cy="${e0}" rx="11" ry="24" transform="rotate(-22 ${(100+xo).toFixed(1)} ${e0})" pathLength="1"/>`}
+ // ツノ・触角・頭の持ち物
+ const hk=kind(d,"h");
+ if(hk==="one")front+=P(`M94 ${top+10} L100 ${top-18} L106 ${top+10}`,"ln part horn");
+ if(hk==="two"||hk==="stripe"){front+=P(`M${L} ${top+18} Q${L-4} ${top-4} ${L+8} ${top-6} Q${L+10} ${top+8} ${L+14} ${top+14}`,"ln part horn")+P(`M${R} ${top+18} Q${R+4} ${top-4} ${R-8} ${top-6} Q${R-10} ${top+8} ${R-14} ${top+14}`,"ln part horn");if(hk==="stripe")front+=P(`M${L} ${top+8} l11 -2 M${L+1} ${top+2} l9 -2 M${R} ${top+8} l-11 -2 M${R-1} ${top+2} l-9 -2`,"ln thin")}
+ if(hk==="curl")front+=P(`M${L+2} ${top+18} c-14 -8 -12 -26 2 -26 c8 0 9 9 3 10`)+P(`M${R-2} ${top+18} c14 -8 12 -26 -2 -26 c-8 0 -9 9 -3 10`);
+ if(hk==="crystal")front+=P(`M${L-2} ${top+16} L${L-4} ${top-6} L${L+4} ${top-20} L${L+11} ${top-4} L${L+12} ${top+14} Z M${L+4} ${top-20} L${L+4} ${top+15}`,"ln part crystal")+P(`M${R+2} ${top+16} L${R+4} ${top-6} L${R-4} ${top-20} L${R-11} ${top-4} L${R-12} ${top+14} Z M${R-4} ${top-20} L${R-4} ${top+15}`,"ln part crystal");
+ if(hk==="flower"){front+=P(`M95 ${top+10} L100 ${top-6} L105 ${top+10}`,"ln part horn");for(let k=0;k<5;k++){const a=k/5*2*Math.PI-Math.PI/2;front+=`<circle class="ln part pink" cx="${(100+Math.cos(a)*6.5).toFixed(1)}" cy="${(top-12+Math.sin(a)*6.5).toFixed(1)}" r="4.6" pathLength="1"/>`}front+=`<circle class="ln part gold" cx="100" cy="${top-12}" r="3.4" pathLength="1"/>`}
+ if(hk==="bolt")front+=P(`M${L+6} ${top+16} L${L-3} ${top+2} L${L+5} ${top+1} L${L-4} ${top-18}`,"ln gold-ln")+P(`M${R-6} ${top+16} L${R+3} ${top+2} L${R-5} ${top+1} L${R+4} ${top-18}`,"ln gold-ln");
+ if(hk==="antenna")front+=P(`M${L+10} ${top+12} Q${L+2} ${top-2} ${L-4} ${top-14} M${R-10} ${top+12} Q${R-2} ${top-2} ${R+4} ${top-14}`,"ln thin")+P(star4(L-4,top-19,7,.3),"ln part gold")+P(star4(R+4,top-19,7,.3),"ln part gold");
+ if(hk==="mush")front+=P(`M${L+10} ${top+12} L${L+5} ${top-6} M${R-10} ${top+12} L${R-5} ${top-6}`,"ln thin")+P(`M${L-5} ${top-5} Q${L+5} ${top-25} ${L+15} ${top-5} Z`,"ln part red")+P(`M${R+5} ${top-5} Q${R-5} ${top-25} ${R-15} ${top-5} Z`,"ln part red")+`<circle cx="${L+3}" cy="${top-11}" r="1.8" fill="#FFFFFF"/><circle cx="${R-3}" cy="${top-11}" r="1.8" fill="#FFFFFF"/>`;
+ const ak=kind(d,"a");
+ if(ak==="leaf")front+=P(`M100 ${top+6} q14 -24 30 -16 q-10 18 -30 16z`,"ln part leaf");
+ if(ak==="ribbon")front+=P(`M100 ${top+12} l-22 -12 l0 22 z M100 ${top+12} l22 -12 l0 22 z`,"ln part red");
+ if(ak==="crown")front+=P(`M86 ${top+10} L86 ${top-6} L93 ${top+2} L100 ${top-10} L107 ${top+2} L114 ${top-6} L114 ${top+10} Z`,"ln part gold");
+ // 目（ここだけ本番の色）。頭の幅に合わせて間隔と大きさを縮める
+ const ne=eyeCount(d),ey=H.top+(H.bottom-H.top)*.42,sc=Math.min(1,halfW(H,ey)/62),er=(ne===1?17:ne===3?10:12.5)*sc;
+ const xs=(ne===1?[100]:ne===2?[80,120]:[74,100,126]).map(x=>+(100+(x-100)*sc).toFixed(1)),yy=ne===3?[ey+3*sc,ey-6*sc,ey+3*sc]:xs.map(()=>ey);
+ xs.forEach((x,i)=>{const e=eyeSVG(x,+yy[i].toFixed(1),er,i,d.i==="classic");front+=e.s;defs+=e.defs});
+ if(ak==="glasses"&&ne>=2)front+=`<circle class="ln ink" cx="${xs[0]}" cy="${yy[0].toFixed(1)}" r="${(er+5).toFixed(1)}" pathLength="1"/><circle class="ln ink" cx="${xs[ne-1]}" cy="${yy[ne-1].toFixed(1)}" r="${(er+5).toFixed(1)}" pathLength="1"/>`;
+ // 口・キバ（鼻は描かない）
+ const my=+(ey+er+14*Math.max(.8,sc)).toFixed(1);
+ front+=P(`M90 ${my} Q100 ${my+10} 110 ${my}`,"ln ink");
+ const fk=kind(d,"f");
+ if(fk==="one")front+=P(`M104 ${my+2} l3 7 l3 -6 z`,"ln thin tooth");
+ if(fk==="two")front+=P(`M93 ${my+1} l3 7 l3 -5 z M104 ${my+2} l3 7 l3 -6 z`,"ln thin tooth");
+ // 首まわり（雪だるま型は頭と胴のあいだ）
+ const ny=+(G.snow?H.bottom-14:my+16).toFixed(1),nw=+(G.snow?36:Math.min(B.bw*.8,halfW(B,ny))).toFixed(1);
+ if(ak==="scarf")front+=P(`M${100-nw} ${ny} Q100 ${ny+14} ${100+nw} ${ny} L${100+nw} ${ny+12} Q100 ${ny+26} ${100-nw} ${ny+12} Z`,"ln part red")+P(`M${(100+nw*.44).toFixed(1)} ${ny+14} h14 v26 h-14 z`,"ln part red");
+ if(ak==="headphones")front+=P(`M${(100-nw*.75).toFixed(1)} ${ny+6} Q100 ${ny+28} ${(100+nw*.75).toFixed(1)} ${ny+6}`,"ln ink")+`<circle class="ln ink-fill" cx="${(100-nw*.78).toFixed(1)}" cy="${ny+2}" r="8" pathLength="1"/><circle class="ln ink-fill" cx="${(100+nw*.78).toFixed(1)}" cy="${ny+2}" r="8" pathLength="1"/>`;
+ if(ak==="bag")front+=P(`M${(100+B.bw-10).toFixed(1)} ${(B.mid+4).toFixed(1)} h26 v30 h-26 z`,"ln part orange")+P(`M${(100+B.bw-4).toFixed(1)} ${(B.mid+4).toFixed(1)} q8 -16 14 0`);
+ defs+=`<linearGradient id="egc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset="1" stop-color="#9B72CB"/></linearGradient><radialGradient id="ecore"><stop offset="0" stop-color="#120F2A" stop-opacity=".82"/><stop offset=".55" stop-color="#120F2A" stop-opacity=".45"/><stop offset="1" stop-color="#1A2366" stop-opacity="0"/></radialGradient><filter id="esoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${(er*.12).toFixed(2)}"/></filter>`;
+ const sig=JSON.stringify([d.c,d.s,d.u,d.h,d.e,d.t,d.w,d.y,d.f,d.a,d.i]),drawing=lastSketch!==""&&sig!==lastSketch;lastSketch=sig;
+ $("#preview").innerHTML=`<svg viewBox="-24 -8 248 226" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="${drawing?"drawing":""}" style="--fur:${fur}"><defs>${defs}</defs>${back}${body}${front}</svg>`;
+ const au=autoNames(d);
+ $("#autocap").textContent=au.length?`おまかせ：${au.join("・")}（基準画像で Gemini が決めます）`:"すべてのパーツが決まっています";
+}
+
+/* ================= 画面の組み立て（最初に1回） ================= */
+function buildStatic(){
+ $("#colors").innerHTML=COLORS.map(c=>`<button type="button" class="sw" id="sw-${c.id}" data-c="${c.id}" title="${c.name}" aria-label="${c.name}" aria-pressed="false" style="background:${c.hex||"conic-gradient(#4285F4,#EA4335,#FBBC04,#34A853,#4285F4)"}"></button>`).join("");
+ $("#partsel").innerHTML=PART_ORDER.map(k=>`<div class="field"><label for="p-${k}">${PARTS[k].name}</label><select id="p-${k}" name="part-${k}" data-part="${k}"></select></div>`).join("");
+ $("#tags").innerHTML=TAGS.map(t=>`<button type="button" class="chip" data-tag="${t}" aria-pressed="false">${t}</button>`).join("");
+ $("#rgroups").innerHTML=GROUPS.map(gn=>`<div class="rg${gn==="なおす"?" fix":""}"><div class="rg-name">${gn}</div><div class="chips">${RECIPES.filter(r=>r.group===gn).map(r=>`<button type="button" class="chip" id="r-${r.id}" data-recipe="${r.id}" aria-pressed="false">${r.label}</button>`).join("")}</div></div>`).join("");
+ $("#samples").innerHTML=SAMPLES.map((s,i)=>`<button type="button" class="chip" data-sample="${i}">${esc(s.n)}</button>`).join("");
+ try{if(navigator.share)$("#share-dna").hidden=false}catch(e){}
+ const site=siteUrl();if(site)$("#copy-link").hidden=false;
+}
+function siteUrl(){const m=document.querySelector('meta[name="moffy-site-url"]');return m&&m.content?m.content.trim():""}
+function syncInputs(){
+ const d=st.d;
+ $("#kw").value=d.k;$("#nm").value=d.n;$("#ps").value=d.p;$("#ot").value=d.o;$("#eyestyle").value=d.i;
+ $("#mo").value=d.m||"";$("#xi").value=INTENSITY[d.x]?d.x:"mid";for(const [k] of PROFILE)$("#p"+k).value=d[k]||"";
+ for(const k of PART_ORDER){const sel=$("#p-"+k);let html=PARTS[k].opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("");if(isCustom(d[k]))html+=`<option value="${esc(d[k])}">取り込んだ値：${esc(d[k].slice(1))}</option>`;sel.innerHTML=html;sel.value=d[k]}
+ syncColor();syncTags();
+}
+function syncColor(){document.querySelectorAll(".sw").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===st.d.c)))}
+function syncTags(){document.querySelectorAll("[data-tag]").forEach(b=>b.setAttribute("aria-pressed",String(st.d.k.includes(b.dataset.tag))))}
+
+/* ================= 描画 ================= */
+function renderCard(){
+ eyeSyncDefault();
+ const d=st.d;
+ $("#c-name").textContent=d.n||"名前未定";
+ $("#c-id").textContent=dnaId(d);
+ $("#c-p").textContent=d.p||"未定";
+ const hex=colorHex(d);
+ $("#chip").innerHTML=`<span class="swatch"${hex?` style="background:${hex}"`:" data-auto"} aria-hidden="true"></span><span><b>毛</b>${esc(colorDesc(d)||"おまかせ（基準画像で決まります）")}</span><span class="swatch eye${d.i==="classic"?" classic":""}" aria-hidden="true"></span><span><b>目</b>${d.i==="classic"?"青→紫のグラデーション":"虹色（青・紫・赤・オレンジ・黄・緑）"}と、真ん中の大きな白い四芒星</span>`;
+ const ms=motifsOf(d);
+ const rows=[...(ms.length?[["その子らしさ",`${ms.join("、")}（${(INTENSITY[d.x]||INTENSITY.mid)[0]}）`]]:[]),...PART_ORDER.map(k=>[PARTS[k].name,partLabel(d,k)])];
+ if(d.o)rows.push(["そのほか",d.o]);
+ for(const [k,l] of PROFILE)if(d[k])rows.push([l,d[k]]);
+ $("#c-dl").innerHTML=rows.map(([k,v])=>`<div class="row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+ $("#rules").innerHTML=checkList(d).map(r=>`<li>${esc(r)}</li>`).join("");
+ $("#c-code").textContent=dnaCode(d);
+ const hits=ipHits(TEXT_KEYS.map(k=>d[k]||"").join(" "));
+ $("#ipwarn").hidden=!hits.length;
+ if(hits.length)$("#ipwarn").textContent=`「${hits.join("」「")}」は既存のキャラクター名です。オリジナルのモッフィーにするため、指示書からは外しています。`;
+ drawPreview(d);
+ if(!$("#qr").hidden)renderQR();
+}
+function setHash(){try{history.replaceState(null,"",`#recipe-${st.recipe}`)}catch(e){}}
+function recipe(){return RECIPES.find(r=>r.id===st.recipe)||RECIPES[0]}
+function ropts(r){const o=st.ro[r.id]||(st.ro[r.id]={});for(const f of r.fields)if(o[f.k]===undefined)o[f.k]=f.type==="multi"?[...(f.def||[])]:(f.def!==undefined?f.def:(f.opts?f.opts[0]:""));return o}
+function ratioOf(r,o){return o.__ratio||(r.ratioBy?r.ratioBy(o):r.ratio)}
+function friendsOf(o){const list=[],errs=[];String(o.codes||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,3).forEach((line,i)=>{try{list.push(promptDNA(parseDNA(line)))}catch(e){errs.push(`${i+1}行目：${e.message}`)}});return {list,errs}}
+function renderRecipeUI(){
+ const r=recipe(),o=ropts(r);
+ document.querySelectorAll("[data-recipe]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.recipe===r.id)));
+ $("#rdesc").textContent=r.desc;
+ document.querySelectorAll("[data-attach]").forEach(b=>{b.setAttribute("aria-pressed",String((b.dataset.attach==="1")===st.attach));b.disabled=!r.usesAttach});
+ $("#attach-tabs").title=r.usesAttach?"":"このレシピでは切り替えません";
+ let html=r.fields.map(f=>{const id=`f-${r.id}-${f.k}`,v=o[f.k];
+  if(f.type==="select")return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" name="${f.k}" data-f="${f.k}">${f.opts.map(x=>`<option${x===v?" selected":""}>${esc(x)}</option>`).join("")}</select></div>`;
+  if(f.type==="textarea")return `<div class="field" style="grid-column:1/-1"><label for="${id}">${f.label}</label><textarea id="${id}" name="${f.k}" data-f="${f.k}" autocomplete="off" spellcheck="false" placeholder="例：MF1.eyJ2Ijox…（1行に1匹）">${esc(v)}</textarea><div id="${id}-msg"></div></div>`;
+  if(f.type==="multi")return `<div class="field" style="grid-column:1/-1"><span class="lbl">${f.label}</span><div class="chips">${f.opts.map(x=>`<button type="button" class="chip" data-multi="${f.k}" data-val="${esc(x)}" aria-pressed="${v.includes(x)}">${esc(x)}</button>`).join("")}</div></div>`;
+  return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" name="${f.k}" data-f="${f.k}" autocomplete="off" value="${esc(v)}"></div>`;
+ }).join("");
+ const rr=ratioOf(r,o);
+ if(rr)html+=`<div class="field"><label for="f-ratio">アスペクト比</label><select id="f-ratio" name="ratio" data-f="__ratio">${Object.keys(RATIO_LABEL).map(k=>`<option value="${k}"${k===rr?" selected":""}>${RATIO_LABEL[k]}</option>`).join("")}</select></div>`;
+ $("#rfields").innerHTML=html;$("#rfields").hidden=!html;
+ renderOut();
+}
+function buildSegs(){
+ const r=recipe(),o=ropts(r),d=promptDNA(st.d);
+ const fr=r.id==="friends"?friendsOf(o):{list:[],errs:[]};
+ const c=buildCtx(r,o,{attach:st.attach,eye:eyeActive(),friends:fr.list});
+ if(r.id==="friends"){const m=$(`#f-friends-codes-msg`);if(m)m.innerHTML=fr.errs.length?`<div class="warn">${esc(fr.errs.join(" / "))}</div>`:(fr.list.length?`<div class="okmsg">${fr.list.map(x=>esc(x.n||"名前未定")).join("、")} を読み込みました</div>`:"")}
+ return {r,o,c,segs:composeSegs(r,d,o,ratioOf(r,o),c)};
+}
+const plain=segs=>segs.map(s=>(s.h?`【${s.h}】\n`:"")+s.t).join("\n\n");
+function renderOut(){
+ const {r,o,c,segs}=buildSegs();
+ const gem=r.id==="gem",refs=c.refs;
+ let list;
+ if(gem)list=`<p><b>Gem に入れるもの</b>${esc(o.scope==="このモッフィー専用"?"（任意）目の見本と基準画像を、Gem の「知識」に追加":"（任意）目の見本を、Gem の「知識」に追加")}</p>`;
+ else if(!refs.length)list=`<p><b>Gemini に添付するもの</b>なし${r.usesAttach&&!st.attach?"（文章だけ）":""}</p>`;
+ else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${genRowTools(k)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28"><span class="mini"><button type="button" class="btn ghost tiny" data-eyeact="copy" aria-label="目の見本をコピー">コピー</button>${$("#eye-save").hidden?"":`<button type="button" class="btn ghost tiny" data-eyeact="save" aria-label="目の見本を保存">保存</button>`}</span>`:""}</li>`).join("")}</ul>`;
+ const eyeUsable=r.usesAttach?st.attach:(r.id==="check"||r.id==="fix");
+ const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に画像を入れると、目が公式の子に近づきます。":"";
+ const ei=refs.findIndex(x=>x[0]==="eye");
+ $("#eye-note").textContent=ei>=0?`このレシピでは、${ei+1}枚目に添付します`:gem?"「Gemにする」では添付しません（Gem の「知識」に入れられます）":st.useEye===false?"「指示書で使う」がオフなので、添付しません":r.usesAttach&&!st.attach?"「文章だけ」なので、添付しません":r.id==="fix"?"「部分修正」では、目を直すときだけ添付します":`「${r.label}」では、目の見本は添付しません`;
+ $(".eye-ref").classList.toggle("unused",ei<0);
+ const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。「見た目を指定する」でパーツを選んでおくと安定します。":"";
+ const how=gem?"":CANVAS?(refs.length?"「このページで生成」を押すと、この順番で自動で添付して生成します。指示書をコピーして Gemini アプリで作るときは、この順番で画像を添付してください（モデルは Flash か Pro）。":"「このページで生成」を押すと、指示書だけで生成します。指示書をコピーして Gemini アプリで作ることもできます。"):`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
+ $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
+ const nx=NEXT[r.id]||NEXT.scene;
+ $("#nextline").innerHTML=`<h3>このあと</h3><ol>${nx.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+ const out=$("#out");out.classList.toggle("explain",st.explain);
+ out.innerHTML=segs.map((s,i)=>`<div class="blk"><div class="blk-h"><span>${esc(s.h)}</span>${r.copyEach?`<button type="button" class="btn ghost small" data-copyseg="${i}">この欄をコピー</button>`:""}</div><p class="blk-t">${esc(s.t)}</p>${st.explain?(s.why?`<div class="why" role="note" aria-label="解説"><p>なぜ：${esc(s.why)}</p><p class="src">根拠：${esc(s.src)}</p></div>`:`<div class="why empty" aria-hidden="true"></div>`):""}</div>`).join("");
+ $("#count").textContent=`${new Intl.NumberFormat("ja-JP").format(plain(segs).length)}文字`;
+ genUpdate(c);
+ persist();
+}
+function renderAll(){renderCard();renderOut()}
+
+/* ================= QR・コピー・保存 ================= */
+function shareTarget(){const code=dnaCode(st.d),site=siteUrl();return site?`${site}${site.includes("?")?"&":"?"}dna=${code}`:code}
+function renderQR(){
+ const box=$("#qr");box.innerHTML="";
+ if(typeof QRCode==="undefined"){box.innerHTML=`<p class="hint">QRコードの部品を読み込めませんでした。DNAコードをコピーして渡してください。</p>`;return}
+ const holder=document.createElement("div");box.appendChild(holder);
+ const text=shareTarget(),big=text.length>320,size=big?248:184;
+ try{new QRCode(holder,{text,width:size,height:size,colorDark:"#24233A",colorLight:"#FFFFFF",correctLevel:big?QRCode.CorrectLevel.L:QRCode.CorrectLevel.M})}catch(e){box.innerHTML=`<p class="hint">QRコードを作れませんでした（${esc(e.message)}）。DNAコードをコピーして渡してください。</p>`;return}
+ const p=document.createElement("p");p.className="hint";p.textContent=siteUrl()?"スマホのカメラで読むと、このツールにDNA入りで開きます。":"読み取ると DNA コードの文字が出ます。友だちはそれを「取り込む」に貼ります。";box.appendChild(p);
+}
+async function copyText(text,toast,fallbackEl){
+ try{await navigator.clipboard.writeText(text);flash(toast,"コピーしました")}
+ catch(e){if(fallbackEl){const r=document.createRange();r.selectNodeContents(fallbackEl);const s=getSelection();s.removeAllRanges();s.addRange(r)}flash(toast,"自動でコピーできませんでした。選択した部分を手動でコピーしてください")}
+}
+function flash(sel,msg){const el=$(sel);el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=""},2600)}
+function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro,useEye:st.useEye}))}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)&&!(o.recipe==="sheet"&&o.useEye===undefined)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false}}catch(e){}}
+function savedList(){try{return JSON.parse(localStorage.getItem("moffy-maker-saved")||"[]")}catch(e){return []}}
+function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span class="hint">保存したモッフィー：</span>`+l.map((x,i)=>`<button type="button" data-load="${i}">${esc(x.name)}</button>`).join(""):""}
+function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}
+function setMode(m){st.mode=m;$("#pane-new").hidden=m!=="new";$("#pane-import").hidden=m!=="import";document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.mode===m)))}
+
+/* ================= 目の見本（最初から標準の見本を用意。自分の画像に差しかえも可。画像はこのブラウザの中だけで扱い、どこにも送信しない） ================= */
+const EYE_KEY="moffy-eye-sample",EYE_OUT=768;
+const eye={kind:"default",style:"",img:null,src:"",zoom:1,x:0,y:0,out:"",canvas:null,blob:null,t:0};
+const eyeActive=()=>!!(eye.out&&st.useEye!==false);
+const eyeMsg=m=>flash("#toast3",m);
+const eyeStyle=()=>st.d.i==="classic"?"classic":"g4";
+// 標準の目の見本：作者が Gemini で作ったモッフィーの右目を切り抜いたもの（tools/make_eye.py が下の2行を書く）。
+// 公式ジェネレーターの見本画像は使っていない。クラシック（青→紫）は、虹彩の色だけをこの場で置きかえて作る
+const EYE_SRC="data:image/jpeg;base64,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";
+const EYE_IRIS={cy:396.5,ry:243.2};
+let eyeBase=null;
+const eyeBaseReady=()=>!!(eyeBase&&eyeBase.complete&&eyeBase.naturalWidth);
+function eyeLoadBase(cb){
+ if(!eyeBase){eyeBase=new Image();eyeBase.decoding="async";eyeBase.src=EYE_SRC}
+ if(eyeBaseReady()){cb();return}
+ eyeBase.addEventListener("load",()=>cb(),{once:true});
+}
+function drawEyeSample(cv,style){
+ const S=cv.width,g=cv.getContext("2d");
+ g.fillStyle="#FFFFFF";g.fillRect(0,0,S,S);g.drawImage(eyeBase,0,0,S,S);
+ if(style!=="classic")return;
+ // 色のある画素だけ（白目・星・ツヤはそのまま）、色相を上の青（217°）→下の紫（268°）に置きかえる
+ const d=g.getImageData(0,0,S,S),p=d.data,k=S/768,top=(EYE_IRIS.cy-EYE_IRIS.ry)*k,span=2*EYE_IRIS.ry*k;
+ for(let y=0;y<S;y++){
+  const h=(217+51*Math.min(1,Math.max(0,(y+.5-top)/span)))/60,sec=Math.floor(h)%6,f=h-Math.floor(h);
+  for(let x=0;x<S;x++){
+   const i=(y*S+x)*4,r=p[i],gg=p[i+1],b=p[i+2],mx=Math.max(r,gg,b),mn=Math.min(r,gg,b),sa=mx?(mx-mn)/mx:0,w=Math.min(1,Math.max(0,(sa-.1)/.1));
+   if(w<=0)continue;
+   const P_=mx*(1-sa),Q=mx*(1-sa*f),T=mx*(1-sa*(1-f));
+   const nr=sec===3?P_:T,ng=sec===3?Q:P_,nb=mx;
+   p[i]=r+(nr-r)*w;p[i+1]=gg+(ng-gg)*w;p[i+2]=b+(nb-b)*w;
+  }
+ }
+ g.putImageData(d,0,0);
+}
+// いまの見本のキャンバスから、サムネイル（JPEG）と、コピー・共有用の PNG を用意する
+function eyeSetCanvas(cv){
+ eye.canvas=cv;eye.blob=null;
+ if(!cv){eye.out="";return}
+ eye.out=cv.toDataURL("image/jpeg",.92);
+ try{cv.toBlob(b=>{if(eye.canvas===cv)eye.blob=b},"image/png")}catch(e){}
+}
+function eyeUseDefault(){
+ Object.assign(eye,{kind:"default",style:eyeStyle(),img:null,src:"",zoom:1,x:0,y:0});
+ const style=eye.style,draw=()=>{const cv=document.createElement("canvas");cv.width=cv.height=EYE_OUT;try{drawEyeSample(cv,style);eyeSetCanvas(cv)}catch(e){eyeSetCanvas(null)}};
+ if(eyeBaseReady()){draw();eyeUI();return}
+ eyeSetCanvas(null);eyeUI();
+ // 画像の読みこみを待って描く（そのあいだに自分の画像へ差しかえたときは描かない）
+ eyeLoadBase(()=>{if(eye.kind==="default"&&eye.style===style){draw();eyeUI();renderOut()}});
+}
+// 目のスタイル（虹色／クラシック）を変えたら、標準の見本も描き直す
+function eyeSyncDefault(){if(eye.kind==="default"&&eye.style!==eyeStyle())eyeUseDefault()}
+function eyeLoadFile(file){
+ if(!file||!/^image\//.test(file.type||"")){eyeMsg("画像ファイルを選んでください");return}
+ if(file.size>20*1024*1024){eyeMsg("20MB より小さい画像を選んでください");return}
+ const fr=new FileReader();
+ fr.onload=()=>eyeSetSource(String(fr.result),{});
+ fr.onerror=()=>eyeMsg("画像を読み込めませんでした");
+ fr.readAsDataURL(file);
+}
+// 自分の画像は、長い辺 1024px までの JPEG にしてから持つ（保存の容量を抑える。透明な所は白）
+function eyeSetSource(url,opt){
+ const im=new Image();
+ im.onload=()=>{
+  if(!opt.ready){
+   const W=im.naturalWidth,H=im.naturalHeight,k=Math.min(1,1024/Math.max(W,H,1));
+   const cv=document.createElement("canvas");cv.width=Math.max(1,Math.round(W*k));cv.height=Math.max(1,Math.round(H*k));
+   const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,cv.width,cv.height);g.drawImage(im,0,0,cv.width,cv.height);
+   eyeSetSource(cv.toDataURL("image/jpeg",.9),{...opt,ready:true});return;
+  }
+  eye.kind="own";eye.img=im;eye.src=url;
+  if(opt.restore){eye.zoom=+opt.zoom||1;eye.x=+opt.x||0;eye.y=+opt.y||0}else{eye.zoom=1;eye.x=0;eye.y=0}
+  eyeRender();
+  if(!opt.restore){eyeSave();eyeMsg("自分の画像を目の見本にしました")}
+  renderOut();
+ };
+ im.onerror=()=>{if(opt.restore){try{localStorage.removeItem(EYE_KEY)}catch(e){}}else eyeMsg("画像を読み込めませんでした")};
+ im.src=url;
+}
+// 自分の画像は、公式ジェネレーターと同じく白い正方形に収める。拡大すると中心付近を切り出し、左右・上下でずらせる
+function eyeRender(){
+ if(eye.kind!=="own"||!eye.img){eyeUseDefault();return}
+ const im=eye.img,W=im.naturalWidth,H=im.naturalHeight,cv=document.createElement("canvas");cv.width=cv.height=EYE_OUT;
+ const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,EYE_OUT,EYE_OUT);
+ const f=Math.min(EYE_OUT/W,EYE_OUT/H)*eye.zoom,dw=W*f,dh=H*f;
+ const ox=(EYE_OUT-dw)/2-eye.x*Math.max(0,(dw-EYE_OUT)/2),oy=(EYE_OUT-dh)/2-eye.y*Math.max(0,(dh-EYE_OUT)/2);
+ g.save();g.beginPath();g.rect(0,0,EYE_OUT,EYE_OUT);g.clip();g.drawImage(im,ox,oy,dw,dh);g.restore();
+ eyeSetCanvas(cv);
+ eyeUI();
+}
+function eyeUI(){
+ const has=!!eye.out,own=eye.kind==="own",th=$("#eye-thumb");
+ if(has)th.src=eye.out;else th.removeAttribute("src");
+ th.hidden=!has;$("#eye-empty").hidden=has;
+ th.alt=own?"目の見本（自分の画像を白い正方形に整えたもの）":"標準の目の見本：つやのある白い目玉に、虹色の虹彩と大きな白い四芒星";
+ $("#eye-kind").textContent=own?"自分の画像を使っています":"標準の目の見本を使っています";
+ $("#eye-ctrl").hidden=!own;$("#eye-clear").hidden=!own;
+ $("#eye-zoom").value=String(Math.round(eye.zoom*100));$("#eye-x").value=String(Math.round(eye.x*100));$("#eye-y").value=String(Math.round(eye.y*100));
+ const use=$("#eye-use");use.checked=st.useEye!==false;use.disabled=!has;
+ $("#eye-pick").textContent=own?"別の画像にする":"自分の画像にする";
+ for(const id of ["eye-copy","eye-save","eye-share"])$("#"+id).disabled=!has;
+}
+function eyeSave(){try{if(eye.kind==="own"&&eye.src)localStorage.setItem(EYE_KEY,JSON.stringify({src:eye.src,zoom:eye.zoom,x:eye.x,y:eye.y}));else localStorage.removeItem(EYE_KEY)}catch(e){eyeMsg("このブラウザには保存できませんでした（このページを開いているあいだは使えます）")}}
+const eyePng=()=>eye.blob?Promise.resolve(eye.blob):new Promise((res,rej)=>eye.canvas.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png"));
+async function eyeCopy(){
+ if(!eye.canvas)return;
+ try{
+  if(!window.ClipboardItem||!navigator.clipboard||!navigator.clipboard.write)throw new Error("unsupported");
+  await navigator.clipboard.write([new ClipboardItem({"image/png":eyePng()})]);
+  eyeMsg("目の見本をコピーしました。Gemini の入力欄に貼り付けると添付できます");
+ }catch(e){eyeMsg("このブラウザでは画像をコピーできません。「画像を保存」してから添付してください")}
+}
+// 保存：ふつうのページ（GitHub Pages など）は <a download>。claude.ai の画面の中に埋め込まれているときは、
+// その画面の downloads 機能で保存する（使えないときはボタンを隠す）
+const eyeFramed=(()=>{try{return window.top!==window.self}catch(e){return true}})();
+let eyeDL;
+function initEyeDownloads(){
+ try{
+  if(!eyeFramed||!(window.claude&&typeof window.claude.use==="function"))return;
+  eyeDL=null;$("#eye-save").hidden=true;
+  window.claude.use("downloads").then(ns=>{eyeDL=ns||null;$("#eye-save").hidden=!eyeDL;renderOut()}).catch(()=>{});
+ }catch(e){}
+}
+async function eyeDownload(){
+ if(!eye.canvas)return;
+ if(eyeDL===undefined){const a=document.createElement("a");a.href=eye.canvas.toDataURL("image/png");a.download="moffy-eye-sample.png";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました");return}
+ if(!eyeDL){eyeMsg("この画面では保存できません。「画像をコピー」を使ってください");return}
+ let blob;try{blob=await eyePng()}catch(e){eyeMsg("画像を作れませんでした");return}
+ try{const r=await eyeDL.save({filename:"moffy-eye-sample.png",data:blob});if(r&&r.status==="saved")eyeMsg("画像を保存しました")}
+ catch(err){const code=err&&err.code;eyeMsg(code==="declined"?"保存をやめました":code==="rate_limited"?"少し待ってから、もう一度押してください":"この画面では保存できません。「画像をコピー」を使ってください")}
+}
+// 共有：スマホなどで、共有メニューから Gemini アプリや写真に送る（埋め込まれた画面では出さない）
+const eyeCanShare=(()=>{try{return !eyeFramed&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[new File([new Uint8Array([137])],"eye.png",{type:"image/png"})]})}catch(e){return false}})();
+function eyeShare(){
+ if(!eye.canvas)return;
+ if(!eye.blob){eyeMsg("準備中です。もう一度押してください");return}
+ try{navigator.share({files:[new File([eye.blob],"moffy-eye-sample.png",{type:"image/png"})]}).catch(err=>{if(!err||err.name!=="AbortError")eyeMsg("共有できませんでした。「画像を保存」を使ってください")})}
+ catch(err){eyeMsg("共有できませんでした。「画像を保存」を使ってください")}
+}
+function eyeClear(b){
+ const L="標準に戻す";
+ if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと標準に戻す";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent=L},4000);return}
+ clearTimeout(b._t);b.dataset.armed="";b.textContent=L;
+ eyeUseDefault();eyeSave();renderOut();eyeMsg("標準の目の見本に戻しました");
+}
+function initEye(){
+ const drop=$("#eye-drop"),file=$("#eye-file");
+ $("#eye-pick").addEventListener("click",()=>file.click());
+ file.addEventListener("change",()=>{const f=file.files&&file.files[0];if(f)eyeLoadFile(f);file.value=""});
+ for(const t of ["dragenter","dragover"])drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")});
+ for(const t of ["dragleave","dragend"])drop.addEventListener(t,()=>drop.classList.remove("over"));
+ drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");const f=[...((e.dataTransfer&&e.dataTransfer.files)||[])].find(x=>/^image\//.test(x.type));if(f)eyeLoadFile(f);else eyeMsg("画像ファイルをドロップしてください")});
+ // 画像の貼り付けだけを受け取る（文字の貼り付けはそのまま）
+ document.addEventListener("paste",e=>{const it=[...((e.clipboardData&&e.clipboardData.items)||[])].find(x=>x.kind==="file"&&/^image\//.test(x.type));if(!it)return;const f=it.getAsFile();if(!f)return;e.preventDefault();eyeLoadFile(f)});
+ const slide=()=>{eye.zoom=+$("#eye-zoom").value/100;eye.x=+$("#eye-x").value/100;eye.y=+$("#eye-y").value/100;eyeRender();clearTimeout(eye.t);eye.t=setTimeout(()=>{eyeSave();renderOut()},250)};
+ for(const id of ["eye-zoom","eye-x","eye-y"])$("#"+id).addEventListener("input",slide);
+ $("#eye-use").addEventListener("change",e=>{st.useEye=e.target.checked;renderOut()});
+ $("#eye-copy").addEventListener("click",eyeCopy);
+ $("#eye-save").addEventListener("click",eyeDownload);
+ $("#eye-share").addEventListener("click",eyeShare);
+ $("#eye-share").hidden=!eyeCanShare;
+ $("#eye-clear").addEventListener("click",e=>eyeClear(e.currentTarget));
+ initEyeDownloads();
+ eyeUseDefault();
+ try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eyeSetSource(o.src,{restore:true,ready:true,zoom:o.zoom,x:o.x,y:o.y})}}catch(e){}
+}
+
+/* ================= Canvas 版：このページで生成する（Gemini の Canvas の中で動く。API キーは Canvas が用意するので空のまま） ================= */
+const CANVAS=(()=>{const m=document.querySelector('meta[name="moffy-mode"]');return !!(m&&m.content==="canvas")})();
+const GEN={busy:false,base:"",imgs:{},last:"",results:[],seq:0,cfg:"imageConfig",model:{image:0,text:0},pickKey:""};
+// 公式ジェネレーターと同じ呼び方。モデルが見つからないとき（404）は次の候補へ
+const GEN_MODELS={image:["gemini-2.5-flash-image-preview","gemini-2.5-flash-image"],text:["gemini-3-flash-preview","gemini-2.5-flash"]};
+const GEN_KEY="";
+const GEN_BASE_KEY="moffy-canvas-base";
+const GEN_SYS="あなたは、Gemini から生まれたふわふわの3DCGキャラクター「モッフィー」を描くイラストレーターです。指示書の「絶対に守るルール」を最優先で守ります。添付した画像の役割は、指示書の「添付した画像」のとおりです。目の見本はキャラクターではないので、描き直したり説明したりしません。";
+const genSleep=ms=>new Promise(r=>setTimeout(r,ms));
+const genSplit=url=>{const m=/^data:([^;,]+);base64,(.*)$/.exec(url||"");return m?{mimeType:m[1],data:m[2]}:null};
+function genRefUrl(k){return k==="eye"?(eye.out||""):k==="base"?GEN.base:(GEN.imgs[k]||"")}
+function genMissing(c){return c.refs.map((x,i)=>[x,i]).filter(([x])=>!genRefUrl(x[0])).map(([x,i])=>`${i+1}枚目（${x[1]}）`)}
+// 画像を JPEG にそろえる（長い辺 max px、透明な所は白）。File でも data URL でもよい
+function genNormalize(src,max=1280){
+ return new Promise((res,rej)=>{
+  const go=url=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight,1)),cv=document.createElement("canvas");cv.width=Math.max(1,Math.round(im.naturalWidth*k));cv.height=Math.max(1,Math.round(im.naturalHeight*k));const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,cv.width,cv.height);g.drawImage(im,0,0,cv.width,cv.height);res(cv.toDataURL("image/jpeg",.9))};im.onerror=()=>rej(new Error("画像を読み込めませんでした"));im.src=url};
+  if(typeof src==="string"){go(src);return}
+  if(!src||!/^image\//.test(src.type||"")){rej(new Error("画像ファイルを選んでください"));return}
+  const fr=new FileReader();fr.onload=()=>go(String(fr.result));fr.onerror=()=>rej(new Error("画像を読み込めませんでした"));fr.readAsDataURL(src);
+ });
+}
+// API を呼ぶ。混雑（429）や Gemini 側のエラー（5xx）は待って再試行、モデルや設定の名前ちがい（404・400）は切りかえて再試行
+async function genFetch(kind,makeBody){
+ let lastErr=null;
+ for(let attempt=0;attempt<5;attempt++){
+  const model=GEN_MODELS[kind][GEN.model[kind]]||GEN_MODELS[kind][0];
+  let r;
+  try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEN_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(makeBody())})}
+  catch(e){lastErr=new Error("通信できませんでした。少し待ってからもう一度試してください");await genSleep(1200*(attempt+1));continue}
+  if(r.ok)return r.json();
+  const detail=await r.text().catch(()=>"");
+  if(r.status===404&&GEN.model[kind]<GEN_MODELS[kind].length-1){GEN.model[kind]++;continue}
+  if(r.status===400&&kind==="image"&&GEN.cfg==="imageConfig"&&/imageConfig|aspect/i.test(detail)){GEN.cfg="flat";continue}
+  if(r.status===429||r.status>=500){lastErr=new Error(r.status===429?"混み合っているか、今日の生成の上限に近づいています。少し待ってからもう一度試してください":"Gemini 側でエラーが起きました。もう一度試してください");await genSleep(1500*(attempt+1));continue}
+  throw new Error(r.status===401||r.status===403?"ここでは生成できません。Gemini の Canvas の中で開いてください（指示書のコピーは使えます）":`生成できませんでした（エラー ${r.status}）`);
+ }
+ throw lastErr||new Error("生成できませんでした");
+}
+async function genImage(prompt,urls,ratio,wantText){
+ const parts=[...urls.map(u=>({inlineData:genSplit(u)})),{text:`${prompt}\n\n[seed:${Math.random().toString(36).slice(2,8)}]`}];
+ const j=await genFetch("image",()=>{const gc={responseModalities:wantText?["TEXT","IMAGE"]:["IMAGE"]};if(ratio){if(GEN.cfg==="imageConfig")gc.imageConfig={aspectRatio:ratio};else gc.aspectRatio=ratio}return {contents:[{role:"user",parts}],generationConfig:gc,systemInstruction:{parts:[{text:GEN_SYS}]}}});
+ const cand=(j&&j.candidates&&j.candidates[0])||{},ps=(cand.content&&cand.content.parts)||[];
+ const img=ps.find(p=>p.inlineData&&p.inlineData.data);
+ const text=ps.filter(p=>typeof p.text==="string").map(p=>p.text).join("\n").trim();
+ if(!img){const why=String(cand.finishReason||(j&&j.promptFeedback&&j.promptFeedback.blockReason)||"");throw new Error(/SAFETY|NO_IMAGE|PROHIBITED|BLOCK|RECITATION/i.test(why)?"安全のための制限で、画像が作られませんでした。言葉や場面を少し変えてみてください":"画像が返ってきませんでした。もう一度試すか、「指示書をコピー」して Gemini アプリで作ってください")}
+ return {url:`data:${img.inlineData.mimeType||"image/png"};base64,${img.inlineData.data}`,text};
+}
+async function genText(prompt,urls,json){
+ const parts=[...urls.map(u=>({inlineData:genSplit(u)})),{text:prompt}];
+ const j=await genFetch("text",()=>({contents:[{role:"user",parts}],...(json?{generationConfig:{responseMimeType:"application/json"}}:{})}));
+ const t=((((j&&j.candidates&&j.candidates[0])||{}).content||{}).parts||[]).map(p=>p.text||"").join("").trim();
+ if(!t)throw new Error("返事が空でした。もう一度試してください");
+ return t;
+}
+// 結果のカード
+function genCard(label){
+ const id=++GEN.seq,el=document.createElement("article");
+ el.className="gen-card";el.dataset.id=String(id);
+ el.innerHTML=`<div class="gen-head"><b>${esc(label)}</b><span class="gen-time">${new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}</span></div><div class="gen-body"><p class="gen-wait">生成しています…（10〜40秒ほど）</p></div>`;
+ $("#gen-out").hidden=false;$("#gen-list").prepend(el);
+ GEN.results.unshift({id,label,kind:"",url:"",text:"",rid:""});
+ while(GEN.results.length>12){const old=GEN.results.pop();const e=$(`.gen-card[data-id="${old.id}"]`);if(e)e.remove()}
+ return id;
+}
+const genItem=id=>GEN.results.find(x=>x.id===id);
+const genBody=id=>{const e=$(`.gen-card[data-id="${id}"] .gen-body`);return e};
+function genShowImage(id,rid,res){
+ const it=genItem(id);if(!it)return;Object.assign(it,{kind:"image",url:res.url,text:res.text||"",rid});
+ GEN.last=res.url;
+ let canImport=false;if(res.text){try{parseDNA(res.text);canImport=true}catch(e){}}
+ const body=genBody(id);if(!body)return;
+ body.innerHTML=`<img class="gen-img" src="${res.url}" alt="${esc(it.label)}で生成した画像">${res.text?`<details class="gen-text"><summary>一緒に返ってきた文字</summary><pre class="gen-pre">${esc(res.text)}</pre></details>`:""}<div class="btns"><button type="button" class="btn small" data-genact="save" data-id="${id}">保存</button><button type="button" class="btn ghost small" data-genact="base" data-id="${id}">基準画像にする</button><button type="button" class="btn ghost small" data-genact="fix" data-id="${id}">部分修正へ</button><button type="button" class="btn ghost small" data-genact="check" data-id="${id}">ルールチェックへ</button>${canImport?`<button type="button" class="btn ghost small" data-genact="import" data-id="${id}">文字の内容を DNA に取り込む</button>`:""}</div>`;
+ if(rid==="base"&&!GEN.base)genSetBase(res.url,"生成した画像を、基準画像にしました");
+}
+function genShowText(id,rid,text,target){
+ const it=genItem(id);if(!it)return;Object.assign(it,{kind:"text",text,rid,target:target||""});
+ const body=genBody(id);if(!body)return;
+ let html="";
+ if(rid==="check"){
+  let o=null;try{const m=text.match(/\{[\s\S]*\}/);o=m?looseJSON(m[0]):null}catch(e){}
+  if(o&&Array.isArray(o.results)){
+   it.fix=String(o.fix_prompt||"").trim();
+   html=`<p class="gen-score">合格 ${esc(o.score||`${o.results.filter(x=>x.pass).length}/${o.results.length}`)}</p><ul class="gen-checks">${o.results.map(x=>`<li class="${x.pass?"ok":"ng"}"><b>${x.pass?"合格":"不合格"}</b>${esc(x.item||"")}<span>${esc(x.reason||"")}</span></li>`).join("")}</ul>${it.fix&&it.target?`<div class="btns"><button type="button" class="btn small" data-genact="applyfix" data-id="${id}">この直し方で直す</button></div>`:""}`;
+  }
+ }
+ if(rid==="import"){
+  let ok=false;try{parseDNA(text);ok=true}catch(e){}
+  html=`<pre class="gen-pre">${esc(text)}</pre>${ok?`<div class="btns"><button type="button" class="btn small" data-genact="import" data-id="${id}">この内容を取り込む</button></div>`:`<p class="hint">取り込める形ではありませんでした。キャラクター全体が写った画像で試してください。</p>`}`;
+ }
+ body.innerHTML=html||`<pre class="gen-pre">${esc(text)}</pre>`;
+}
+function genShowError(id,e){const body=genBody(id);if(body)body.innerHTML=`<p class="gen-err" role="alert">${esc(e&&e.message||"生成できませんでした")}</p>`;const it=genItem(id);if(it)it.kind="error"}
+// 生成する（いまのレシピ）
+async function genRun(){
+ if(GEN.busy)return;
+ const {r,o,c,segs}=buildSegs();
+ if(r.id==="gem")return;
+ const miss=genMissing(c);
+ if(miss.length){flash("#toast2",`先に画像を入れてください：${miss.join("、")}`);return}
+ const urls=c.refs.map(([k])=>genRefUrl(k)),prompt=plain(segs),id=genCard(r.label);
+ const target=r.id==="check"?(GEN.imgs.target||""):"";
+ GEN.busy=true;genUpdate();
+ try{
+  if(r.id==="import"||r.id==="check")genShowText(id,r.id,await genText(prompt,urls,r.id==="check"),target);
+  else genShowImage(id,r.id,await genImage(prompt,urls,ratioOf(r,o),r.id==="base"&&String(o.json||"").startsWith("受け取る")));
+ }catch(e){genShowError(id,e)}
+ finally{GEN.busy=false;genUpdate()}
+}
+// ルールチェックの直し方（fix_prompt）で、判定した画像を直す
+async function genApplyFix(it){
+ if(GEN.busy||!it.fix||!it.target)return;
+ const useEye=eyeActive(),urls=[it.target,...(useEye?[eye.out]:[])];
+ const prompt=[`【添付した画像】\n1枚目：直してほしい画像${useEye?`\n2枚目：${EYE_REF[2]}`:""}`,`【直すこと】\n${it.fix}${useEye?"\n目を直すときは、目の描き方を2枚目の目の見本とそっくり同じにする（まねするのは目の描き方だけ）。":""}`,"【構図】\n直す所のほかは、ポーズ・表情・背景・光・構図をまったく同じに保つ。アスペクト比も元の画像と同じにする。画像は1枚だけ出力する。"].join("\n\n");
+ const id=genCard("ルールチェックで直す");
+ GEN.busy=true;genUpdate();
+ try{genShowImage(id,"fix",await genImage(prompt,urls,null,false))}catch(e){genShowError(id,e)}
+ finally{GEN.busy=false;genUpdate()}
+}
+function genDownload(url,name){
+ try{const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();flash("#toast2","保存しました。保存されないときは、画像を長押し（右クリック）して保存してください")}
+ catch(e){flash("#toast2","画像を長押し（右クリック）して保存してください")}
+}
+// 基準画像の欄
+async function genSetBase(url,msg){
+ try{GEN.base=await genNormalize(url,1024)}catch(e){flash("#toast4",e.message);return}
+ try{localStorage.setItem(GEN_BASE_KEY,GEN.base)}catch(e){}
+ genBaseUI();renderOut();if(msg)flash("#toast4",msg);
+}
+function genBaseUI(){
+ const has=!!GEN.base,th=$("#base-thumb");
+ if(has)th.src=GEN.base;else th.removeAttribute("src");
+ th.hidden=!has;$("#base-empty").hidden=has;$("#base-save").disabled=!has;$("#base-clear").hidden=!has;
+ $("#base-kind").textContent=has?"この子の基準画像を使っています":"「基準画像をつくる」で生成すると、自動でここに入ります";
+ $("#base-pick").textContent=has?"別の画像にする":"手持ちの画像を入れる";
+}
+function genBaseClear(b){
+ const L="外す";
+ if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと外す";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent=L},4000);return}
+ clearTimeout(b._t);b.dataset.armed="";b.textContent=L;
+ GEN.base="";try{localStorage.removeItem(GEN_BASE_KEY)}catch(e){}
+ genBaseUI();renderOut();flash("#toast4","基準画像を外しました");
+}
+// いまのレシピに合わせて、生成ボタンと添付の欄をそろえる（renderOut から呼ぶ）
+function genUpdate(c0){
+ if(!CANVAS)return;
+ const r=recipe(),c=c0||buildSegs().c,go=$("#gen-go");
+ go.hidden=r.id==="gem";
+ const miss=genMissing(c);
+ go.disabled=GEN.busy||!!miss.length;
+ go.textContent=GEN.busy?"生成中…":(r.id==="import"||r.id==="check")?"Gemini に聞く":"このページで生成";
+ go.title=miss.length?`先に画像を入れてください：${miss.join("、")}`:"";
+ $("#gen-miss").textContent=!GEN.busy&&miss.length&&r.id!=="gem"?`生成するには、先に画像を入れてください：${miss.join("、")}`:"";
+}
+// 添付の一覧の各行に置くボタン（目の見本は上の欄、ほかはここで入れる）
+function genRowTools(k){
+ if(!CANVAS||k==="eye")return "";
+ const url=genRefUrl(k),thumb=url?`<img class="attach-thumb" src="${url}" alt="" width="28" height="28">`:"";
+ if(k==="base")return thumb+(url?"":`<span class="miss-tag">未設定（上の「基準画像」へ）</span>`);
+ return `${thumb}<span class="mini"><button type="button" class="btn ghost tiny" data-genpick="${k}">${url?"入れかえる":"画像を選ぶ"}</button>${(k==="target"||k==="src")&&GEN.last&&GEN.last!==url?`<button type="button" class="btn ghost tiny" data-genlast="${k}">直前に生成した画像</button>`:""}</span>`;
+}
+function initGen(){
+ if(!CANVAS)return;
+ document.documentElement.classList.add("canvas-mode");
+ $("#base-ref").hidden=false;$("#gen-go").hidden=false;$("#copy").classList.add("ghost");
+ const lede=$(".lede");if(lede)lede.innerHTML='Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描きます。この Canvas 版は、ボタンを押すとこのページで画像まで作れます（あなたの <span translate="no">Gemini</span> の利用枠を使います）。指示書をコピーして <span translate="no">Gemini</span> アプリで作ることもできます。';
+ const step=$(".flow li:last-child");if(step)step.innerHTML="<b>このページで生成</b><span>目の見本と基準画像は自動で添付</span>";
+ const sn=$("#recipes .sheet-no");if(sn)sn.textContent="レシピを選んで「このページで生成」を押します。指示書のコピーもできます";
+ const file=$("#gen-file");
+ file.addEventListener("change",async()=>{const f=file.files&&file.files[0],k=GEN.pickKey;file.value="";if(!f||!k)return;try{const url=await genNormalize(f);if(k==="base")genSetBase(url,"基準画像を入れました");else{GEN.imgs[k]=url;renderOut()}}catch(e){flash("#toast2",e.message)}});
+ $("#base-pick").addEventListener("click",()=>{GEN.pickKey="base";file.click()});
+ $("#base-save").addEventListener("click",()=>{if(GEN.base)genDownload(GEN.base,"moffy-base.jpg")});
+ $("#base-clear").addEventListener("click",e=>genBaseClear(e.currentTarget));
+ $("#gen-go").addEventListener("click",genRun);
+ document.addEventListener("click",async e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.genpick){GEN.pickKey=b.dataset.genpick;file.click();return}
+  if(b.dataset.genlast){GEN.imgs[b.dataset.genlast]=await genNormalize(GEN.last).catch(()=>GEN.last);renderOut();return}
+  if(!b.dataset.genact)return;
+  const it=genItem(+b.dataset.id);if(!it)return;
+  switch(b.dataset.genact){
+   case "save":genDownload(it.url,`moffy-${it.rid||"image"}-${it.id}.png`);break;
+   case "base":genSetBase(it.url,"基準画像にしました");break;
+   case "fix":case "check":{GEN.imgs.target=await genNormalize(it.url).catch(()=>it.url);st.recipe=b.dataset.genact;renderRecipeUI();setHash();$("#recipes").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});flash("#toast2",b.dataset.genact==="fix"?"この画像を「直したい画像」にしました。直したい所を選んで生成してください":"この画像を「判定したい画像」にしました");break}
+   case "import":try{const d=parseDNA(it.text);loadDNA(d,`「${d.n||"名前未定"}」を取り込みました。レシピを選んで続けられます。`);flash("#toast2","DNA に取り込みました")}catch(err){flash("#toast2",err.message)}break;
+   case "applyfix":genApplyFix(it);break;
+  }
+ });
+ try{const b=localStorage.getItem(GEN_BASE_KEY);if(b&&b.startsWith("data:image/"))GEN.base=b}catch(e){}
+ genBaseUI();
+}
+
+/* ================= イベント ================= */
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.mode){setMode(b.dataset.mode);return}
+ if(b.dataset.sample!==undefined){const s=SAMPLES[+b.dataset.sample];if(s){loadDNA({...s});flash("#toast1",`見本「${s.n}」を読み込みました`)}return}
+ if(b.dataset.c){st.d.c=b.dataset.c;syncColor();renderAll();return}
+ if(b.dataset.tag){const t=b.dataset.tag,kw=st.d.k;st.d.k=kw.includes(t)?kw.split(/[、,]\s*/).filter(x=>x&&x!==t).join("、"):(kw.trim()?kw.trim().replace(/[、,]$/,"")+"、":"")+t;$("#kw").value=st.d.k;syncTags();renderAll();return}
+ if(b.dataset.recipe){st.recipe=b.dataset.recipe;renderRecipeUI();setHash();persist();return}
+ if(b.dataset.attach!==undefined){st.attach=b.dataset.attach==="1";renderRecipeUI();return}
+ if(b.dataset.multi){const o=ropts(recipe()),arr=o[b.dataset.multi],v=b.dataset.val,i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);b.setAttribute("aria-pressed",String(i<0));renderOut();return}
+ if(b.dataset.copyseg!==undefined){const {segs}=buildSegs();copyText(segs[+b.dataset.copyseg].t,"#toast2");return}
+ if(b.dataset.eyeact){if(b.dataset.eyeact==="copy")eyeCopy();else eyeDownload();return}
+ if(b.dataset.load!==undefined){const x=savedList()[+b.dataset.load];if(x){try{loadDNA(parseDNA(x.code));flash("#toast1",`「${x.name}」を読み込みました`)}catch(err){flash("#toast1",err.message)}}return}
+ switch(b.id){
+  case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}
+  case "share-dna":{const fail=()=>flash("#toast1","共有メニューを開けませんでした。DNAコードのコピーを使ってください");try{navigator.share({title:"モッフィーのDNA",text:`モッフィー「${st.d.n||"名前未定"}」のDNAコード\n${shareTarget()}`}).catch(err=>{if(err&&err.name!=="AbortError")fail()})}catch(err){fail()}break}
+  case "gacha":{loadDNA(gacha());flash("#toast1","ガチャで新しいモッフィーを決めました");break}
+  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、基準画像のときに Gemini が言葉からモチーフを考えて描きます。"}break}
+  case "copy-code":copyText(dnaCode(st.d),"#toast1",$("#c-code"));break;
+  case "copy-link":copyText(shareTarget(),"#toast1");break;
+  case "qr-btn":{const box=$("#qr");box.hidden=!box.hidden;b.setAttribute("aria-expanded",String(!box.hidden));if(!box.hidden)renderQR();break}
+  case "save":{const l=savedList().filter(x=>x.id!==dnaId(st.d));l.unshift({id:dnaId(st.d),name:st.d.n||"名前未定",code:dnaCode(st.d)});try{localStorage.setItem("moffy-maker-saved",JSON.stringify(l.slice(0,12)));flash("#toast1","このブラウザに保存しました")}catch(err){flash("#toast1","このブラウザでは保存できません")}renderSaved();break}
+  case "imp-go":{try{const d=parseDNA($("#imp").value);loadDNA(d,`「${d.n||"名前未定"}」を読み込みました。レシピを選んで続けられます。`)}catch(err){$("#imp-msg").innerHTML=`<div class="warn">${esc(err.message)}</div>`}break}
+  case "imp-recipe":{st.recipe="import";renderRecipeUI();setHash();$("#recipes").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});break}
+ }
+});
+document.addEventListener("input",e=>{
+ const t=e.target;
+ const map={kw:"k",nm:"n",ps:"p",ot:"o",mo:"m",pq:"q",pr:"r",pg:"g",pb:"b",pz:"z"};
+ if(map[t.id]){st.d[map[t.id]]=t.value;if(t.id==="kw")syncTags();renderAll();return}
+ if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.tagName!=="SELECT")renderOut();return}
+});
+document.addEventListener("change",e=>{
+ const t=e.target;
+ if(t.dataset.part){st.d[t.dataset.part]=t.value;renderAll();return}
+ if(t.id==="eyestyle"){st.d.i=t.value;renderAll();return}
+ if(t.id==="xi"){st.d.x=t.value;renderAll();return}
+ if(t.id==="explain"){st.explain=t.checked;renderOut();return}
+ if(t.dataset.f){const o=ropts(recipe());o[t.dataset.f]=t.value;if(t.dataset.f==="panels")delete o.__ratio;renderRecipeUI();return}
+});
+
+/* ================= 起動 ================= */
+restore();
+buildStatic();
+initEye();
+initGen();
+let fromLink="";
+try{const q=new URLSearchParams(location.search).get("dna");if(q){st.d={...BLANK_DNA,...parseDNA(q)};fromLink=st.d.n||"名前未定"}}catch(e){}
+syncInputs();$("#explain").checked=st.explain;
+try{const h=(location.hash||"").match(/^#recipe-([a-z]+)$/);if(h&&RECIPES.some(r=>r.id===h[1]))st.recipe=h[1]}catch(e){}
+renderCard();renderRecipeUI();renderSaved();
+if(fromLink){setMode("import");$("#imp-msg").innerHTML=`<div class="okmsg">共有リンクから「${esc(fromLink)}」を読み込みました。</div>`}
+</script>
+</body>
+</html>
