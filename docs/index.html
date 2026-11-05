@@ -224,6 +224,9 @@ details.fold[open]>summary{margin-bottom:14px}
 .eye-ref{display:grid;gap:10px;border:1px dashed var(--rule-strong);border-radius:6px;padding:12px 14px;background:var(--fill)}
 .eye-head{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;justify-content:space-between}
 .eye-head .switch input{accent-color:var(--blue)}
+.eye-kind{font-size:13.5px;font-weight:700}
+.btn.tiny{padding:2px 9px;font-size:12px;border-width:1px}
+.refs .mini{display:inline-flex;gap:6px;margin-left:10px}
 .eye-body{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start}
 @media (max-width:520px){.eye-body{grid-template-columns:minmax(0,1fr)}}
 .eye-drop{width:132px;height:132px;box-sizing:border-box;border:1.5px dashed var(--rule-strong);border-radius:6px;background:var(--paper);display:grid;place-items:center;text-align:center;padding:6px;transition:border-color .15s,background-color .15s}
@@ -415,25 +418,27 @@ footer ul{margin:0;padding-left:1.2em}
       <section class="eye-ref" aria-labelledby="h-eye">
         <div class="eye-head">
           <h3 id="h-eye">目の見本</h3>
-          <label class="switch"><input type="checkbox" id="eye-use" name="eye-use" checked disabled> 指示書で使う</label>
+          <label class="switch"><input type="checkbox" id="eye-use" name="eye-use" checked> 指示書で使う</label>
         </div>
         <div class="eye-body">
           <div class="eye-drop" id="eye-drop">
-            <img id="eye-thumb" width="120" height="120" alt="目の見本（白い正方形に整えたもの）" hidden>
+            <img id="eye-thumb" width="120" height="120" alt="目の見本" hidden>
             <p id="eye-empty">ここに画像をドロップするか、貼り付け（<kbd>Ctrl</kbd>+<kbd>V</kbd>／<kbd>⌘</kbd>+<kbd>V</kbd>）</p>
           </div>
           <div class="eye-side">
-            <p class="hint">公式ジェネレーターは、目の見本画像を毎回いっしょに渡してキラキラの目を描かせています。気に入った目の画像（公式ジェネレーターで作った子の顔のアップなど）を入れると、指示書に「目の見本」の添付が入り、目だけをまねるように頼みます。画像はこのブラウザの中だけで扱い、どこにも送信しません（「文章だけ」のときは使いません）。</p>
-            <div class="btns"><button type="button" class="btn ghost small" id="eye-pick">画像を選ぶ</button></div>
+            <p class="eye-kind" id="eye-kind">標準の目の見本（このツールが描いた目）を使っています</p>
+            <p class="hint">指示書と一緒に Gemini に添付する、目だけの見本です。公式ジェネレーターも目の見本画像を毎回渡して、キラキラの目を描かせています。標準の見本は、公式のルール（白いふち・虹色・真ん中の大きな白い星）にそってこのツールが描いたオリジナルです。自分の子の目のアップに差しかえることもできます（この欄へのドロップや貼り付けでも入ります）。画像はこのブラウザの中だけで扱い、送信しません。「文章だけ」のときは添付しません。</p>
+            <div class="btns">
+              <button type="button" class="btn small" id="eye-copy">画像をコピー</button>
+              <button type="button" class="btn ghost small" id="eye-save">画像を保存</button>
+              <button type="button" class="btn ghost small" id="eye-share" hidden>共有</button>
+              <button type="button" class="btn ghost small" id="eye-pick">自分の画像にする</button>
+              <button type="button" class="btn ghost small danger" id="eye-clear" hidden>標準に戻す</button>
+            </div>
             <div class="eye-ctrl" id="eye-ctrl" hidden>
               <label>拡大<input type="range" id="eye-zoom" name="eye-zoom" min="100" max="400" step="5" value="100"></label>
               <label>左右<input type="range" id="eye-x" name="eye-x" min="-100" max="100" step="2" value="0"></label>
               <label>上下<input type="range" id="eye-y" name="eye-y" min="-100" max="100" step="2" value="0"></label>
-              <div class="btns">
-                <button type="button" class="btn ghost small" id="eye-copy">画像をコピー</button>
-                <button type="button" class="btn ghost small" id="eye-save">画像を保存</button>
-                <button type="button" class="btn ghost small danger" id="eye-clear">削除</button>
-              </div>
             </div>
             <input type="file" id="eye-file" name="eye-file" accept="image/*" hidden>
             <div class="toast" id="toast3" role="status"></div>
@@ -789,7 +794,7 @@ function rulesSeg(d,c,expr,multi,fur){
  const eyeRef=c&&c.n?c.n("eye"):"";
  const fk=partPhrase(d,"f");
  const L=[
-  `${multi?"目の数はそれぞれの子のとおり（3つまで）。":`目は${eyeCount(d)}つ。`}${eyeRef?`目の描き方は${eyeRef}の目の見本とそっくり同じにする（まねするのは目だけで、見本のキャラクターの色や形はまねしない）。`:""}${eyeDesc(d)}`,
+  `${multi?"目の数はそれぞれの子のとおり（3つまで）。":`目は${eyeCount(d)}つ。`}${eyeRef?`目の描き方は${eyeRef}の目の見本とそっくり同じにする（まねするのは目の描き方だけ。見本に写っているほかの物の色や形はまねしない）。`:""}${eyeDesc(d)}`,
   "鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。",
   `口は描く。${!multi&&fk?fk+"。":""}表情：${expr}。`,
   RULE_PROP,
@@ -999,7 +1004,7 @@ const RECIPES=[
   desc:"Gemini の Gem（カスタム版の Gemini）に入れる文章です。Gem のカスタム指示は、公式ジェネレーターの「システム指示」と同じく、毎回のやりとりの前提になります。パソコンで gemini.google.com を開き、Gem マネージャー →「新しい Gem」で、名前・説明・カスタム指示にそれぞれ貼ります。共有から「リンクを知っている全員」にすると、リンクで配れます。",
   fields:[{k:"scope",label:"Gem の種類",type:"select",opts:["このモッフィー専用","だれでも使える工房"]}],
   build(d,o){const own=o.scope==="このモッフィー専用";const nm=d.n||"マイモッフィー";
-   const rules=["# 絶対に守るルール（毎回）",`1. ${own?`目は${eyeCount(d)}つ。${eyeDesc(d)}`:`目は1〜3つ。${eyeDesc({i:"g4"})}`}`,"2. ユーザーが目の見本画像を送ってきたら、目の描き方はその見本とそっくり同じにする（まねするのは目だけで、見本のキャラクターの色や形はまねしない）。","3. 鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。","4. 口は描く。",`5. ${RULE_PROP}`,`6. ${RULE_FUR}`,"7. 画像には、頼まれたとき以外は文字を入れない。"];
+   const rules=["# 絶対に守るルール（毎回）",`1. ${own?`目は${eyeCount(d)}つ。${eyeDesc(d)}`:`目は1〜3つ。${eyeDesc({i:"g4"})}`}`,"2. 知識に目の見本の画像があるとき、またはユーザーが目の見本の画像を送ってきたときは、目の描き方をその見本とそっくり同じにする（まねするのは目の描き方だけ。見本に写っているほかの物の色や形はまねしない）。","3. 鼻は描かない。目と口のあいだは、まわりと同じ毛並みがそのまま続く。","4. 口は描く。",`5. ${RULE_PROP}`,`6. ${RULE_FUR}`,"7. 画像には、頼まれたとき以外は文字を入れない。"];
    const flow=own?["# 進め方","1. ユーザーから場面（おでかけ・着せ替え・シール・スタンプなど）を聞く。","2. 下の「固定するモッフィー」の見た目を一切変えずに、その場面の画像を作る。基準画像や目の見本が送られてきたら、それを見本にする。","3. 毎回、用途に合うアスペクト比を指定する（アイコンは1:1、投稿は4:5など）。","4. 描いたら、ルールと固定パーツを見直し、合わない所はその部分だけを直す。","5. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"]:["# 進め方","1. 最初に、好きな言葉（色・好きなもの・性格など）か、すでに作ったモッフィーの画像を受け取る。目の見本画像があれば、一緒に送ってもらう。","2. 見た目を決め、毛の色・体のかたち・毛並み・ツノ・耳・しっぽ・はね・目の数・キバ・身につけている物を箇条書きで示し、これを「DNA」として以後ずっと固定する。","3. まず基準画像を1枚作る：1体だけ・全身・真正面・左右対称・真っ白な背景・正方形（1:1）。","4. 以後のリクエストでは、基準画像の見た目を変えずに描く。毎回アスペクト比を指定する。","5. 描いたら、ルールと DNA を見直し、合わない所はその部分だけを直す。","6. 既存のキャラクターや実在の人物に似せたい依頼には、オリジナルのモッフィーのままで応える。"];
    const ms=motifsOf(d),fk=partPhrase(d,"f");
    const fixed=own?["","# 固定するモッフィー",`名前：${nm}`,d.p?`性格：${d.p}`:"",`見た目：${bodyText(d,"text")}`,ms.length?`その子らしさのモチーフ：${ms.join("、")}（毎回入れる）`:"",fk?`口：${fk}`:"",...PROFILE.filter(([k])=>d[k]).map(([k,l])=>`${l}：${d[k]}`),d.r?"クセは、しぐさや表情にさりげなく出す。口ぐせは、セリフを入れるときに使う。":"",`DNAコード：${dnaCode(d)}`].filter(Boolean):[];
@@ -1158,6 +1163,7 @@ function syncTags(){document.querySelectorAll("[data-tag]").forEach(b=>b.setAttr
 
 /* ================= 描画 ================= */
 function renderCard(){
+ eyeSyncDefault();
  const d=st.d;
  $("#c-name").textContent=d.n||"名前未定";
  $("#c-id").textContent=dnaId(d);
@@ -1211,13 +1217,13 @@ function renderOut(){
  const {r,o,c,segs}=buildSegs();
  const gem=r.id==="gem",refs=c.refs;
  let list;
- if(gem)list=`<p><b>Gem に入れるもの</b>${esc(o.scope==="このモッフィー専用"?"（任意）基準画像と目の見本を、Gem の「知識」に追加":"なし")}</p>`;
+ if(gem)list=`<p><b>Gem に入れるもの</b>${esc(o.scope==="このモッフィー専用"?"（任意）目の見本と基準画像を、Gem の「知識」に追加":"（任意）目の見本を、Gem の「知識」に追加")}</p>`;
  else if(!refs.length)list=`<p><b>Gemini に添付するもの</b>なし${r.usesAttach&&!st.attach?"（文章だけ）":""}</p>`;
- else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28">`:""}</li>`).join("")}</ul>`;
+ else list=`<p><b>Gemini に添付するもの</b>${refs.length}枚（この順番で）</p><ul class="refs">${refs.map(([k,l],i)=>`<li><b>${i+1}枚目</b>${esc(l)}${k==="eye"&&eye.out?`<img class="attach-thumb" src="${eye.out}" alt="" width="28" height="28"><span class="mini"><button type="button" class="btn ghost tiny" data-eyeact="copy" aria-label="目の見本をコピー">コピー</button>${$("#eye-save").hidden?"":`<button type="button" class="btn ghost tiny" data-eyeact="save" aria-label="目の見本を保存">保存</button>`}</span>`:""}</li>`).join("")}</ul>`;
  const eyeUsable=r.usesAttach?st.attach:(r.id==="check"||r.id==="fix");
- const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に、キラキラの目の画像を入れておくと、目が公式の子に近づきます。":"";
+ const eyeHint=!gem&&eyeUsable&&!eye.out?"上の「目の見本」に画像を入れると、目が公式の子に近づきます。":"";
  const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。基準画像のあとに返ってくる JSON を取り込むと安定します。":"";
- const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?"貼り方：入力欄の「＋」（ファイルを追加）から、この順番で画像を添付し、指示書を貼って送信します。":"指示書を貼って送信します。"}`;
+ const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
  $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
  const nx=NEXT[r.id]||NEXT.scene;
  $("#nextline").innerHTML=`<h3>このあと</h3><ol>${nx.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
@@ -1250,11 +1256,69 @@ function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span
 function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}
 function setMode(m){st.mode=m;$("#pane-new").hidden=m!=="new";$("#pane-import").hidden=m!=="import";document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.mode===m)))}
 
-/* ================= 目の見本（画像はこのブラウザの中だけで扱い、どこにも送信しない） ================= */
+/* ================= 目の見本（最初から標準の見本を用意。自分の画像に差しかえも可。画像はこのブラウザの中だけで扱い、どこにも送信しない） ================= */
 const EYE_KEY="moffy-eye-sample",EYE_OUT=768;
-const eye={img:null,src:"",zoom:1,x:0,y:0,out:"",canvas:null,t:0};
+const eye={kind:"default",style:"",img:null,src:"",zoom:1,x:0,y:0,out:"",canvas:null,blob:null,t:0};
 const eyeActive=()=>!!(eye.out&&st.useEye!==false);
 const eyeMsg=m=>flash("#toast3",m);
+const eyeStyle=()=>st.d.i==="classic"?"classic":"g4";
+// 標準の目の見本（このツールのオリジナルの絵。公式ジェネレーターの見本画像は使っていない）。
+// 公式のルールにそって描く：白いふち・虹色の虹彩（ふちに沿って一周）・真ん中の大きな白い四芒星・左上の三日月形のツヤ。黒い瞳孔は描かない。
+// tools/assets.js も、この関数で docs/eye-sample.png を書き出す
+function drawEyeSample(cv,style){
+ const S=cv.width,g=cv.getContext("2d"),c=S/2,R=S*.4,Ri=R*.8,TAU=Math.PI*2;
+ const disc=r=>{g.beginPath();g.arc(c,c,r,0,TAU)};
+ g.save();
+ g.fillStyle="#FFFFFF";g.fillRect(0,0,S,S);
+ // ふちの線（濃い紺）と、白いふち（少しだけ球の陰影）
+ disc(R);g.fillStyle="#1F1B2E";g.fill();
+ const rim=g.createRadialGradient(c-R*.25,c-R*.3,R*.1,c,c,R*.97);rim.addColorStop(0,"#FFFFFF");rim.addColorStop(.78,"#F6F7FB");rim.addColorStop(1,"#D9DEEB");
+ disc(R*.962);g.fillStyle=rim;g.fill();
+ // 虹彩（虹色は上の青から時計回り。クラシックは青→紫のたてのグラデーション）
+ g.save();disc(Ri);g.clip();
+ if(style==="classic"){const lg=g.createLinearGradient(0,c-Ri,0,c+Ri);lg.addColorStop(0,"#4285F4");lg.addColorStop(1,"#9B72CB");g.fillStyle=lg;g.fillRect(c-Ri,c-Ri,Ri*2,Ri*2)}
+ else if(typeof g.createConicGradient==="function"){const cg=g.createConicGradient(-Math.PI/2,c,c);IRIS.forEach((col,i)=>cg.addColorStop(i/6,col));cg.addColorStop(1,IRIS[0]);g.fillStyle=cg;g.fillRect(c-Ri,c-Ri,Ri*2,Ri*2)}
+ else{const rgb=h=>[1,3,5].map(k=>parseInt(h.slice(k,k+2),16));for(let k=0;k<360;k++){const t=k/60,i=Math.floor(t)%6,A=rgb(IRIS[i]),B=rgb(IRIS[(i+1)%6]),f=t-Math.floor(t);g.beginPath();g.moveTo(c,c);g.arc(c,c,Ri*1.02,(k-.7)/360*TAU-Math.PI/2,(k+1)/360*TAU-Math.PI/2);g.closePath();g.fillStyle=`rgb(${A.map((v,j)=>Math.round(v+(B[j]-v)*f)).join(",")})`;g.fill()}}
+ // 虹彩のすじ（立体感）
+ g.globalAlpha=.12;g.strokeStyle="#FFFFFF";g.lineWidth=S*.0028;
+ for(let k=0;k<120;k++){const a=k/120*TAU,r0=Ri*(.3+.08*((k*7)%5)/5);g.beginPath();g.moveTo(c+Math.cos(a)*r0,c+Math.sin(a)*r0);g.lineTo(c+Math.cos(a)*Ri*.96,c+Math.sin(a)*Ri*.96);g.stroke()}
+ g.globalAlpha=1;
+ // 内側を明るく、ふち寄りを少し暗く
+ const lim=g.createRadialGradient(c,c,0,c,c,Ri);lim.addColorStop(0,"rgba(255,255,255,0.28)");lim.addColorStop(.5,"rgba(255,255,255,0.06)");lim.addColorStop(.82,"rgba(30,25,70,0)");lim.addColorStop(1,"rgba(30,25,70,0.42)");
+ g.fillStyle=lim;g.fillRect(c-Ri,c-Ri,Ri*2,Ri*2);
+ // 上まぶたの影
+ const lid=g.createLinearGradient(0,c-Ri,0,c-Ri*.15);lid.addColorStop(0,"rgba(20,18,50,0.34)");lid.addColorStop(1,"rgba(20,18,50,0)");
+ g.fillStyle=lid;g.fillRect(c-Ri,c-Ri,Ri*2,Ri*.85);
+ g.restore();
+ disc(Ri);g.lineWidth=S*.004;g.strokeStyle="rgba(31,27,46,.6)";g.stroke();
+ // 大きな白い四芒星（虹彩の幅の半分以上。ふちのはっきりした白）
+ const s=Ri*.8,k=.11;
+ g.beginPath();g.moveTo(c,c-s);g.quadraticCurveTo(c+s*k,c-s*k,c+s,c);g.quadraticCurveTo(c+s*k,c+s*k,c,c+s);g.quadraticCurveTo(c-s*k,c+s*k,c-s,c);g.quadraticCurveTo(c-s*k,c-s*k,c,c-s);g.closePath();
+ g.fillStyle="#FFFFFF";g.fill();
+ // 左上の三日月形のツヤ
+ const hr=Ri*.21,hx=c-Ri*.5,hy=c-Ri*.5,tmp=document.createElement("canvas");tmp.width=tmp.height=Math.ceil(hr*2+4);
+ const t=tmp.getContext("2d");t.fillStyle="#FFFFFF";t.beginPath();t.arc(hr+2,hr+2,hr,0,TAU);t.fill();t.globalCompositeOperation="destination-out";t.beginPath();t.arc(hr+2+hr*.45,hr+2+hr*.45,hr*.95,0,TAU);t.fill();
+ g.drawImage(tmp,hx-hr-2,hy-hr-2);
+ // ガラスのような照り（ごくうすく）
+ const sh=g.createRadialGradient(c-Ri*.3,c-Ri*.35,0,c-Ri*.3,c-Ri*.35,Ri*.75);sh.addColorStop(0,"rgba(255,255,255,0.18)");sh.addColorStop(1,"rgba(255,255,255,0)");
+ disc(Ri);g.fillStyle=sh;g.fill();
+ g.restore();
+}
+// いまの見本のキャンバスから、サムネイル（JPEG）と、コピー・共有用の PNG を用意する
+function eyeSetCanvas(cv){
+ eye.canvas=cv;eye.blob=null;
+ if(!cv){eye.out="";return}
+ eye.out=cv.toDataURL("image/jpeg",.92);
+ try{cv.toBlob(b=>{if(eye.canvas===cv)eye.blob=b},"image/png")}catch(e){}
+}
+function eyeUseDefault(){
+ Object.assign(eye,{kind:"default",style:eyeStyle(),img:null,src:"",zoom:1,x:0,y:0});
+ const cv=document.createElement("canvas");cv.width=cv.height=EYE_OUT;
+ try{drawEyeSample(cv,eye.style);eyeSetCanvas(cv)}catch(e){eyeSetCanvas(null)}
+ eyeUI();
+}
+// 目のスタイル（虹色／クラシック）を変えたら、標準の見本も描き直す
+function eyeSyncDefault(){if(eye.kind==="default"&&eye.style!==eyeStyle())eyeUseDefault()}
 function eyeLoadFile(file){
  if(!file||!/^image\//.test(file.type||"")){eyeMsg("画像ファイルを選んでください");return}
  if(file.size>20*1024*1024){eyeMsg("20MB より小さい画像を選んでください");return}
@@ -1263,7 +1327,7 @@ function eyeLoadFile(file){
  fr.onerror=()=>eyeMsg("画像を読み込めませんでした");
  fr.readAsDataURL(file);
 }
-// 読み込んだ画像は、長い辺 1024px までの JPEG にしてから持つ（保存の容量を抑える。透明な所は白）
+// 自分の画像は、長い辺 1024px までの JPEG にしてから持つ（保存の容量を抑える。透明な所は白）
 function eyeSetSource(url,opt){
  const im=new Image();
  im.onload=()=>{
@@ -1273,41 +1337,46 @@ function eyeSetSource(url,opt){
    const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,cv.width,cv.height);g.drawImage(im,0,0,cv.width,cv.height);
    eyeSetSource(cv.toDataURL("image/jpeg",.9),{...opt,ready:true});return;
   }
-  eye.img=im;eye.src=url;
-  if(!opt.restore){eye.zoom=1;eye.x=0;eye.y=0}
+  eye.kind="own";eye.img=im;eye.src=url;
+  if(opt.restore){eye.zoom=+opt.zoom||1;eye.x=+opt.x||0;eye.y=+opt.y||0}else{eye.zoom=1;eye.x=0;eye.y=0}
   eyeRender();
-  if(!opt.restore){eyeSave();eyeMsg("目の見本を入れました。指示書の添付の順番に入っています")}
+  if(!opt.restore){eyeSave();eyeMsg("自分の画像を目の見本にしました")}
   renderOut();
  };
- im.onerror=()=>{if(!opt.restore)eyeMsg("画像を読み込めませんでした")};
+ im.onerror=()=>{if(opt.restore){try{localStorage.removeItem(EYE_KEY)}catch(e){}}else eyeMsg("画像を読み込めませんでした")};
  im.src=url;
 }
-// 公式ジェネレーターと同じく、白い正方形に収める。拡大すると中心付近を切り出し、左右・上下でずらせる
+// 自分の画像は、公式ジェネレーターと同じく白い正方形に収める。拡大すると中心付近を切り出し、左右・上下でずらせる
 function eyeRender(){
- if(!eye.img){eye.out="";eye.canvas=null;eyeUI();return}
+ if(eye.kind!=="own"||!eye.img){eyeUseDefault();return}
  const im=eye.img,W=im.naturalWidth,H=im.naturalHeight,cv=document.createElement("canvas");cv.width=cv.height=EYE_OUT;
  const g=cv.getContext("2d");g.fillStyle="#FFFFFF";g.fillRect(0,0,EYE_OUT,EYE_OUT);
  const f=Math.min(EYE_OUT/W,EYE_OUT/H)*eye.zoom,dw=W*f,dh=H*f;
  const ox=(EYE_OUT-dw)/2-eye.x*Math.max(0,(dw-EYE_OUT)/2),oy=(EYE_OUT-dh)/2-eye.y*Math.max(0,(dh-EYE_OUT)/2);
  g.save();g.beginPath();g.rect(0,0,EYE_OUT,EYE_OUT);g.clip();g.drawImage(im,ox,oy,dw,dh);g.restore();
- eye.canvas=cv;eye.out=cv.toDataURL("image/jpeg",.92);
+ eyeSetCanvas(cv);
  eyeUI();
 }
 function eyeUI(){
- const has=!!eye.out,th=$("#eye-thumb");
+ const has=!!eye.out,own=eye.kind==="own",th=$("#eye-thumb");
  if(has)th.src=eye.out;else th.removeAttribute("src");
- th.hidden=!has;$("#eye-empty").hidden=has;$("#eye-ctrl").hidden=!has;
+ th.hidden=!has;$("#eye-empty").hidden=has;
+ th.alt=own?"目の見本（自分の画像を白い正方形に整えたもの）":"目の見本（このツールが描いた標準の目）";
+ $("#eye-kind").textContent=own?"自分の画像を使っています":"標準の目の見本（このツールが描いた目）を使っています";
+ $("#eye-ctrl").hidden=!own;$("#eye-clear").hidden=!own;
  $("#eye-zoom").value=String(Math.round(eye.zoom*100));$("#eye-x").value=String(Math.round(eye.x*100));$("#eye-y").value=String(Math.round(eye.y*100));
  const use=$("#eye-use");use.checked=st.useEye!==false;use.disabled=!has;
- $("#eye-pick").textContent=has?"別の画像にする":"画像を選ぶ";
+ $("#eye-pick").textContent=own?"別の画像にする":"自分の画像にする";
+ for(const id of ["eye-copy","eye-save","eye-share"])$("#"+id).disabled=!has;
 }
-function eyeSave(){try{if(eye.src)localStorage.setItem(EYE_KEY,JSON.stringify({src:eye.src,zoom:eye.zoom,x:eye.x,y:eye.y}));else localStorage.removeItem(EYE_KEY)}catch(e){eyeMsg("このブラウザには保存できませんでした（このページを開いているあいだは使えます）")}}
+function eyeSave(){try{if(eye.kind==="own"&&eye.src)localStorage.setItem(EYE_KEY,JSON.stringify({src:eye.src,zoom:eye.zoom,x:eye.x,y:eye.y}));else localStorage.removeItem(EYE_KEY)}catch(e){eyeMsg("このブラウザには保存できませんでした（このページを開いているあいだは使えます）")}}
+const eyePng=()=>eye.blob?Promise.resolve(eye.blob):new Promise((res,rej)=>eye.canvas.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png"));
 async function eyeCopy(){
  if(!eye.canvas)return;
  try{
   if(!window.ClipboardItem||!navigator.clipboard||!navigator.clipboard.write)throw new Error("unsupported");
-  await navigator.clipboard.write([new ClipboardItem({"image/png":new Promise((res,rej)=>eye.canvas.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png"))})]);
-  eyeMsg("コピーしました。Gemini の入力欄に貼り付けられます");
+  await navigator.clipboard.write([new ClipboardItem({"image/png":eyePng()})]);
+  eyeMsg("目の見本をコピーしました。Gemini の入力欄に貼り付けると添付できます");
  }catch(e){eyeMsg("このブラウザでは画像をコピーできません。「画像を保存」してから添付してください")}
 }
 // 保存：ふつうのページ（GitHub Pages など）は <a download>。claude.ai の画面の中に埋め込まれているときは、
@@ -1318,23 +1387,30 @@ function initEyeDownloads(){
  try{
   if(!eyeFramed||!(window.claude&&typeof window.claude.use==="function"))return;
   eyeDL=null;$("#eye-save").hidden=true;
-  window.claude.use("downloads").then(ns=>{eyeDL=ns||null;$("#eye-save").hidden=!eyeDL}).catch(()=>{});
+  window.claude.use("downloads").then(ns=>{eyeDL=ns||null;$("#eye-save").hidden=!eyeDL;renderOut()}).catch(()=>{});
  }catch(e){}
 }
 async function eyeDownload(){
  if(!eye.canvas)return;
- if(eyeDL===undefined){const a=document.createElement("a");a.href=eye.out;a.download="moffy-eye-sample.jpg";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました");return}
+ if(eyeDL===undefined){const a=document.createElement("a");a.href=eye.canvas.toDataURL("image/png");a.download="moffy-eye-sample.png";document.body.appendChild(a);a.click();a.remove();eyeMsg("画像を保存しました");return}
  if(!eyeDL){eyeMsg("この画面では保存できません。「画像をコピー」を使ってください");return}
- const blob=await new Promise(res=>eye.canvas.toBlob(res,"image/jpeg",.92));
- if(!blob){eyeMsg("画像を作れませんでした");return}
- try{const r=await eyeDL.save({filename:"moffy-eye-sample.jpg",data:blob});if(r&&r.status==="saved")eyeMsg("画像を保存しました")}
+ let blob;try{blob=await eyePng()}catch(e){eyeMsg("画像を作れませんでした");return}
+ try{const r=await eyeDL.save({filename:"moffy-eye-sample.png",data:blob});if(r&&r.status==="saved")eyeMsg("画像を保存しました")}
  catch(err){const code=err&&err.code;eyeMsg(code==="declined"?"保存をやめました":code==="rate_limited"?"少し待ってから、もう一度押してください":"この画面では保存できません。「画像をコピー」を使ってください")}
 }
+// 共有：スマホなどで、共有メニューから Gemini アプリや写真に送る（埋め込まれた画面では出さない）
+const eyeCanShare=(()=>{try{return !eyeFramed&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[new File([new Uint8Array([137])],"eye.png",{type:"image/png"})]})}catch(e){return false}})();
+function eyeShare(){
+ if(!eye.canvas)return;
+ if(!eye.blob){eyeMsg("準備中です。もう一度押してください");return}
+ try{navigator.share({files:[new File([eye.blob],"moffy-eye-sample.png",{type:"image/png"})]}).catch(err=>{if(!err||err.name!=="AbortError")eyeMsg("共有できませんでした。「画像を保存」を使ってください")})}
+ catch(err){eyeMsg("共有できませんでした。「画像を保存」を使ってください")}
+}
 function eyeClear(b){
- if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと削除";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent="削除"},4000);return}
- clearTimeout(b._t);b.dataset.armed="";b.textContent="削除";
- Object.assign(eye,{img:null,src:"",zoom:1,x:0,y:0});
- eyeSave();eyeRender();renderOut();eyeMsg("目の見本を削除しました");
+ const L="標準に戻す";
+ if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="もう一度押すと標準に戻す";clearTimeout(b._t);b._t=setTimeout(()=>{b.dataset.armed="";b.textContent=L},4000);return}
+ clearTimeout(b._t);b.dataset.armed="";b.textContent=L;
+ eyeUseDefault();eyeSave();renderOut();eyeMsg("標準の目の見本に戻しました");
 }
 function initEye(){
  const drop=$("#eye-drop"),file=$("#eye-file");
@@ -1350,10 +1426,12 @@ function initEye(){
  $("#eye-use").addEventListener("change",e=>{st.useEye=e.target.checked;renderOut()});
  $("#eye-copy").addEventListener("click",eyeCopy);
  $("#eye-save").addEventListener("click",eyeDownload);
+ $("#eye-share").addEventListener("click",eyeShare);
+ $("#eye-share").hidden=!eyeCanShare;
  $("#eye-clear").addEventListener("click",e=>eyeClear(e.currentTarget));
  initEyeDownloads();
- try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eye.zoom=+o.zoom||1;eye.x=+o.x||0;eye.y=+o.y||0;eyeSetSource(o.src,{restore:true,ready:true})}}catch(e){}
- eyeUI();
+ eyeUseDefault();
+ try{const o=JSON.parse(localStorage.getItem(EYE_KEY)||"null");if(o&&typeof o.src==="string"&&o.src.startsWith("data:image/")){eyeSetSource(o.src,{restore:true,ready:true,zoom:o.zoom,x:o.x,y:o.y})}}catch(e){}
 }
 
 /* ================= イベント ================= */
@@ -1367,6 +1445,7 @@ document.addEventListener("click",e=>{
  if(b.dataset.attach!==undefined){st.attach=b.dataset.attach==="1";renderRecipeUI();return}
  if(b.dataset.multi){const o=ropts(recipe()),arr=o[b.dataset.multi],v=b.dataset.val,i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);b.setAttribute("aria-pressed",String(i<0));renderOut();return}
  if(b.dataset.copyseg!==undefined){const {segs}=buildSegs();copyText(segs[+b.dataset.copyseg].t,"#toast2");return}
+ if(b.dataset.eyeact){if(b.dataset.eyeact==="copy")eyeCopy();else eyeDownload();return}
  if(b.dataset.load!==undefined){const x=savedList()[+b.dataset.load];if(x){try{loadDNA(parseDNA(x.code));flash("#toast1",`「${x.name}」を読み込みました`)}catch(err){flash("#toast1",err.message)}}return}
  switch(b.id){
   case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}

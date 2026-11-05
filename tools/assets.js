@@ -2,6 +2,8 @@
 //   docs/og.jpg              リンクを貼ったときのプレビュー（1200x630、Discord・X・LINE など）
 //   docs/social-preview.jpg  GitHub の Settings → Social preview 用（1280x640）
 //   gem-instructions.md      Gem「モッフィー工房」に貼る文章
+//   docs/eye-sample.png      標準の目の見本（虹色）。ツールと同じ関数 drawEyeSample で描く（1024x1024）
+//   docs/eye-sample-classic.png  標準の目の見本（クラシック：青→紫）
 // 絵は assets/og-base.jpg（Gemini / Nano Banana で生成した文字なしの絵）を使い、文字はサイトと同じフォントで重ねる。
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -35,7 +37,12 @@ function cardHTML(w, h, s, img) {
   await p.goto('file://' + path.join(ROOT, 'moffy-studio.html')); await p.waitForTimeout(800);
   // だれでも使える工房版の Gem 指示文
   const gem = await p.evaluate(() => { const r = RECIPES.find(x => x.id === 'gem'); const segs = r.build(promptDNA(st.d), { scope: 'だれでも使える工房' }, null, {}); return segs.map(s => `## ${s.h}\n\n${s.h === 'カスタム指示' ? '```\n' + s.t + '\n```' : s.t}`).join('\n\n'); });
-  fs.writeFileSync(path.join(ROOT, 'gem-instructions.md'), `# Gem「モッフィー工房（非公式）」\n\nツールのレシピ「Gemにする」→「だれでも使える工房」と同じ内容です。gemini.google.com（パソコン）→ Gem マネージャー →「新しい Gem」で、それぞれの欄に貼ってください。\n\n${gem}\n`);
+  fs.writeFileSync(path.join(ROOT, 'gem-instructions.md'), `# Gem「モッフィー工房（非公式）」\n\nツールのレシピ「Gemにする」→「だれでも使える工房」と同じ内容です。gemini.google.com（パソコン）→ Gem マネージャー →「新しい Gem」で、それぞれの欄に貼ってください。\n\n目の見本（[docs/eye-sample.png](docs/eye-sample.png)）を Gem の「知識」に追加しておくと、毎回送らなくても目の描き方がそろいます。\n\n${gem}\n`);
+  // 標準の目の見本（ツールと同じ描き方）
+  fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
+  const eyes = await p.evaluate(() => ['g4', 'classic'].map(s => { const cv = document.createElement('canvas'); cv.width = cv.height = 1024; drawEyeSample(cv, s); return cv.toDataURL('image/png').split(',')[1]; }));
+  fs.writeFileSync(path.join(ROOT, 'docs', 'eye-sample.png'), Buffer.from(eyes[0], 'base64'));
+  fs.writeFileSync(path.join(ROOT, 'docs', 'eye-sample-classic.png'), Buffer.from(eyes[1], 'base64'));
   // サムネイル
   if (!fs.existsSync(BASE)) throw new Error('assets/og-base.jpg がありません');
   const img = 'data:image/jpeg;base64,' + fs.readFileSync(BASE).toString('base64');
@@ -48,5 +55,5 @@ function cardHTML(w, h, s, img) {
     await card.close();
   }
   await b.close();
-  console.log('docs/og.jpg・docs/social-preview.jpg・gem-instructions.md を書き出しました');
+  console.log('docs/og.jpg・docs/social-preview.jpg・docs/eye-sample.png・docs/eye-sample-classic.png・gem-instructions.md を書き出しました');
 })();
