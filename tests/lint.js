@@ -31,7 +31,7 @@ const file = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '.
           if (r.id === 'stamps') o.panels = ['4', '6', '8'][cases % 3];
           if (r.id === 'friends') o.codes = friendsCodes;
           if (r.id === 'comic') o.talk = cases % 2 ? '短いセリフあり' : 'なし（絵だけ）';
-          if (r.id === 'base') o.src = r.fields[0].opts[cases % 2];
+          if (r.id === 'base') { o.src = r.fields[0].opts[cases % 2]; o.json = r.fields[1].opts[(cases >> 1) % 2]; }
           if (r.id === 'photo') o.pos = r.fields[0].opts[cases % 4];
           if (r.id === 'fix' && cases % 3 === 0) o.parts = ['鼻が出ている', 'ツノ'];
           const friends = r.id === 'friends' ? o.codes.split('\n').map(x => promptDNA(parseDNA(x))) : [];

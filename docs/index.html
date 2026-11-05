@@ -340,7 +340,7 @@ footer ul{margin:0;padding-left:1.2em}
           <details class="fold" id="prof">
             <summary>プロフィール帳（任意）</summary>
             <div class="fold-body">
-              <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄は基準画像のときに Gemini が考えます。</p>
+              <p class="hint">公式のモッフィーの魅力は「感情が動くとしっぽが震える」のようなクセです。決めておくと、しぐさや表情、4コマのセリフ、Gem に使われます。空欄のままでもかまいません。</p>
               <div class="row2">
                 <div class="field"><label for="pq">口ぐせ</label><input type="text" id="pq" name="catchphrase" autocomplete="off" placeholder="例：てっぺんまで、もうひと息！…"></div>
                 <div class="field"><label for="pr">クセ</label><input type="text" id="pr" name="quirk" autocomplete="off" placeholder="例：うれしいとしっぽが揺れる…"></div>
@@ -373,7 +373,7 @@ footer ul{margin:0;padding-left:1.2em}
             <button type="button" class="btn ghost" id="imp-recipe">公式の子を取り込むレシピを開く</button>
           </div>
           <div id="imp-msg" role="status"></div>
-          <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。基準画像のあとに Gemini が返す JSON も、ここに貼ると「おまかせ」だった所が確定します。</p>
+          <p class="hint">公式ジェネレーターで作った子は、レシピ「公式の子を取り込む」で Gemini に特徴を JSON で書き出してもらい、その返事をここに貼ります。「基準画像をつくる」で「決まった見た目を文字でも受け取る」を選んだときに返ってくる JSON も、ここに貼れます。</p>
         </div>
       </section>
 
@@ -608,9 +608,9 @@ function gacha(){
 }
 // レシピごとの「このあと」
 const NEXT={
- base:["出てきた画像を保存する（以後のレシピで「基準画像」として添付します）","一緒に返ってきた JSON をコピーし、「モッフィーを決める」の「取り込む」に貼る（おまかせだった所が確定します）","目が見本どおりでなければ「部分修正」で目だけ直す","横向きや後ろ姿も描きたいときは「設定画をつくる」へ"],
+ base:["出てきた画像を保存する（以後のレシピで「基準画像」として添付します）","目が見本どおりでなければ「部分修正」で目だけ直す","あとは遊ぶレシピを選び、目の見本と基準画像を添付して指示書を貼るだけ","「文章だけ」で使う人や、DNA コードを友だちに渡す人は、「決まった見た目を文字でも受け取る」を選ぶと、おまかせの所を DNA に取り込めます"],
  sheet:["設定画は、横向きや後ろ姿を描くときの資料として保存する","ふだんのレシピでは、基準画像のほうを添付します"],
- import:["Gemini の返事（JSON）をコピーし、「取り込む」に貼る","レシピ「基準画像をつくる」で、もとにする画像を「あり」にして基準画像を作る"],
+ import:["Gemini の返事（JSON）をコピーし、「モッフィーを決める」の「取り込む」に貼る","レシピ「基準画像をつくる」で、もとにする画像を「あり」にして、その子の基準画像を作る"],
  scene:["気になる所があれば「ルールチェック」か「部分修正」へ","同じチャットなら、続けて「次は〇〇して」と頼むだけでも見た目を保ちやすくなります。チャットが長くなったら、新しいチャットで基準画像と目の見本を添付し直します"],
  stamps:["文字がまちがっていたら「部分修正」の「そのほか」に正しい文字を書いて直す","コマ数がずれたら、4コマから試すと安定します"],
  friends:["友だちにも自分の DNA コードを渡すと、相手の画面でも共演の指示書を作れます"],
@@ -693,7 +693,7 @@ const WHY={
  char:["キーワードを並べるより、文章で具体的に描写したほうが狙いどおりになります。本家の2025年版ジェネレーターも、色・体の形・ツノ・口・毛・アクセサリーを文章にしてつなげる形でした。","公式ガイド「Be Hyper-Specific」／2025年版ジェネレーターのプロンプト"],
  charAttach:["以前に生成した画像を一緒に渡すと、同じキャラクターを保ちやすくなります。文章は確認用で、食いちがったら画像を優先させます。","公式ガイド「Character consistency」"],
  refs:["画像を何枚も添付するときは、何枚目が何の画像かを最初に書きます。目の見本をキャラクターとして描き直したり、目の見本を「取り込みたい子」として読んだりする取りちがえを防げます。","公式ガイド「Provide Context and Intent」"],
- charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、基準画像のあとに返ってくる JSON を取り込んで確定させるのがおすすめです。","このツールの仕組み"],
+ charText:["画像を添付しないときは、文章だけが手がかりです。「おまかせ」を残すと毎回変わるので、文章だけで使うときは、パーツを選んで決めておくのがおすすめです。","このツールの仕組み"],
  rules:["公式ジェネレーターは、鼻・目・頭身などの絶対ルールを、毎回の文章とは別枠（システム指示）で最初に渡しています。ここでも最初に短くまとめ、場面の説明に埋もれないようにします。","公式ジェネレーターの作り方（Canvas のコード）"],
  rulesEye:["公式ジェネレーターがキラキラの目を安定して出せるのは、目の見本画像を毎回いっしょに渡し、目は見本どおりに、見本のキャラの色や形はまねしないように指示しているからです。同じやり方です。","公式ジェネレーターの作り方（Canvas のコード）"],
  base:["公式ジェネレーターの最初の1枚は、1体・真正面・左右対称・白い背景・正方形です。目が大きく写り、あとで基準画像として使いやすくなります。","公式ジェネレーターの作り方（Canvas のコード）"],
@@ -754,7 +754,7 @@ function profileSeg(d,rid){
 // レシピの部品に「その子らしさ」と「しぐさ」を差しこむ（画面とテストの両方で使う）
 const NO_EXTRA=["import","check","fix","gem","friends"];
 function composeSegs(r,d,o,ratio,c){
- const segs=r.build(d,o,ratio,c);
+ const segs=r.build(d,o,ratio,c).filter(Boolean);
  if(!NO_EXTRA.includes(r.id)){
   const i=segs.findIndex(s=>s.h==="この子の特徴");
   const decide=r.id==="base"||(r.id==="sheet"&&!c.n("base")),ref=r.id==="base"||r.id==="sheet";
@@ -850,15 +850,15 @@ const sceneMode=c=>c.n("base")?"keep":"text";
 /* ================= レシピ ================= */
 const RECIPES=[
  {id:"base",group:"はじめる",label:"基準画像をつくる",ratio:"1:1",usesAttach:true,
-  desc:"最初に作る1枚です。公式ジェネレーターと同じく、1体・真正面・白い背景・正方形で描きます。以後のレシピでは、この画像を「基準画像」として添付します。",
-  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式の子や設定画）"]}],
-  build(d,o,r,c){const src=c.n("src");return [
+  desc:"最初に作る1枚です。公式ジェネレーターと同じく、1体・真正面・白い背景・正方形で描きます。出てきた画像を保存し、以後のレシピでは「基準画像」として添付します（文章を取り込み直す必要はありません）。",
+  fields:[{k:"src",label:"もとにする画像",type:"select",opts:["なし（言葉から作る）","あり（公式の子や設定画）"]},{k:"json",label:"決まった見た目を文字でも受け取る",type:"select",opts:["受け取らない（画像だけ）","受け取る（DNA に取り込む）"]}],
+  build(d,o,r,c){const src=c.n("src"),json=String(o.json||"").startsWith("受け取る");return [
    seg("目的",src?`${src}の画像のモッフィーを、基準画像として描き直してください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。`:"新しいモッフィーの基準画像を1枚つくってください。この先ずっと同じ見た目で描くための、いちばん大事な見本になります。",WHY.base),
    rulesSeg(d,c,"にっこり笑った、愛らしい表情"),
    featSeg(d,c,"decide"),
    frameSeg(r,"1体だけを、全身が入るように真正面から描く。顔も体もカメラに正対し、左右対称に立つ","背景は真っ白。床・影・背景の小物は描かない"),
    checkSeg(d),
-   seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、描いた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${fixedProfile(d)}\n${JSON_TEMPLATE}`,WHY.json),
+   json?seg("画像のあとに",`画像のあとに、次の JSON だけを書いてください。おまかせだった項目も、描いた内容を入れます。性格・モチーフ・口ぐせなどで決まっていないものは、もとになった言葉から考えてください。${fixedProfile(d)}\n${JSON_TEMPLATE}`,WHY.json):null,
   ]}},
  {id:"sheet",group:"はじめる",label:"設定画をつくる（任意）",ratio:"16:9",usesAttach:true,
   desc:"横向きや後ろ姿も描きたいときの資料です。基準画像を添付して、三面図と表情4つを1枚にまとめます。",
@@ -872,7 +872,7 @@ const RECIPES=[
    checkSeg(d,["コマが7つだけで、文字がない"]),
   ]}},
  {id:"import",group:"はじめる",label:"公式の子を取り込む",ratio:null,usesAttach:false,
-  desc:"公式ジェネレーターなどで作ったモッフィーの画像から、DNA を読み取ります。Gemini の返事（JSON）を、上の「取り込む」に貼ってください。",
+  desc:"すでに画像がある子（公式ジェネレーターで作った子など）を、このツールで続けて遊ばせたいときだけ使います。その子の全身の画像を添付すると、特徴を JSON で返してもらえるので、上の「取り込む」に貼ります。新しく作るときは使いません（「基準画像をつくる」へ）。",
   fields:[],
   build(d,o,r,c){return [
    seg("目的",`${c.n("src")}の画像のキャラクター（モッフィー）の見た目を観察して、ほかの画像でも同じ子を描けるように特徴を書き出してください。画像は生成しないでください。`,WHY.import),
@@ -1176,7 +1176,7 @@ function renderCard(){
  const d=st.d;
  $("#c-name").textContent=d.n||"名前未定";
  $("#c-id").textContent=dnaId(d);
- $("#c-p").textContent=d.p||"未定（基準画像で Gemini が考えます）";
+ $("#c-p").textContent=d.p||"未定";
  const hex=colorHex(d);
  $("#chip").innerHTML=`<span class="swatch"${hex?` style="background:${hex}"`:" data-auto"} aria-hidden="true"></span><span><b>毛</b>${esc(colorDesc(d)||"おまかせ（基準画像で決まります）")}</span><span class="swatch eye${d.i==="classic"?" classic":""}" aria-hidden="true"></span><span><b>目</b>${d.i==="classic"?"青→紫のグラデーション":"虹色（青・紫・赤・オレンジ・黄・緑）"}と、真ん中の大きな白い四芒星</span>`;
  const ms=motifsOf(d);
@@ -1234,7 +1234,7 @@ function renderOut(){
  const ei=refs.findIndex(x=>x[0]==="eye");
  $("#eye-note").textContent=ei>=0?`このレシピでは、${ei+1}枚目に添付します`:gem?"「Gemにする」では添付しません（Gem の「知識」に入れられます）":st.useEye===false?"「指示書で使う」がオフなので、添付しません":r.usesAttach&&!st.attach?"「文章だけ」なので、添付しません":r.id==="fix"?"「部分修正」では、目を直すときだけ添付します":`「${r.label}」では、目の見本は添付しません`;
  $(".eye-ref").classList.toggle("unused",ei<0);
- const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。基準画像のあとに返ってくる JSON を取り込むと安定します。":"";
+ const warnText=r.usesAttach&&!st.attach&&autoNames(st.d).length?"「おまかせ」が残っていると、毎回見た目が変わります。「見た目を指定する」でパーツを選んでおくと安定します。":"";
  const how=gem?"":`モデルは Flash か Pro を選びます。${refs.length?`貼り方：① 画像をこの順番で添付（入力欄の「＋」から${refs.some(x=>x[0]==="eye")?"。パソコンなら、コピーした目の見本を入力欄に貼り付けても添付できます":""}）② 指示書をコピーして貼る ③ 送信`:"指示書を貼って送信します。"}`;
  $("#attachline").innerHTML=`<svg class="clip" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.5l5.6-5.6a3 3 0 0 1 4.2 4.2l-7.1 7.1a5 5 0 0 1-7.1-7.1l6.4-6.4"/></svg><div>${list}${how?`<p class="hint">${esc(how)}</p>`:""}${eyeHint?`<p class="hint">${esc(eyeHint)}</p>`:""}${warnText?`<p class="warn-inline">${esc(warnText)}</p>`:""}</div>`;
  const nx=NEXT[r.id]||NEXT.scene;
@@ -1452,7 +1452,7 @@ document.addEventListener("click",e=>{
   case "copy":{const {segs}=buildSegs();copyText(plain(segs),"#toast2",$("#out"));break}
   case "share-dna":{const fail=()=>flash("#toast1","共有メニューを開けませんでした。DNAコードのコピーを使ってください");try{navigator.share({title:"モッフィーのDNA",text:`モッフィー「${st.d.n||"名前未定"}」のDNAコード\n${shareTarget()}`}).catch(err=>{if(err&&err.name!=="AbortError")fail()})}catch(err){fail()}break}
   case "gacha":{loadDNA(gacha());flash("#toast1","ガチャで新しいモッフィーを決めました");break}
-  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、基準画像のときに Gemini がモチーフを考えて JSON で返します。"}break}
+  case "mo-suggest":{const ms=suggestMotifs(st.d.k);if(ms.length){st.d.m=ms.join("、");$("#mo").value=st.d.m;renderAll();$("#mo-hint").textContent="言葉からモチーフを提案しました。自由に書きかえてください。"}else{$("#mo-hint").textContent="辞書にない言葉でした。空欄のままなら、基準画像のときに Gemini が言葉からモチーフを考えて描きます。"}break}
   case "copy-code":copyText(dnaCode(st.d),"#toast1",$("#c-code"));break;
   case "copy-link":copyText(shareTarget(),"#toast1");break;
   case "qr-btn":{const box=$("#qr");box.hidden=!box.hidden;b.setAttribute("aria-expanded",String(!box.hidden));if(!box.hidden)renderQR();break}

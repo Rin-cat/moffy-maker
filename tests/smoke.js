@@ -93,9 +93,12 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok(mo.includes('リュック') && mo.includes('なると'), '言葉からモチーフを提案 (' + mo + ')');
   await p.selectOption('#xi', 'high');
   await p.click('#r-base');
+  ok(!(await p.textContent('#out')).includes('"motifs"') && !(await p.textContent('#nextline')).includes('JSON をコピー'), '基準画像は画像だけ（JSON の往復なし）が既定');
+  await p.selectOption('#f-base-json', { index: 1 });
   const sh = await p.textContent('#out');
   ok(sh.includes('その子らしさ') && sh.includes('リュック') && sh.includes('強く出す'), '基準画像にモチーフと強さが入る');
-  ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '基準画像の JSON にモチーフとプロフィールの欄');
+  ok(sh.includes('"motifs"') && sh.includes('"catchphrase"'), '「文字でも受け取る」を選ぶと、JSON にモチーフとプロフィールの欄');
+  await p.selectOption('#f-base-json', { index: 0 });
   await p.fill('#mo', ''); await p.fill('#kw', 'ほげほげ'); await p.click('#mo-suggest');
   ok((await p.textContent('#mo-hint')).includes('辞書にない'), '辞書にない言葉の案内');
   ok((await p.textContent('#out')).includes('目に見えるモチーフ2〜3個'), 'モチーフ未定なら基準画像で決めさせる');
