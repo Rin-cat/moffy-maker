@@ -11,7 +11,11 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const html = fs.readFileSync(path.join(ROOT, 'docs', 'canvas.html'), 'utf8');
   await p.route('https://rin-cat.github.io/moffy-maker/canvas.html', r => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', headers: { 'access-control-allow-origin': '*' }, body: html }));
   let calls = 0;
-  await p.route('https://generativelanguage.googleapis.com/**', r => { calls++; return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' } }] } }] }) }); });
+  await p.route('https://generativelanguage.googleapis.com/**', r => {
+    // 見た目の自動チェック（文字のモデル）には合格を返し、画像の生成だけを数える
+    if (!/image/.test(r.request().url())) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"results":[],"corrections":""}' }] } }] }) });
+    calls++; return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' } }] } }] }) });
+  });
   await p.goto('file://' + path.join(ROOT, 'canvas', 'loader.html')); await p.waitForTimeout(1500);
   ok((await p.$$eval('[data-recipe]', bs => bs.length)) === 16 && !(await p.$eval('#gen-go', e => e.hidden)), '読み込み版：本体（Canvas モード）が表示される');
   await p.click('#r-base'); await p.click('#gen-go');

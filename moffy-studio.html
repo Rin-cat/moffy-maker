@@ -245,6 +245,20 @@ kbd{font-family:var(--f-code);font-size:11px;border:1px solid var(--rule-strong)
 .gen-pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-code);font-size:12px;background:var(--fill);border:1px solid var(--rule);border-radius:4px;padding:8px;max-height:260px;overflow:auto}
 .gen-text summary{cursor:pointer;font-size:13px}
 .gen-score{font-weight:700}
+.switch.blue input{accent-color:var(--blue)}
+.gen-check{border-top:1px dashed var(--rule);padding-top:8px;display:grid;gap:6px}
+.gc-head{font-size:13.5px;font-weight:700}
+.gen-check.pending .gc-head,.gen-check.none .gc-head{color:var(--sub);font-weight:500}
+.gen-check.ok .gc-head{color:var(--ok)}
+.gen-check.ng .gc-head{color:var(--red)}
+.gc-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px}
+.gc-list li{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:2px 4px}
+.gc-list li b{font-weight:900}
+.gc-list li.ok b{color:var(--ok)}
+.gc-list li.ng b{color:var(--red)}
+.gc-list li small{flex-basis:100%;color:var(--sub);font-size:12px}
+.gc-act{display:grid;gap:6px}
+.gc-text{font-size:13.5px!important;padding:6px 10px!important}
 .gen-checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px}
 .gen-checks li{display:grid;grid-template-columns:4em minmax(0,1fr);gap:2px 8px}
 .gen-checks li span{grid-column:2;color:var(--sub);font-size:12.5px}
@@ -479,6 +493,8 @@ footer ul{margin:0;padding-left:1.2em}
           <button type="button" data-attach="0" aria-pressed="false">文章だけ</button>
         </div>
         <label class="switch"><input type="checkbox" id="explain" name="explain"> 赤ペンの解説を表示</label>
+        <label class="switch blue" id="ac-wrap" hidden><input type="checkbox" id="ac-on" name="auto-check" checked> 生成のあと、見た目を自動でチェック</label>
+        <label class="switch blue" id="ar-wrap" hidden><input type="checkbox" id="ar-on" name="auto-retry"> 合わなければ自動で作り直す（最大2回）</label>
       </div>
       <div class="rfields" id="rfields"></div>
       <div class="attach" id="attachline"></div>
@@ -653,7 +669,7 @@ const ipHits=t=>[...new Set((String(t||"").match(new RegExp(IP_SRC,"gi"))||[]))]
 const ipClean=t=>String(t||"").replace(new RegExp(IP_SRC,"gi"),"").replace(/[、,]\s*(?=[、,])/g,"").replace(/^[、,\s]+|[、,\s]+$/g,"").trim();
 
 /* ================= 状態 ================= */
-const st={d:{...DEFAULT_DNA},mode:"new",recipe:"base",attach:true,explain:false,ro:{},useEye:true};
+const st={d:{...DEFAULT_DNA},mode:"new",recipe:"base",attach:true,explain:false,ro:{},useEye:true,autoCheck:true,autoRetry:false};
 
 /* ================= DNA の読み書き ================= */
 const optOf=(k,v)=>PARTS[k].opts.find(o=>o[0]===v);
@@ -1290,8 +1306,8 @@ async function copyText(text,toast,fallbackEl){
  catch(e){if(fallbackEl){const r=document.createRange();r.selectNodeContents(fallbackEl);const s=getSelection();s.removeAllRanges();s.addRange(r)}flash(toast,"自動でコピーできませんでした。選択した部分を手動でコピーしてください")}
 }
 function flash(sel,msg){const el=$(sel);el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=""},2600)}
-function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro,useEye:st.useEye}))}catch(e){}}
-function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)&&!(o.recipe==="sheet"&&o.useEye===undefined)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false}}catch(e){}}
+function persist(){try{localStorage.setItem("moffy-maker-draft",JSON.stringify({d:st.d,recipe:st.recipe,attach:st.attach,explain:st.explain,ro:st.ro,useEye:st.useEye,autoCheck:st.autoCheck,autoRetry:st.autoRetry}))}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("moffy-maker-draft")||"null");if(o&&o.d){st.d={...BLANK_DNA,...o.d};st.recipe=RECIPES.some(r=>r.id===o.recipe)&&!(o.recipe==="sheet"&&o.useEye===undefined)?o.recipe:"base";st.attach=o.attach!==false;st.explain=!!o.explain;st.ro=o.ro||{};st.useEye=o.useEye!==false;st.autoCheck=o.autoCheck!==false;st.autoRetry=o.autoRetry===true}}catch(e){}}
 function savedList(){try{return JSON.parse(localStorage.getItem("moffy-maker-saved")||"[]")}catch(e){return []}}
 function renderSaved(){const l=savedList();$("#saved").innerHTML=l.length?`<span class="hint">保存したモッフィー：</span>`+l.map((x,i)=>`<button type="button" data-load="${i}">${esc(x.name)}</button>`).join(""):""}
 function loadDNA(d,msg){st.d={...BLANK_DNA,...d};syncInputs();renderAll();if(msg)$("#imp-msg").innerHTML=`<div class="okmsg">${esc(msg)}</div>`}
@@ -1530,13 +1546,61 @@ function genCard(label){
 }
 const genItem=id=>GEN.results.find(x=>x.id===id);
 const genBody=id=>{const e=$(`.gen-card[data-id="${id}"] .gen-body`);return e};
-function genShowImage(id,rid,res){
- const it=genItem(id);if(!it)return;Object.assign(it,{kind:"image",url:res.url,text:res.text||"",rid});
+function genShowImage(id,rid,res,job,check){
+ const it=genItem(id);if(!it)return;Object.assign(it,{kind:"image",url:res.url,text:res.text||"",rid,job:job||null,check:null});
  GEN.last=res.url;
  let canImport=false;if(res.text){try{parseDNA(res.text);canImport=true}catch(e){}}
  const body=genBody(id);if(!body)return;
- body.innerHTML=`<img class="gen-img" src="${res.url}" alt="${esc(it.label)}で生成した画像">${res.text?`<details class="gen-text"><summary>一緒に返ってきた文字</summary><pre class="gen-pre">${esc(res.text)}</pre></details>`:""}<div class="btns"><button type="button" class="btn small" data-genact="save" data-id="${id}">保存</button><button type="button" class="btn ghost small" data-genact="base" data-id="${id}">基準画像にする</button><button type="button" class="btn ghost small" data-genact="fix" data-id="${id}">部分修正へ</button><button type="button" class="btn ghost small" data-genact="check" data-id="${id}">ルールチェックへ</button>${canImport?`<button type="button" class="btn ghost small" data-genact="import" data-id="${id}">文字の内容を DNA に取り込む</button>`:""}</div>`;
- if(rid==="base"&&!GEN.base)genSetBase(res.url,"生成した画像を、基準画像にしました");
+ body.innerHTML=`<img class="gen-img" src="${res.url}" alt="${esc(it.label)}で生成した画像">${res.text?`<details class="gen-text"><summary>一緒に返ってきた文字</summary><pre class="gen-pre">${esc(res.text)}</pre></details>`:""}${check?`<div class="gen-check pending" role="status"><p class="gc-head">見た目をチェックしています…</p></div>`:""}<div class="btns"><button type="button" class="btn small" data-genact="save" data-id="${id}">保存</button><button type="button" class="btn ghost small" data-genact="base" data-id="${id}">基準画像にする</button><button type="button" class="btn ghost small" data-genact="fix" data-id="${id}">部分修正へ</button><button type="button" class="btn ghost small" data-genact="check" data-id="${id}">ルールチェックへ</button>${canImport?`<button type="button" class="btn ghost small" data-genact="import" data-id="${id}">文字の内容を DNA に取り込む</button>`:""}</div>`;
+}
+// 見た目の自動チェック。本家ジェネレーターと同じく、生成した画像を文字のモデルに見せて項目ごとに判定する
+function genCheckItems(rid){
+ const d=promptDNA(st.d),multi=["friends","comic","stamps","sheet"].includes(rid),who=multi?"どのモッフィーも、":"";
+ const iris=d.i==="classic"?"青から紫へのグラデーション":"虹色の輪（赤・オレンジ・黄・緑・水色・青・紫がふちに沿って一周する）";
+ return [
+  {key:"nose",label:"鼻がない",short:"鼻",ask:`${who}鼻が描かれていない。鼻は完全に禁止で、目と口のあいだにある小さな丸い点や三角も鼻とみなす`},
+  {key:"mouth",label:"口がある",short:"口",ask:`${who}口が描かれている`},
+  ...(multi?[]:[{key:"eyes",label:`目が${eyeCount(d)}つ`,short:"目の数",ask:`目の数がちょうど${eyeCount(d)}つ（ウインクなどで閉じている目も数える）`}]),
+  {key:"iris",label:"虹彩の色",short:"虹彩の色",ask:`${who}開いているすべての目の虹彩が${iris}で、どの目も同じ色。片方だけ単色、体と同じ色、黒いだけの目は不合格`},
+  {key:"sparkle",label:"目のキラキラ",short:"目のキラキラ",ask:`${who}開いているすべての目の真ん中に、大きな白い四芒星（✦）のハイライトがある。片目でも欠けていれば不合格`},
+  {key:"texture",label:rid==="figure"?"毛並みの質感":"ふわふわ",short:rid==="figure"?"毛並みの質感":"ふわふわ感",ask:rid==="figure"?"フィギュアとして、ふわふわの毛並みが形で表されている":"全身がふわふわ・もこもこの毛並み"},
+ ];
+}
+async function genValidate(url,rid){
+ const items=genCheckItems(rid);
+ const prompt=`添付した画像のキャラクター（モッフィー）が、デザインのルールに合っているかを、次の項目ごとに判定してください。画像から確かめられない項目（その部分が写っていない、など）は合格にします。\n${items.map((x,i)=>`${i+1}. [${x.key}] ${x.ask}`).join("\n")}\n\n次の JSON だけを返してください。\n{"results":[{"key":"nose","pass":true,"reason":"判断の理由を短く"}],"corrections":"不合格の所を直すための指示を1〜2文で（全部合格なら空文字）"}`;
+ const t=await genText(prompt,[url],true);
+ const m=t.match(/\{[\s\S]*\}/);let o=null;try{o=m?looseJSON(m[0]):null}catch(e){}
+ if(!o||!Array.isArray(o.results))throw new Error("判定の返事が読めませんでした");
+ const res=items.map(x=>{const f=o.results.find(y=>y&&y.key===x.key);return {...x,pass:f?f.pass!==false:true,reason:f&&f.reason?String(f.reason):""}});
+ return {items:res,passed:res.every(x=>x.pass),corrections:String(o.corrections||"").trim()};
+}
+function genShowCheck(id,v,err){
+ const it=genItem(id),box=$(`.gen-card[data-id="${id}"] .gen-check`);if(!it||!box)return;
+ it.check=v||null;box.removeAttribute("role");
+ if(!v){box.className="gen-check none";box.innerHTML=`<p class="gc-head">見た目のチェックはできませんでした${err?`（${esc(err)}）`:""}</p>`;return}
+ const ng=v.items.filter(x=>!x.pass);
+ box.className=`gen-check ${v.passed?"ok":"ng"}`;
+ box.innerHTML=`<p class="gc-head">${v.passed?"見た目のチェック：合格":`見た目のチェック：${esc(ng.map(x=>x.short||x.label).join("・"))}を直したほうがよさそうです`}</p><ul class="gc-list">${v.items.map(x=>`<li class="${x.pass?"ok":"ng"}"><b aria-hidden="true">${x.pass?"✓":"✕"}</b><span class="vh">${x.pass?"合格":"不合格"}：</span>${esc(x.label)}${!x.pass&&x.reason?`<small>${esc(x.reason)}</small>`:""}</li>`).join("")}</ul>${v.passed?"":`<div class="gc-act"><input type="text" class="gc-text" id="gc-text-${id}" placeholder="こうしたい、があれば（任意）" aria-label="作り直すときに足すお願い（任意）"><div class="btns"><button type="button" class="btn small" data-genact="autofix" data-id="${id}">その部分だけ直す</button><button type="button" class="btn ghost small" data-genact="regen" data-id="${id}">もう一度生成する</button></div></div>`}`;
+}
+// 作り直すときの指示書：もとの指示書に、合わなかった所と追加のお願いを足す（何回作り直しても重ならないよう、もとの指示書から作る）
+function genRetryJob(job,v,text){
+ const ng=v?v.items.filter(x=>!x.pass):[];
+ const extra=[ng.length?`【前の候補で合わなかった所 — 今回はとくに守る】\n${ng.map(x=>`・${x.ask}${x.reason?`（前の候補：${x.reason}）`:""}`).join("\n")}${v.corrections?`\n直し方：${v.corrections}`:""}`:"",text?`【追加のお願い — 最優先で反映する】\n${text}`:""].filter(Boolean).join("\n\n");
+ const base=job.basePrompt||job.prompt;
+ return {...job,basePrompt:base,prompt:extra?`${base}\n\n${extra}`:base};
+}
+// 画像を生成して、見た目を自動でチェックする。設定しだいで、合わなければ自動で作り直す（最大2回）
+async function genImageFlow(job){
+ const id=genCard(job.label);
+ let res,v=null,verr="";
+ try{res=await genImage(job.prompt,job.urls,job.ratio,job.wantText)}catch(e){genShowError(id,e);return}
+ const check=st.autoCheck!==false;
+ genShowImage(id,job.rid,res,job,check);
+ if(check){try{v=await genValidate(res.url,job.rid)}catch(e){verr=e&&e.message||""}genShowCheck(id,v,verr)}
+ if(job.rid==="base"&&!GEN.base&&(!v||v.passed))genSetBase(res.url,"生成した画像を、基準画像にしました");
+ const n=(job.retry||0)+1;
+ if(v&&!v.passed&&st.autoRetry&&n<=2){const head=job.head||job.label;await genImageFlow({...genRetryJob(job,v,""),label:`${head}（自動で作り直し ${n}/2）`,head,retry:n})}
 }
 function genShowText(id,rid,text,target){
  const it=genItem(id);if(!it)return;Object.assign(it,{kind:"text",text,rid,target:target||""});
@@ -1563,23 +1627,24 @@ async function genRun(){
  if(r.id==="gem")return;
  const miss=genMissing(c);
  if(miss.length){flash("#toast2",`先に画像を入れてください：${miss.join("、")}`);return}
- const urls=c.refs.map(([k])=>genRefUrl(k)),prompt=plain(segs),id=genCard(r.label);
- const target=r.id==="check"?(GEN.imgs.target||""):"";
+ const urls=c.refs.map(([k])=>genRefUrl(k)),prompt=plain(segs);
  GEN.busy=true;genUpdate();
  try{
-  if(r.id==="import"||r.id==="check")genShowText(id,r.id,await genText(prompt,urls,r.id==="check"),target);
-  else genShowImage(id,r.id,await genImage(prompt,urls,ratioOf(r,o),r.id==="base"&&String(o.json||"").startsWith("受け取る")));
- }catch(e){genShowError(id,e)}
+  if(r.id==="import"||r.id==="check"){
+   const id=genCard(r.label),target=r.id==="check"?(GEN.imgs.target||""):"";
+   try{genShowText(id,r.id,await genText(prompt,urls,r.id==="check"),target)}catch(e){genShowError(id,e)}
+  }
+  else await genImageFlow({label:r.label,rid:r.id,prompt,basePrompt:prompt,urls,ratio:ratioOf(r,o),wantText:r.id==="base"&&String(o.json||"").startsWith("受け取る"),retry:0});
+ }
  finally{GEN.busy=false;genUpdate()}
 }
 // ルールチェックの直し方（fix_prompt）で、判定した画像を直す
-async function genApplyFix(it){
+async function genApplyFix(it,label){
  if(GEN.busy||!it.fix||!it.target)return;
  const useEye=eyeActive(),urls=[it.target,...(useEye?[eye.out]:[])];
  const prompt=[`【添付した画像】\n1枚目：直してほしい画像${useEye?`\n2枚目：${EYE_REF[2]}`:""}`,`【直すこと】\n${it.fix}${useEye?"\n目を直すときは、目の描き方を2枚目の目の見本とそっくり同じにする（まねするのは目の描き方だけ）。":""}`,"【構図】\n直す所のほかは、ポーズ・表情・背景・光・構図をまったく同じに保つ。アスペクト比も元の画像と同じにする。画像は1枚だけ出力する。"].join("\n\n");
- const id=genCard("ルールチェックで直す");
  GEN.busy=true;genUpdate();
- try{genShowImage(id,"fix",await genImage(prompt,urls,null,false))}catch(e){genShowError(id,e)}
+ try{await genImageFlow({label:label||"ルールチェックで直す",rid:"fix",prompt,basePrompt:prompt,urls,ratio:null,wantText:false,retry:0})}
  finally{GEN.busy=false;genUpdate()}
 }
 function genDownload(url,name){
@@ -1637,6 +1702,11 @@ function initGen(){
  $("#base-save").addEventListener("click",()=>{if(GEN.base)genDownload(GEN.base,"moffy-base.jpg")});
  $("#base-clear").addEventListener("click",e=>genBaseClear(e.currentTarget));
  $("#gen-go").addEventListener("click",genRun);
+ const ac=$("#ac-on"),ar=$("#ar-on");$("#ac-wrap").hidden=false;$("#ar-wrap").hidden=false;
+ const syncAuto=()=>{ac.checked=st.autoCheck!==false;ar.checked=!!st.autoRetry;ar.disabled=!ac.checked};
+ ac.addEventListener("change",()=>{st.autoCheck=ac.checked;syncAuto();persist()});
+ ar.addEventListener("change",()=>{st.autoRetry=ar.checked;persist()});
+ syncAuto();
  document.addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
   if(b.dataset.genpick){GEN.pickKey=b.dataset.genpick;file.click();return}
@@ -1649,6 +1719,8 @@ function initGen(){
    case "fix":case "check":{GEN.imgs.target=await genNormalize(it.url).catch(()=>it.url);st.recipe=b.dataset.genact;renderRecipeUI();setHash();$("#recipes").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});flash("#toast2",b.dataset.genact==="fix"?"この画像を「直したい画像」にしました。直したい所を選んで生成してください":"この画像を「判定したい画像」にしました");break}
    case "import":try{const d=parseDNA(it.text);loadDNA(d,`「${d.n||"名前未定"}」を取り込みました。レシピを選んで続けられます。`);flash("#toast2","DNA に取り込みました")}catch(err){flash("#toast2",err.message)}break;
    case "applyfix":genApplyFix(it);break;
+   case "autofix":{if(!it.check)break;const t=(($(`#gc-text-${it.id}`)||{}).value||"").trim(),ng=it.check.items.filter(x=>!x.pass);it.fix=[it.check.corrections,...ng.map(x=>"・"+x.ask),t?`追加のお願い：${t}`:""].filter(Boolean).join("\n");it.target=it.url;genApplyFix(it,"見た目チェックで直す");break}
+   case "regen":{if(GEN.busy||!it.job)break;const t=(($(`#gc-text-${it.id}`)||{}).value||"").trim(),head=it.job.head||it.job.label;GEN.busy=true;genUpdate();try{await genImageFlow({...genRetryJob(it.job,it.check,t),label:`${head}（もう一度）`,head,retry:0})}finally{GEN.busy=false;genUpdate()}break}
   }
  });
  try{const b=localStorage.getItem(GEN_BASE_KEY);if(b&&b.startsWith("data:image/"))GEN.base=b}catch(e){}
