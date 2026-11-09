@@ -7,24 +7,24 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F141D">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='26' fill='%238EC9F2'/%3E%3Ccircle cx='23' cy='32' r='8' fill='%231E1B2C'/%3E%3Ccircle cx='41' cy='32' r='8' fill='%231E1B2C'/%3E%3Cpath d='M23 26l2 6 6 0-6 2-2 6-2-6-6-2 6 0z M41 26l2 6 6 0-6 2-2 6-2-6-6-2 6 0z' fill='%23fff'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
-<meta property="og:title" content="モッフィー指示書メーカー">
-<meta property="og:description" content="Gemini で自分のモッフィーを同じ見た目のまま遊ばせるための指示書（プロンプト）を作る、非公式のファンメイドツール。">
+<meta property="og:title" content="非公式モッフィージェネレーター">
+<meta property="og:description" content="Gemini で自分のモッフィーを作り、同じ見た目のまま、いろいろな場面で遊ばせる非公式のファンメイドツール。Canvas 版は画像まで生成し、Web 版は Gemini アプリに貼る指示書（プロンプト）を作ります。">
 <meta property="og:image" content="https://rin-cat.github.io/moffy-maker/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる。左に「モッフィー指示書メーカー」の文字">
+<meta property="og:image:alt" content="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる。左に「非公式・ファンメイド　モッフィージェネレーター」の文字">
 <meta property="og:url" content="https://rin-cat.github.io/moffy-maker/">
 <meta name="twitter:card" content="summary_large_image">
-<title>モッフィー指示書メーカー</title>
+<title>非公式モッフィージェネレーター</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Gemini で自分のモッフィーを同じ見た目のまま遊ばせるための指示書（プロンプト）を作る、非公式のファンメイドツール。">
+<meta name="description" content="Gemini で自分のモッフィーを作り、同じ見た目のまま、いろいろな場面で遊ばせる非公式のファンメイドツール。Canvas 版は画像まで生成し、Web 版は Gemini アプリに貼る指示書（プロンプト）を作ります。">
 <meta name="moffy-site-url" content="https://rin-cat.github.io/moffy-maker/">
 <meta name="moffy-mode" content="">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Yomogi&family=M+PLUS+1+Code:wght@400;500&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=%E3%83%A2%E3%83%83%E3%83%95%E3%82%A3%E3%83%BC%E6%8C%87%E7%A4%BA%E6%9B%B8%E3%83%A1%E3%83%BC%E3%82%AB%E3%83%BC123">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=%E3%83%A2%E3%83%83%E3%83%95%E3%82%A3%E3%83%BC%E3%82%B8%E3%82%A7%E3%83%8D%E3%83%AC%E3%83%BC%E3%82%BF%E3%83%BC123">
 <style>
 /* Layout: アニメ制作の設定資料デスク。左＝モッフィーを決める（机の上のメモ）、右＝キャラ表（紙・スクロールに追従）、下＝指示書（紙・全幅）。
    青鉛筆＝描く・選ぶ。赤鉛筆＝直す・注意・赤ペンの解説。見せ場はキャラ表のラフ線画と、指示書の余白に入る手書きの解説だけ */
@@ -77,6 +77,7 @@ p{margin:0}
 .top-text{display:grid;gap:16px;min-width:0}
 h1{font-family:var(--f-title);font-weight:400;font-size:clamp(34px,5.4vw,60px);line-height:1.12;letter-spacing:.01em}
 h1 .nb{display:inline-block}
+.stamp::before{content:"非公式"}
 .stamp{display:inline-grid;place-items:center;vertical-align:middle;width:clamp(48px,4.6vw,64px);height:clamp(48px,4.6vw,64px);margin:0 .3em 0 .2em;border:2.5px solid var(--red);border-radius:50%;color:var(--red);font-family:var(--f-ui);font-weight:900;font-size:clamp(12px,1.1vw,15px);line-height:1;letter-spacing:.02em;white-space:nowrap;transform:rotate(-12deg)}
 .lede{color:var(--sub);font-size:15.5px;max-width:40em}
 .flow{list-style:none;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;counter-reset:f}
@@ -304,8 +305,8 @@ footer ul{margin:0;padding-left:1.2em}
   <a class="skip" href="#main">本文へ移動</a>
   <header class="top">
     <div class="top-text">
-      <h1><span class="nb">モッフィー</span><span class="stamp" aria-hidden="true">非公式</span><span class="nb">指示書メーカー</span></h1>
-      <p class="lede">Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描いてもらうための指示書（プロンプト）をつくります。画像は自分の <span translate="no">Gemini</span> アプリで作るので、APIキーも費用もいりません。</p>
+      <h1><span class="vh">非公式</span><span class="nb">モッフィー</span><span class="stamp" aria-hidden="true"></span><span class="nb">ジェネレーター</span></h1>
+      <p class="lede">Gemini で生まれた自分のモッフィーを、同じ見た目のまま、いろいろな場面で描くための非公式ツールです。この Web 版では指示書（プロンプト）をつくり、画像は自分の <span translate="no">Gemini</span> アプリで作るので、APIキーも費用もいりません。</p>
       <ol class="flow">
         <li><b>モッフィーを決める</b><span>言葉とパーツから。公式の子も取り込めます</span></li>
         <li><b>指示書を選ぶ</b><span>基準画像・おでかけ・スタンプなど16種類</span></li>

@@ -39,7 +39,7 @@ extra = f"""<meta charset="utf-8">
 <meta property="og:image" content="{og_image}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる。左に「モッフィー指示書メーカー」の文字">
+<meta property="og:image:alt" content="ふわふわのモッフィー3匹が、自分の設計図カードを持って机の前に並んでいる。左に「非公式・ファンメイド　モッフィージェネレーター」の文字">
 {f'<meta property="og:url" content="{site_url}">' if site_url else ''}
 <meta name="twitter:card" content="summary_large_image">
 """

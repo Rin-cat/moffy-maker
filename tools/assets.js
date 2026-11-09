@@ -25,7 +25,7 @@ function cardHTML(w, h, s, img) {
   .u{margin-top:${6 * s}px;font:500 ${14 * s}px "IBM Plex Mono",monospace;color:#5E5A78}
 </style></head><body><div class="t">
   <div class="e"><b>✦</b> 非公式・ファンメイド</div>
-  <h1>モッフィー<br>指示書メーカー</h1>
+  <h1>モッフィー<br>ジェネレーター</h1>
   <p>自分のモッフィーを、<br>同じ見た目のまま Gemini で</p>
   <div class="u">${SITE}</div>
 </div></body></html>`;
